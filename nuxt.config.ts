@@ -7,7 +7,8 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@vueuse/motion/nuxt',
     '@nuxtjs/tailwindcss',
-    '@nuxt/icon'
+    '@nuxt/icon',
+    '@pinia/nuxt',
   ],
   image: {
     format: ['avif', 'webp', 'png', 'jpg'],
@@ -18,5 +19,10 @@ export default defineNuxtConfig({
       xl: 1280,
       xxl: 1536,
     },
-  }
-});
+  },
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.API_BASE,
+    },
+  },
+})
