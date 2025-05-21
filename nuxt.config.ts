@@ -4,8 +4,18 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
     '@nuxt/eslint',
-    '@nuxt/ui',
     '@nuxt/image',
-    '@vueuse/motion/nuxt'
-  ]
+    '@vueuse/motion/nuxt',
+    '@nuxtjs/tailwindcss',
+  ],
+  image: {
+    format: ['avif', 'webp', 'png', 'jpg'],
+    screens: {
+      sm: 320,
+      md: 640,
+      lg: 1024,
+      xl: 1280,
+      xxl: 1536,
+    },
+  }
 });
