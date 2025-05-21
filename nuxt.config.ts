@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@vueuse/motion/nuxt',
     '@nuxtjs/tailwindcss',
+    '@nuxt/icon'
   ],
   image: {
     format: ['avif', 'webp', 'png', 'jpg'],
