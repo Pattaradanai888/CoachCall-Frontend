@@ -67,7 +67,7 @@
         <!-- Password -->
         <div class="flex flex-col">
           <div class="flex items-center border rounded-lg px-3 py-2 shadow-md">
-            <Icon name="material-symbols:lock" size="1.5rem" style="color: black" class="mr-2" />
+            <Icon name="mdi:password" size="1.5rem" style="color: black" class="mr-2" />
             <input
               id="password"
               v-model="password"
@@ -83,7 +83,7 @@
         <!-- Confirm Password -->
         <div class="flex flex-col">
           <div class="flex items-center border rounded-lg px-3 py-2 shadow-md">
-            <Icon name="material-symbols:lock" size="1.5rem" style="color: black" class="mr-2" />
+            <Icon name="mdi:password" size="1.5rem" style="color: black" class="mr-2" />
             <input
               id="confirm"
               v-model="confirm"
