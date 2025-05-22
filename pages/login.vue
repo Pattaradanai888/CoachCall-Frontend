@@ -42,6 +42,7 @@
               v-model="email"
               type="email"
               placeholder="Email"
+              autocomplete="email"
               class="w-full outline-none"
             />
           </div>
@@ -57,6 +58,7 @@
               v-model="password"
               type="password"
               placeholder="Password"
+              autocomplete="current-password"
               class="w-full outline-none"
             />
           </div>
@@ -91,35 +93,31 @@
 </template>
 
 <script setup lang="ts">
-import { useForm, useField } from 'vee-validate'
-import { toFieldValidator } from '@vee-validate/zod'
-import { z } from 'zod'
-import { useAuthStore } from '~/stores/auth'
-import { useRouter } from 'vue-router'
-
-definePageMeta({
-  middleware: 'guest-only',
-})
+import { useForm, useField } from 'vee-validate';
+import { toFieldValidator } from '@vee-validate/zod';
+import { z } from 'zod';
+import { useAuthStore } from '~/stores/auth';
+import { useRouter } from 'vue-router';
 
 // 1) Schema
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'Password too short'),
-})
+});
 
 // 2) Setup VeeValidate
 const { handleSubmit, errors } = useForm({
   validationSchema: toFieldValidator(loginSchema),
-})
-const { value: email } = useField<string>('email')
-const { value: password } = useField<string>('password')
+});
+const { value: email } = useField<string>('email');
+const { value: password } = useField<string>('password');
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
 
 // 3) onSubmit now used in template
 const onSubmit = handleSubmit(async () => {
-  await auth.login({ email: email.value, password: password.value })
-  router.push('/')
-})
+  await auth.login({ email: email.value, password: password.value });
+  router.push('/');
+});
 </script>

@@ -1,17 +1,39 @@
 // middleware/auth.ts
-import { useAuthStore } from '~/stores/auth'
-import { navigateTo } from '#app'
+import { defineNuxtRouteMiddleware, navigateTo } from '#app';
+import { useAuthStore } from '~/stores/auth';
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const auth = useAuthStore()
-  if (!auth.isAuthenticated) {
+  const authStore = useAuthStore();
+
+  // Skip auth for public routes
+  if (['/login', '/register'].includes(to.path)) return;
+
+  // Server-side: Check if we can get auth state
+  if (import.meta.server) {
     try {
-      await auth.fetchProfile()
+      // Try to refresh token server-side via API route
+      await $fetch('/api/auth/refresh', { method: 'POST' });
+      // If successful, the user is authenticated
+      return;
     } catch {
-      return navigateTo('/login')
+      // Refresh failed, redirect to login
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Authentication required',
+      });
     }
   }
-  if (auth.isAuthenticated && ['/login', '/register'].includes(to.path)) {
-    return navigateTo('/')
+
+  // Client-side: Use existing logic
+  if (!authStore.isAuthenticated && !authStore.accessToken) {
+    try {
+      await authStore.fetchProfile();
+    } catch {
+      return navigateTo('/login');
+    }
   }
-})
+
+  if (!authStore.isAuthenticated) {
+    return navigateTo('/login');
+  }
+});

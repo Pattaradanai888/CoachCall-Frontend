@@ -41,6 +41,7 @@
               v-model="fullname"
               type="text"
               placeholder="Name"
+              autocomplete="name"
               class="w-full outline-none"
             />
           </div>
@@ -56,6 +57,7 @@
               v-model="email"
               type="email"
               placeholder="Email"
+              autocomplete="email"
               class="w-full outline-none"
             />
           </div>
@@ -71,6 +73,7 @@
               v-model="password"
               type="password"
               placeholder="Password"
+              autocomplete="new-password"
               class="w-full outline-none"
             />
           </div>
@@ -86,6 +89,7 @@
               v-model="confirm"
               type="password"
               placeholder="Confirm Password"
+              autocomplete="new-password"
               class="w-full outline-none"
             />
           </div>
@@ -109,16 +113,13 @@
 </template>
 
 <script setup lang="ts">
-import { useForm } from 'vee-validate'
-import { z } from 'zod'
-import { useAuthStore } from '~/stores/auth'
-import { useRouter } from 'vue-router'
+import { useForm, useField } from 'vee-validate';
+import { toFieldValidator } from '@vee-validate/zod';
+import { z } from 'zod';
+import { useAuthStore } from '~/stores/auth';
+import { useRouter } from 'vue-router';
 
-definePageMeta({
-  middleware: 'guest-only',
-})
-
-const schema = z
+const registerSchema = z
   .object({
     fullname: z.string().min(1, 'Name is required'),
     email: z.string().email('Invalid email'),
@@ -128,23 +129,24 @@ const schema = z
   .refine((data) => data.password === data.confirm, {
     message: "Passwords don't match",
     path: ['confirm'],
-  })
+  });
 
-const { handleSubmit, errors, defineField } = useForm({
-  validationSchema: schema,
-})
+// VeeValidate form setup
+const { handleSubmit, errors } = useForm({
+  validationSchema: toFieldValidator(registerSchema),
+});
 
-const [fullname] = defineField('fullname')
-const [email] = defineField('email')
-const [password] = defineField('password')
-const [confirm] = defineField('confirm')
+const { value: fullname } = useField<string>('fullname');
+const { value: email } = useField<string>('email');
+const { value: password } = useField<string>('password');
+const { value: confirm } = useField<string>('confirm');
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
 
 // Submit logic
 const onSubmit = handleSubmit(async () => {
-  await auth.register({ fullname: fullname.value, email: email.value, password: password.value })
-  router.push('/')
-})
+  await auth.register({ fullname: fullname.value, email: email.value, password: password.value });
+  router.push('/');
+});
 </script>

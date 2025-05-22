@@ -15,12 +15,54 @@
 
         <!-- Right Side - Desktop -->
         <div class="hidden lg:flex items-center space-x-6">
-          <NuxtLink
-            to="/login"
-            class="text-sm font-semibold text-gray-900 hover:text-[#991B1B] transition"
-          >
-            Log in <span aria-hidden="true">&rarr;</span>
-          </NuxtLink>
+          <ClientOnly>
+            <div v-if="isAuthenticated" class="relative">
+              <button
+                class="flex items-center space-x-2 focus:outline-none"
+                @click.stop="toggleProfileMenu"
+              >
+                <div class="w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
+                  <NuxtImg
+                    src="/default-avatar.png"
+                    alt="User avatar"
+                    class="w-full h-full object-cover"
+                    placeholder
+                  />
+                </div>
+                <span class="text-sm font-semibold text-gray-900">{{
+                  user?.fullname || 'Loading...'
+                }}</span>
+              </button>
+
+              <!-- Profile Dropdown -->
+              <div
+                v-if="isProfileMenuOpen"
+                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 profile-menu"
+              >
+                <NuxtLink
+                  to="#"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="isProfileMenuOpen = false"
+                >
+                  Profile
+                </NuxtLink>
+                <button
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="handleLogout"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+            <div v-else>
+              <NuxtLink
+                to="/login"
+                class="text-sm font-semibold text-gray-900 hover:text-[#991B1B] transition"
+              >
+                Log in <span aria-hidden="true">→</span>
+              </NuxtLink>
+            </div>
+          </ClientOnly>
         </div>
 
         <!-- Mobile Menu Button -->
@@ -68,11 +110,48 @@
           </div>
 
           <div class="mt-6 space-y-4">
-            <NuxtLink
-              to="/login"
-              class="block text-base font-medium text-gray-900 hover:text-[#991B1B]"
-              >Log in</NuxtLink
-            >
+            <!-- Mobile Profile Section -->
+            <ClientOnly>
+              <div v-if="isAuthenticated" class="space-y-2">
+                <div class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
+                    <NuxtImg
+                      src="/default-avatar.png"
+                      alt="User avatar"
+                      class="w-full h-full object-cover"
+                      placeholder
+                    />
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900">{{ user?.fullname || 'Loading...' }}</p>
+                    <p class="text-sm text-gray-500">{{ user?.email || '' }}</p>
+                  </div>
+                </div>
+
+                <NuxtLink
+                  to="#"
+                  class="block py-2 px-3 text-base font-medium text-gray-900 hover:bg-gray-100 rounded-md"
+                  @click="isMobileMenuOpen = false"
+                >
+                  Profile
+                </NuxtLink>
+                <button
+                  class="w-full text-left py-2 px-3 text-base font-medium text-gray-900 hover:bg-gray-100 rounded-md"
+                  @click="handleLogout"
+                >
+                  Sign out
+                </button>
+              </div>
+              <div v-else>
+                <NuxtLink
+                  to="/login"
+                  class="block text-base font-medium text-gray-900 hover:text-[#991B1B]"
+                  @click="isMobileMenuOpen = false"
+                >
+                  Log in
+                </NuxtLink>
+              </div>
+            </ClientOnly>
           </div>
         </div>
       </div>
@@ -85,7 +164,7 @@
 
     <!-- Footer -->
     <footer class="bg-[#FAFAFA] border-t border-gray-200 text-center text-sm text-gray-500 py-6">
-      <p>&copy; 2025 CoachCall. All rights reserved.</p>
+      <p>© 2025 CoachCall. All rights reserved.</p>
       <div class="mt-2 space-x-4">
         <NuxtLink to="#" class="hover:underline">Terms</NuxtLink>
         <NuxtLink to="#" class="hover:underline">Privacy</NuxtLink>
@@ -95,8 +174,65 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script lang="ts" setup>
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useAuthStore } from '~/stores/auth';
+import { useRouter } from '#app';
 
-const isMobileMenuOpen = ref(false)
+const auth = useAuthStore();
+const router = useRouter();
+
+// Get user data from store
+const user = computed(() => auth.user);
+const isAuthenticated = computed(() => auth.isAuthenticated);
+
+// Profile menu state
+const isProfileMenuOpen = ref(false);
+const isMobileMenuOpen = ref(false);
+
+// Toggle profile dropdown
+const toggleProfileMenu = (event: Event) => {
+  event.stopPropagation(); // Prevent click from bubbling to document
+  isProfileMenuOpen.value = !isProfileMenuOpen.value;
+};
+
+// Handle logout
+const handleLogout = async () => {
+  try {
+    await auth.logout();
+    isProfileMenuOpen.value = false;
+    isMobileMenuOpen.value = false;
+    await router.push('/');
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
+};
+
+// Close profile menu when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const profileMenu = document.querySelector('.profile-menu');
+  const profileButton = document.querySelector('.profile-button');
+  if (
+    profileMenu &&
+    !profileMenu.contains(event.target as Node) &&
+    profileButton &&
+    !profileButton.contains(event.target as Node)
+  ) {
+    isProfileMenuOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
+
+<style scoped>
+.profile-menu {
+  z-index: 50; /* Ensure dropdown is above other elements */
+}
+</style>
