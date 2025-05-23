@@ -19,9 +19,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function register(payload: { fullname: string; email: string; password: string }) {
     const { $api } = useNuxtApp();
-    const response = await $api('/auth/register', { method: 'POST', body: payload });
-    user.value = UserSchema.parse(response);
-    return user.value;
+    await $api('/auth/register', { method: 'POST', body: payload });
+    await login({ email: payload.email, password: payload.password });
+    return user.value!;
   }
 
   async function login(payload: { email: string; password: string }) {
