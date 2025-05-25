@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@nuxt/icon',
     '@pinia/nuxt',
+    '@samk-dev/nuxt-vcalendar',
   ],
   image: {
     format: ['avif', 'webp', 'png', 'jpg'],
