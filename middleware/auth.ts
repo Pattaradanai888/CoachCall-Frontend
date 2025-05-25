@@ -1,39 +1,38 @@
 // middleware/auth.ts
-import { defineNuxtRouteMiddleware, navigateTo } from '#app';
+import { defineNuxtRouteMiddleware, navigateTo, useRequestHeaders } from '#app';
 import { useAuthStore } from '~/stores/auth';
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const authStore = useAuthStore();
-
-  // Skip auth for public routes
+  // 1) public
   if (['/login', '/register'].includes(to.path)) return;
 
-  // Server-side: Check if we can get auth state
-  if (import.meta.server) {
-    try {
-      // Try to refresh token server-side via API route
-      await $fetch('/api/auth/refresh', { method: 'POST' });
-      // If successful, the user is authenticated
-      return;
-    } catch {
-      // Refresh failed, redirect to login
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Authentication required',
-      });
-    }
-  }
+  const auth = useAuthStore();
 
-  // Client-side: Use existing logic
-  if (!authStore.isAuthenticated && !authStore.accessToken) {
+  // 2) SSR: try to refresh, otherwise redirect right away
+  if (process.server) {
+    const headers = useRequestHeaders(['cookie']);
     try {
-      await authStore.fetchProfile();
+      await $fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+      });
+      return; // authenticated, continue SSR
     } catch {
+      // **redirect** on SSR rather than throwing an error page
       return navigateTo('/login');
     }
   }
 
-  if (!authStore.isAuthenticated) {
-    return navigateTo('/login');
+  // 3) Client: bail during HMR (so hot-reload doesn’t kick you out)
+  if (import.meta.hot) return;
+
+  // 4) Client: normal guard
+  if (!auth.isAuthenticated) {
+    try {
+      await auth.fetchProfile();
+    } catch {
+      return navigateTo('/login');
+    }
   }
 });
