@@ -53,6 +53,19 @@
                   v-for="(course, index) in upcomingCourses"
                   :key="index"
                   class="mt-2 bg-white shadow-md rounded-md p-4 transition-shadow hover:shadow-lg"
+                  v-motion
+                  :initial="{
+                    opacity: 0,
+                    x: 100,
+                  }"
+                  :enter="{
+                    opacity: 1,
+                    x: 0,
+                  }"
+                  :leave="{
+                    x: -100,
+                    opacity: 0,
+                  }"
                 >
                   <h2 class="font-semibold text-gray-700 mb-2">{{ course.name }}</h2>
                   <ul class="list-disc pl-5">
@@ -66,7 +79,11 @@
                   </ul>
                 </div>
               </div>
-              <div v-else class="flex flex-col justify-center items-center h-full">
+              <div
+                v-else
+                v-motion-pop-visible
+                class="flex flex-col justify-center items-center h-full"
+              >
                 <Icon
                   name="material-symbols:event-busy"
                   size="2rem"
@@ -170,14 +187,10 @@ const calendarAttributes = computed(() => {
     course.sessions.map((session) => session.date)
   );
 
-  // 1. Current date
-  attributes.push({
-    key: 'current-date',
-    highlight: { color: 'red', fillMode: 'solid' },
-    dates: currentDate.value,
-  });
+  // Check if current date is a session date
+  const isCurrentDateSession = sessionDates.some((date) => isSameDay(date, currentDate.value));
 
-  // 2. Session dates
+  // 1. Session dates with light highlight
   attributes.push(
     ...sessionDates.map((date) => ({
       key: `session-${date.toISOString()}`,
@@ -186,11 +199,20 @@ const calendarAttributes = computed(() => {
     }))
   );
 
-  // 3. Selected date
+  // 2. Current date (solid if it's a session)
+  if (isCurrentDateSession) {
+    attributes.push({
+      key: 'current-date',
+      highlight: { color: 'red', fillMode: 'solid' },
+      dates: currentDate.value,
+    });
+  }
+
+  // 3. Selected date (outline unless current)
   if (!isSameDay(selectedDate.value, currentDate.value)) {
     attributes.push({
       key: 'selected-date',
-      highlight: { color: 'red', fillMode: 'outline' },
+      highlight: { color: 'red', fillMode: 'outline', class: 'selected-date-outline' },
       dates: selectedDate.value,
     });
   }
