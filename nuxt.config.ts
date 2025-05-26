@@ -32,22 +32,4 @@ export default defineNuxtConfig({
       apiBase: process.env.API_BASE || 'http://localhost:8000',
     },
   },
-  hooks: {
-    'pages:extend'(pages) {
-      function setMiddleware(pages: NuxtPage[]) {
-        for (const page of pages) {
-          // Apply auth middleware to routes except /, /login, and /register
-          if (!['/', '/login', '/register'].includes(page.path)) {
-            page.meta ||= {};
-            // Change from 'auth-client' to 'auth' (the updated middleware)
-            page.meta.middleware = ['auth'];
-          }
-          if (page.children) {
-            setMiddleware(page.children);
-          }
-        }
-      }
-      setMiddleware(pages);
-    },
-  },
 });
