@@ -94,30 +94,43 @@
 
 <script setup lang="ts">
 import { useForm, useField } from 'vee-validate';
-import { toFieldValidator } from '@vee-validate/zod';
+import { toTypedSchema } from '@vee-validate/zod';
 import { z } from 'zod';
 import { useAuthStore } from '~/stores/auth';
-import { useRouter } from 'vue-router';
+import { useRoute } from 'vue-router'; // Import useRoute
+import { navigateTo } from '#app'; // Use Nuxt's navigateTo for consistency
 
-// 1) Schema
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'Password too short'),
 });
 
-// 2) Setup VeeValidate
-const { handleSubmit, errors } = useForm({
-  validationSchema: toFieldValidator(loginSchema),
+// Destructure isSubmitting and setErrors
+const { handleSubmit, errors, isSubmitting, setErrors } = useForm({
+  validationSchema: toTypedSchema(loginSchema),
 });
 const { value: email } = useField<string>('email');
 const { value: password } = useField<string>('password');
 
 const auth = useAuthStore();
-const router = useRouter();
+const route = useRoute(); // Get current route for redirect query
 
-// 3) onSubmit now used in template
-const onSubmit = handleSubmit(async () => {
-  await auth.login({ email: email.value, password: password.value });
-  router.push('/');
+const onSubmit = handleSubmit(async (values) => {
+  // isSubmitting is automatically true here
+  try {
+    await auth.login({ email: values.email, password: values.password });
+    const redirectPath = (route.query.redirect as string) || '/dashboard';
+    await navigateTo(redirectPath, { replace: true });
+  } catch (error: any) {
+    console.error('Login failed:', error);
+    if (error.response && error.response.data && error.response.data.detail) {
+      setErrors({ email: error.response.data.detail }); // Or a general error message based on your API
+    } else if (error.message) {
+      setErrors({ email: error.message });
+    } else {
+      setErrors({ email: 'An unexpected error occurred during login.' });
+    }
+  }
+  // isSubmitting is automatically false here
 });
 </script>

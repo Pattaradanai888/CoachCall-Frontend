@@ -100,8 +100,9 @@
         <button
           type="submit"
           class="w-full bg-red-800 text-white py-2 rounded-lg hover:bg-red-900 transition mt-5"
+          :disabled="isSubmitting"
         >
-          Register
+          {{ isSubmitting ? 'Registering...' : 'Register' }}
         </button>
       </form>
 
@@ -114,10 +115,10 @@
 
 <script setup lang="ts">
 import { useForm, useField } from 'vee-validate';
-import { toFieldValidator } from '@vee-validate/zod';
+import { toTypedSchema } from '@vee-validate/zod';
 import { z } from 'zod';
 import { useAuthStore } from '~/stores/auth';
-import { useRouter } from 'vue-router';
+import { navigateTo } from '#app';
 
 const registerSchema = z
   .object({
@@ -131,9 +132,9 @@ const registerSchema = z
     path: ['confirm'],
   });
 
-// VeeValidate form setup
-const { handleSubmit, errors } = useForm({
-  validationSchema: toFieldValidator(registerSchema),
+// Destructure isSubmitting and setErrors
+const { handleSubmit, errors, isSubmitting, setErrors } = useForm({
+  validationSchema: toTypedSchema(registerSchema),
 });
 
 const { value: fullname } = useField<string>('fullname');
@@ -142,11 +143,30 @@ const { value: password } = useField<string>('password');
 const { value: confirm } = useField<string>('confirm');
 
 const auth = useAuthStore();
-const router = useRouter();
 
-// Submit logic
-const onSubmit = handleSubmit(async () => {
-  await auth.register({ fullname: fullname.value, email: email.value, password: password.value });
-  router.push('/');
+const onSubmit = handleSubmit(async (values) => {
+  // isSubmitting is automatically true here
+  try {
+    await auth.register({
+      fullname: values.fullname,
+      email: values.email,
+      password: values.password,
+    });
+    await navigateTo('/dashboard', { replace: true });
+  } catch (error: any) {
+    console.error('Registration failed:', error);
+    if (error.response && error.response.data && error.response.data.detail) {
+      if (String(error.response.data.detail).toLowerCase().includes('email already registered')) {
+        setErrors({ email: error.response.data.detail });
+      } else {
+        setErrors({ fullname: error.response.data.detail }); // Or a more general error field
+      }
+    } else if (error.message) {
+      setErrors({ fullname: error.message });
+    } else {
+      setErrors({ fullname: 'An unexpected error occurred during registration.' });
+    }
+  }
+  // isSubmitting is automatically false here
 });
 </script>

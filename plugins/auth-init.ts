@@ -1,28 +1,33 @@
 // plugins/auth-init.ts
-import { defineNuxtPlugin } from '#app';
+import { defineNuxtPlugin, useNuxtApp } from '#app';
 import { useAuthStore } from '~/stores/auth';
-import type { TokenResponse } from '~/types/auth';
 
 export default defineNuxtPlugin(async () => {
   const auth = useAuthStore();
+  const nuxtApp = useNuxtApp();
 
-  // Only run on client-side
-  if (import.meta.server) return;
+  // Only run on client
+  if (import.meta.server) {
+    return;
+  }
 
-  // Only try to initialize if we don't already have a user
-  // This prevents conflicts with the middleware
-  if (auth.user) return;
+  // Check if SSR provided auth state
+  const ssrAccessToken = nuxtApp.payload.auth?.accessToken;
+  const ssrUser = nuxtApp.payload.auth?.user;
 
-  try {
-    // Try to refresh token through our server API
-    const refreshResponse = await $fetch<TokenResponse>('/api/auth/refresh', {
-      method: 'POST',
-    });
+  if (ssrAccessToken && ssrUser) {
+    // Hydrate store with SSR data - this doesn't trigger API calls
+    auth.hydrateFromSSR(ssrAccessToken, ssrUser);
+    return;
+  }
 
-    auth.accessToken = refreshResponse.access_token;
-    await auth.fetchProfile();
-  } catch {
-    // Silent fail - the middleware will handle auth checks
-    console.info('Silent refresh failed or not logged in.');
+  // Only initialize if not already initialized and not authenticated
+  if (!auth.isInitialized && !auth.isAuthenticated && !auth.isRefreshing) {
+    try {
+      await auth.initializeAuth('client');
+    } catch (error) {
+      // Silently handle initialization errors
+      console.warn('Auth initialization failed:', error);
+    }
   }
 });

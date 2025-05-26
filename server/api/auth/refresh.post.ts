@@ -1,37 +1,57 @@
 // server/api/auth/refresh.post.ts
+import {
+  defineEventHandler,
+  getHeader,
+  appendHeader,
+  createError,
+  useRuntimeConfig,
+} from '#imports';
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
+  const cookieHeader = getHeader(event, 'cookie');
 
   try {
-    // Forward ALL cookies from incoming request to FastAPI
-    const cookieHeader = getHeader(event, 'cookie');
+    const refreshResponse = await $fetch.raw<{ access_token: string }>(
+      `${config.apiBase}/auth/refresh`,
+      {
+        method: 'POST',
+        headers: {
+          Cookie: cookieHeader || '',
+        },
+      }
+    );
 
-    const response = await $fetch(`${config.apiBase}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        Cookie: cookieHeader || '',
-      },
-    });
-
-    // Important: Forward any Set-Cookie headers from FastAPI back to client
-    const fastApiHeaders = await $fetch.raw(`${config.apiBase}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        Cookie: cookieHeader || '',
-      },
-    });
-
-    // Copy Set-Cookie headers from FastAPI response to Nuxt response
-    const setCookieHeaders = fastApiHeaders.headers.get('set-cookie');
+    const setCookieHeaders = refreshResponse.headers.get('set-cookie');
     if (setCookieHeaders) {
-      setHeader(event, 'set-cookie', setCookieHeaders);
+      appendHeader(event, 'set-cookie', setCookieHeaders);
     }
 
-    return response;
-  } catch (error) {
+    if (refreshResponse._data) {
+      return refreshResponse._data;
+    } else {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Refresh response missing data',
+      });
+    }
+  } catch (error: any) {
+    let statusCode = 500;
+    let statusMessage = 'Token refresh failed';
+
+    if (error.response && error.response.status) {
+      statusCode = error.response.status;
+    }
+    if (error.data && error.data.detail) {
+      statusMessage = error.data.detail;
+    } else if (error.message && statusCode !== 500) {
+      statusMessage = error.message;
+    }
+
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Token refresh failed',
+      statusCode,
+      statusMessage,
+      data: error.data,
     });
   }
 });
