@@ -1,7 +1,12 @@
 <template>
   <div class="min-h-screen flex flex-col bg-[#FAFAFA]">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200">
+    <header
+      :class="[
+        'fixed top-0 left-0 right-0 z-50',
+        isHeaderTransparent ? 'bg-transparent' : 'bg-white shadow-sm border-b border-gray-200',
+      ]"
+    >
       <nav class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
         <!-- Logo -->
         <NuxtLink :to="isAuthenticated ? '/dashboard' : '/'" class="flex items-center space-x-2">
@@ -10,7 +15,11 @@
           >
             CC
           </div>
-          <span class="text-lg font-semibold text-gray-900">CoachCall</span>
+          <span
+            :class="['text-lg font-semibold', isHeaderTransparent ? 'text-white' : 'text-gray-900']"
+          >
+            CoachCall
+          </span>
         </NuxtLink>
 
         <!-- Right Side - Desktop -->
@@ -29,9 +38,14 @@
                     placeholder
                   />
                 </div>
-                <span class="text-sm font-semibold text-gray-900">{{
-                  user?.fullname || 'Loading...'
-                }}</span>
+                <span
+                  :class="[
+                    'text-sm font-semibold',
+                    isHeaderTransparent ? 'text-white' : 'text-gray-900',
+                  ]"
+                >
+                  {{ user?.fullname || 'Loading...' }}
+                </span>
               </button>
 
               <!-- Profile Dropdown -->
@@ -57,7 +71,13 @@
             <div v-else>
               <NuxtLink
                 to="/login"
-                class="text-sm font-semibold text-gray-900 hover:text-[#991B1B] transition"
+                :class="[
+                  'text-sm font-semibold',
+                  isHeaderTransparent
+                    ? 'text-white hover:text-gray-300'
+                    : 'text-gray-900 hover:text-[#991B1B]',
+                  'transition',
+                ]"
               >
                 Log in <span aria-hidden="true">→</span>
               </NuxtLink>
@@ -178,12 +198,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useRoute } from '#app';
 import { useAuthStore } from '~/stores/auth';
 import { useRouter } from '#app';
 
 const auth = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 // Get user data from store
 const user = computed(() => auth.user);
@@ -193,9 +215,30 @@ const isAuthenticated = computed(() => auth.isAuthenticated);
 const isProfileMenuOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 
+// Scroll state
+const isScrolled = ref(false);
+
+// Detect if on landing page
+const isLandingPage = computed(() => route.path === '/');
+
+// Determine if header should be transparent
+const isHeaderTransparent = computed(() => isLandingPage.value && !isScrolled.value);
+
+// Handle scroll event
+const handleScroll = () => {
+  // The background image section has h-screen (100vh)
+  // We want the navbar to stay transparent while any part of it overlaps with the bg image
+  const navbar = document.querySelector('header');
+  const navbarHeight = navbar ? navbar.offsetHeight : 80; // fallback height
+
+  // Switch to white navbar when we've scrolled past the background image section
+  const bgImageHeight = window.innerHeight; // h-screen = 100vh
+  isScrolled.value = window.scrollY >= bgImageHeight - navbarHeight;
+};
+
 // Toggle profile dropdown
 const toggleProfileMenu = (event: Event) => {
-  event.stopPropagation(); // Prevent click from bubbling to document
+  event.stopPropagation();
   isProfileMenuOpen.value = !isProfileMenuOpen.value;
 };
 
@@ -227,10 +270,13 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  window.addEventListener('scroll', handleScroll);
+  handleScroll(); // Initial check
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScroll);
 });
 </script>
 

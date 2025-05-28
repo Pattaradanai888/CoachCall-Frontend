@@ -1,7 +1,7 @@
 <!-- pages/login.vue -->
 <template>
   <div
-    class="bg-white rounded-xl shadow-lg flex max-w-[1140px] w-full mx-auto h-[600px] max-h-[80vh] my-10"
+    class="bg-white rounded-xl shadow-lg flex max-w-[1140px] w-full mx-auto h-[600px] max-h-[80vh] my-10 mt-[6.5rem]"
   >
     <!-- Left Side: Image -->
     <div class="relative w-1/2 rounded-l-xl overflow-hidden">

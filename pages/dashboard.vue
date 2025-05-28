@@ -1,5 +1,5 @@
 <template>
-  <div class="flex max-w-[1140px] w-full mx-auto h-[600px] max-h-[80vh] my-10">
+  <div class="flex max-w-[1140px] w-full mx-auto h-[600px] max-h-[80vh] my-10 mt-[7rem]">
     <!-- Overview Cards -->
     <div class="w-full grid-flow-row grid-rows-2">
       <div class="grid grid-cols-3 gap-4 mb-4">
