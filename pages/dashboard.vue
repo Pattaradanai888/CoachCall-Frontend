@@ -1,14 +1,24 @@
 <template>
-  <div class="flex max-w-[1140px] w-full mx-auto h-[600px] max-h-[80vh] my-10 mt-[7rem]">
+  <Subnavbar />
+  <div
+    class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] lg:h-[600px] max-h-[none] lg:max-h-[80vh]"
+  >
     <!-- Overview Cards -->
-    <div class="w-full grid-flow-row grid-rows-2">
-      <div class="grid grid-cols-3 gap-4 mb-4">
-        <div v-for="(card, index) in cards" :key="index" class="bg-white shadow-md p-4 rounded-md">
+    <div class="w-full mx-7 lg:mx-0">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <!-- Cards grid responsive changes -->
+        <div
+          v-motion-slide-visible-once-top
+          :delay="100"
+          v-for="(card, index) in cards"
+          :key="index"
+          class="bg-white shadow-md p-4 rounded-md"
+        >
           <div class="flex">
             <Icon :name="card.icon" size="1.25rem" style="color: black" class="mr-1" />
             <div class="text-sm text-gray-600">{{ card.label }}</div>
           </div>
-          <div class="text-3xl font-bold">{{ card.value }}</div>
+          <div class="text-2xl sm:text-3xl font-bold">{{ card.value }}</div>
           <div class="flex">
             <Icon
               :name="
@@ -30,24 +40,32 @@
       <!-- Middle Sections -->
       <div class="mb-4">
         <!-- Calendar Section -->
-        <div class="bg-white shadow-md p-8 rounded-md flex-1 col-span-1">
+        <div
+          v-motion-slide-visible-once-bottom
+          :delay="100"
+          class="bg-white shadow-md p-4 sm:p-8 rounded-md flex-1"
+        >
           <div class="flex">
             <Icon name="mdi:calendar" size="2rem" style="color: black" class="mr-1" />
-            <h1 class="text-2xl font-bold">Calendar</h1>
+            <h1 class="text-xl sm:text-2xl font-bold">Calendar</h1>
           </div>
-          <p class="mb-4">Your scheduled training sessions for this week</p>
-          <div class="grid grid-cols-2 gap-4 px-4">
-            <div class="flex justify-center items-center">
-              <VDatePicker
-                expanded
-                v-model="selectedDate"
-                mode="date"
-                :attributes="calendarAttributes"
-                class="border-2 border-[#9C1313] rounded-md"
-              />
+          <p class="mb-4 text-sm sm:text-base">Your scheduled training sessions for this week</p>
+          <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
+            <!-- Changed to flex-col for mobile -->
+            <div class="flex justify-center w-full">
+              <div class="w-full max-w-[320px] lg:max-w-none">
+                <VDatePicker
+                  expanded
+                  v-model="selectedDate"
+                  mode="date"
+                  :attributes="calendarAttributes"
+                  class="border-2 border-[#9C1313] rounded-md"
+                />
+              </div>
             </div>
-            <div class="ml-5">
-              <h1 class="font-bold">Upcoming Courses</h1>
+            <div class="mt-4 lg:mt-0 lg:ml-5 w-full">
+              <!-- Added top margin for mobile -->
+              <h1 class="font-bold text-lg">Upcoming Courses</h1>
               <div v-if="upcomingCourses.length > 0">
                 <div
                   v-for="(course, index) in upcomingCourses"
@@ -61,10 +79,16 @@
                   :enter="{
                     opacity: 1,
                     x: 0,
+                    transition: {
+                      delay: 200,
+                    },
                   }"
                   :leave="{
                     x: -100,
                     opacity: 0,
+                    transition: {
+                      delay: 200,
+                    },
                   }"
                 >
                   <h2 class="font-semibold text-gray-700 mb-2">{{ course.name }}</h2>
@@ -72,7 +96,7 @@
                     <li
                       v-for="(session, sessionIndex) in course.sessions"
                       :key="sessionIndex"
-                      class="text-gray-600"
+                      class="text-gray-600 text-sm"
                     >
                       {{ session.name }}
                     </li>
@@ -82,7 +106,7 @@
               <div
                 v-else
                 v-motion-pop-visible
-                class="flex flex-col justify-center items-center h-full"
+                class="flex flex-col justify-center items-center h-full py-8"
               >
                 <Icon
                   name="material-symbols:event-busy"
@@ -99,6 +123,8 @@
     </div>
   </div>
 </template>
+
+<!-- Script remains unchanged -->
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
