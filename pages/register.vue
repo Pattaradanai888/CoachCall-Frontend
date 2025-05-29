@@ -7,10 +7,13 @@
     <div class="relative w-1/2 rounded-l-xl overflow-hidden">
       <NuxtImg
         src="/auth-bg.png"
-        format="avif,webp"
-        fetchpriority="high"
         alt="Basketball player"
         class="object-cover w-full h-full"
+        fetchpriority="high"
+        quality="80"
+        format="webp"
+        width="570"
+        height="600"
       />
       <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-6">
         <div class="text-white">
@@ -153,15 +156,26 @@ const onSubmit = handleSubmit(async (values) => {
       password: values.password,
     });
     await navigateTo('/dashboard', { replace: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Registration failed:', error);
-    if (error.response && error.response.data && error.response.data.detail) {
-      if (String(error.response.data.detail).toLowerCase().includes('email already registered')) {
-        setErrors({ email: error.response.data.detail });
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response &&
+      typeof error.response === 'object' &&
+      'data' in error.response &&
+      error.response.data &&
+      typeof error.response.data === 'object' &&
+      'detail' in error.response.data
+    ) {
+      const detail = error.response.data.detail;
+      if (typeof detail === 'string' && detail.toLowerCase().includes('email already registered')) {
+        setErrors({ email: detail });
       } else {
-        setErrors({ fullname: error.response.data.detail }); // Or a more general error field
+        setErrors({ fullname: String(detail) }); // Or a more general error field
       }
-    } else if (error.message) {
+    } else if (error instanceof Error && error.message) {
       setErrors({ fullname: error.message });
     } else {
       setErrors({ fullname: 'An unexpected error occurred during registration.' });

@@ -6,99 +6,146 @@ import {
   useAuthStore,
   useNuxtApp,
 } from '#imports';
+import type { RouteLocationNormalized } from 'vue-router';
 
-let executionCounter = 0;
 let serverAuthPromise: Promise<void> | null = null;
 
-export default defineNuxtRouteMiddleware(async (to, from) => {
-  const id = ++executionCounter;
-  const auth = useAuthStore();
-  const nuxtApp = useNuxtApp();
+// Types
+interface User {
+  id: number;
+  email: string;
+  fullname: string;
+  name?: string;
+  profile_image_url?: string | null;
+  [key: string]: unknown;
+}
 
-  if (import.meta.hot) {
-    return;
-  }
+interface AuthPayload {
+  accessToken: string | null;
+  user: User | null;
+  processed: boolean;
+}
 
-  if (process.server) {
-    // Hydrate from payload if present
-    if (nuxtApp.payload.auth?.accessToken && nuxtApp.payload.auth?.user) {
-      if (!auth.accessToken) auth.accessToken = nuxtApp.payload.auth.accessToken;
-      if (!auth.user) auth.user = nuxtApp.payload.auth.user;
+interface RefreshTokenResponse {
+  access_token: string;
+}
+
+export default defineNuxtRouteMiddleware(
+  async (to: RouteLocationNormalized, _from: RouteLocationNormalized) => {
+    const auth = useAuthStore();
+    const nuxtApp = useNuxtApp();
+
+    if (import.meta.hot) {
+      return;
     }
 
-    // If no token and not yet processed, attempt refresh+profile
-    if (!auth.accessToken && !nuxtApp.payload.auth?.processed) {
-      if (!serverAuthPromise) {
-        serverAuthPromise = performServerAuth(auth, nuxtApp);
+    if (import.meta.server) {
+      // Hydrate from payload if present
+      const authPayload = nuxtApp.payload.auth as AuthPayload | undefined;
+      if (authPayload?.accessToken && authPayload?.user) {
+        if (!auth.accessToken) auth.accessToken = authPayload.accessToken;
+        if (!auth.user) auth.user = authPayload.user;
       }
-      try {
-        await serverAuthPromise;
-      } finally {
-        serverAuthPromise = null;
+
+      // If no token and not yet processed, attempt refresh+profile
+      if (!auth.accessToken && !authPayload?.processed) {
+        if (!serverAuthPromise) {
+          serverAuthPromise = performServerAuth(auth, nuxtApp);
+        }
+        try {
+          await serverAuthPromise;
+        } finally {
+          serverAuthPromise = null;
+        }
       }
+      // If token exists but user missing and not yet processed, fetch profile
+      else if (
+        auth.accessToken &&
+        !auth.user &&
+        !(nuxtApp.payload.auth as AuthPayload)?.processed
+      ) {
+        if (!serverAuthPromise) {
+          serverAuthPromise = fetchProfileAndSetPayload(auth, nuxtApp);
+        }
+        try {
+          await serverAuthPromise;
+        } finally {
+          serverAuthPromise = null;
+        }
+      }
+
+      // Route guard
+      return handleServerRouteGuarding(to, auth);
     }
-    // If token exists but user missing and not yet processed, fetch profile
-    else if (auth.accessToken && !auth.user && !nuxtApp.payload.auth?.processed) {
-      if (!serverAuthPromise) {
-        serverAuthPromise = fetchProfileAndSetPayload(auth, nuxtApp);
-      }
-      try {
-        await serverAuthPromise;
-      } finally {
-        serverAuthPromise = null;
-      }
+
+    // Client-side route guard
+    if (import.meta.client) {
+      return handleClientRouteGuarding(to, auth);
     }
-
-    // Route guard
-    return handleServerRouteGuarding(to, auth);
   }
+);
 
-  // Client-side route guard
-  if (process.client) {
-    return handleClientRouteGuarding(to, auth);
-  }
-});
-
-async function performServerAuth(auth: any, nuxtApp: any): Promise<void> {
+async function performServerAuth(
+  auth: ReturnType<typeof useAuthStore>,
+  nuxtApp: ReturnType<typeof useNuxtApp>
+): Promise<void> {
   const headers = useRequestHeaders(['cookie']);
 
   if (!headers.cookie) {
-    nuxtApp.payload.auth = { accessToken: null, user: null, processed: true };
+    nuxtApp.payload.auth = { accessToken: null, user: null, processed: true } satisfies AuthPayload;
     return;
   }
 
-  const refresh = await $fetch<{ access_token: string }>('/api/auth/refresh', {
-    method: 'POST',
-    headers,
-  });
-  auth.accessToken = refresh.access_token;
+  try {
+    const refresh = await $fetch<RefreshTokenResponse>('/api/auth/refresh', {
+      method: 'POST',
+      headers,
+    });
+    auth.accessToken = refresh.access_token;
 
-  const profileData = await $fetch('/api/auth/me', {
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
-  });
-  auth.setUserData(profileData);
+    const profileData = await $fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    });
+    auth.setUserData(profileData);
 
-  nuxtApp.payload.auth = {
-    accessToken: auth.accessToken,
-    user: JSON.parse(JSON.stringify(auth.user)),
-    processed: true,
-  };
+    nuxtApp.payload.auth = {
+      accessToken: auth.accessToken,
+      user: JSON.parse(JSON.stringify(auth.user)),
+      processed: true,
+    } satisfies AuthPayload;
+  } catch {
+    // If refresh fails, clear auth state
+    nuxtApp.payload.auth = { accessToken: null, user: null, processed: true } satisfies AuthPayload;
+  }
 }
 
-async function fetchProfileAndSetPayload(auth: any, nuxtApp: any): Promise<void> {
-  const profileData = await $fetch('/api/auth/me', {
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
-  });
-  auth.setUserData(profileData);
+async function fetchProfileAndSetPayload(
+  auth: ReturnType<typeof useAuthStore>,
+  nuxtApp: ReturnType<typeof useNuxtApp>
+): Promise<void> {
+  try {
+    const profileData = await $fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    });
+    auth.setUserData(profileData);
 
-  nuxtApp.payload.auth = {
-    accessToken: auth.accessToken,
-    user: JSON.parse(JSON.stringify(auth.user)),
-    processed: true,
-  };
+    nuxtApp.payload.auth = {
+      accessToken: auth.accessToken,
+      user: JSON.parse(JSON.stringify(auth.user)),
+      processed: true,
+    } satisfies AuthPayload;
+  } catch {
+    // If profile fetch fails, clear auth state
+    auth.accessToken = null;
+    auth.user = null;
+    nuxtApp.payload.auth = { accessToken: null, user: null, processed: true } satisfies AuthPayload;
+  }
 }
 
-function handleServerRouteGuarding(to: any, auth: any) {
+function handleServerRouteGuarding(
+  to: RouteLocationNormalized,
+  auth: ReturnType<typeof useAuthStore>
+) {
   const publicRoutes = ['/login', '/register'];
 
   if (publicRoutes.includes(to.path) && auth.isAuthenticated) {
@@ -114,7 +161,10 @@ function handleServerRouteGuarding(to: any, auth: any) {
   }
 }
 
-async function handleClientRouteGuarding(to: any, auth: any) {
+async function handleClientRouteGuarding(
+  to: RouteLocationNormalized,
+  auth: ReturnType<typeof useAuthStore>
+) {
   const publicRoutes = ['/login', '/register'];
 
   if (!auth.isInitialized) {

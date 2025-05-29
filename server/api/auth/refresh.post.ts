@@ -35,23 +35,37 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Refresh response missing data',
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     let statusCode = 500;
     let statusMessage = 'Token refresh failed';
 
-    if (error.response && error.response.status) {
-      statusCode = error.response.status;
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response &&
+      typeof error.response === 'object' &&
+      'status' in error.response
+    ) {
+      statusCode = error.response.status as number;
     }
-    if (error.data && error.data.detail) {
-      statusMessage = error.data.detail;
-    } else if (error.message && statusCode !== 500) {
-      statusMessage = error.message;
+    if (
+      error &&
+      typeof error === 'object' &&
+      'data' in error &&
+      error.data &&
+      typeof error.data === 'object' &&
+      'detail' in error.data
+    ) {
+      statusMessage = error.data.detail as string;
+    } else if (error && typeof error === 'object' && 'message' in error && statusCode !== 500) {
+      statusMessage = error.message as string;
     }
 
     throw createError({
       statusCode,
       statusMessage,
-      data: error.data,
+      data: error && typeof error === 'object' && 'data' in error ? error.data : undefined,
     });
   }
 });

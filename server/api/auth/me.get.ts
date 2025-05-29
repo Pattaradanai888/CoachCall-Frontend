@@ -19,11 +19,12 @@ export default defineEventHandler(async (event) => {
       },
     });
     return profileData;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorResponse = error as { response?: { status?: number }; data?: { detail?: string } };
     throw createError({
-      statusCode: error.response?.status || 500,
-      statusMessage: error.data?.detail || 'Failed to fetch user profile from backend',
-      data: error.data,
+      statusCode: errorResponse.response?.status || 500,
+      statusMessage: errorResponse.data?.detail || 'Failed to fetch user profile from backend',
+      data: errorResponse.data,
     });
   }
 });

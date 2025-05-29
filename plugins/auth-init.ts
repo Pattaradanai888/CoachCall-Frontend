@@ -12,8 +12,8 @@ export default defineNuxtPlugin(async () => {
   }
 
   // Check if SSR provided auth state
-  const ssrAccessToken = nuxtApp.payload.auth?.accessToken;
-  const ssrUser = nuxtApp.payload.auth?.user;
+  const ssrAccessToken = (nuxtApp.payload as any).auth?.accessToken;
+  const ssrUser = (nuxtApp.payload as any).auth?.user;
 
   if (ssrAccessToken && ssrUser) {
     // Hydrate store with SSR data - this doesn't trigger API calls

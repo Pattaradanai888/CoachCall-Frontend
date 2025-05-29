@@ -7,10 +7,13 @@
     <div class="relative w-1/2 rounded-l-xl overflow-hidden">
       <NuxtImg
         src="/auth-bg.png"
-        format="avif,webp"
-        fetchpriority="high"
         alt="Basketball player"
         class="object-cover w-full h-full"
+        fetchpriority="high"
+        quality="80"
+        format="webp"
+        width="570"
+        height="600"
       />
       <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-6">
         <div class="text-white">
@@ -97,7 +100,6 @@ import { useForm, useField } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { z } from 'zod';
 import { useAuthStore } from '~/stores/auth';
-import { useRoute } from 'vue-router'; // Import useRoute
 import { navigateTo } from '#app'; // Use Nuxt's navigateTo for consistency
 
 const loginSchema = z.object({
@@ -106,7 +108,7 @@ const loginSchema = z.object({
 });
 
 // Destructure isSubmitting and setErrors
-const { handleSubmit, errors, isSubmitting, setErrors } = useForm({
+const { handleSubmit, errors, setErrors } = useForm({
   validationSchema: toTypedSchema(loginSchema),
 });
 const { value: email } = useField<string>('email');
@@ -121,11 +123,21 @@ const onSubmit = handleSubmit(async (values) => {
     await auth.login({ email: values.email, password: values.password });
     const redirectPath = (route.query.redirect as string) || '/dashboard';
     await navigateTo(redirectPath, { replace: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login failed:', error);
-    if (error.response && error.response.data && error.response.data.detail) {
-      setErrors({ email: error.response.data.detail }); // Or a general error message based on your API
-    } else if (error.message) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response &&
+      typeof error.response === 'object' &&
+      'data' in error.response &&
+      error.response.data &&
+      typeof error.response.data === 'object' &&
+      'detail' in error.response.data
+    ) {
+      setErrors({ email: String(error.response.data.detail) });
+    } else if (error instanceof Error && error.message) {
       setErrors({ email: error.message });
     } else {
       setErrors({ email: 'An unexpected error occurred during login.' });

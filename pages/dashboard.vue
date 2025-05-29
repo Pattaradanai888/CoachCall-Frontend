@@ -70,8 +70,8 @@
                 <div
                   v-for="(course, index) in upcomingCourses"
                   :key="index"
-                  class="mt-2 bg-white shadow-md rounded-md p-4 transition-shadow hover:shadow-lg"
                   v-motion
+                  class="mt-2 bg-white shadow-md rounded-md p-4 transition-shadow hover:shadow-lg"
                   :initial="{
                     opacity: 0,
                     x: 100,

@@ -32,10 +32,13 @@
               >
                 <div class="w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
                   <NuxtImg
-                    src="/default-profile.jpg"
+                    :src="user?.profile_image_url || '/default-profile.jpg'"
                     alt="User avatar"
                     class="w-full h-full object-cover"
-                    placeholder
+                    placeholder="/default-profile.jpg"
+                    format="webp"
+                    width="32"
+                    height="32"
                   />
                 </div>
                 <span
@@ -44,7 +47,7 @@
                     isHeaderTransparent ? 'text-white' : 'text-gray-900',
                   ]"
                 >
-                  {{ user?.fullname || 'Loading...' }}
+                  {{ user?.fullname || 'User' }}
                 </span>
               </button>
 
@@ -139,14 +142,17 @@
                 <div class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
                   <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
                     <NuxtImg
-                      src="/default-profile.jpg"
+                      :src="user?.profile_image_url || '/default-profile.jpg'"
                       alt="User avatar"
                       class="w-full h-full object-cover"
-                      placeholder
+                      placeholder="/default-profile.jpg"
+                      format="webp"
+                      width="40"
+                      height="40"
                     />
                   </div>
                   <div>
-                    <p class="font-medium text-gray-900">{{ user?.fullname || 'Loading...' }}</p>
+                    <p class="font-medium text-gray-900">{{ user?.fullname || 'User' }}</p>
                     <p class="text-sm text-gray-500">{{ user?.email || '' }}</p>
                   </div>
                 </div>
@@ -199,9 +205,8 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRoute } from '#app';
+import { useRoute, useRouter } from '#app';
 import { useAuthStore } from '~/stores/auth';
-import { useRouter } from '#app';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -269,19 +274,28 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-  window.addEventListener('scroll', handleScroll);
-  handleScroll(); // Initial check
+  if (import.meta.client) {
+    document.addEventListener('click', handleClickOutside);
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+  }
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-  window.removeEventListener('scroll', handleScroll);
+  if (import.meta.client) {
+    document.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('scroll', handleScroll);
+  }
 });
 </script>
 
 <style scoped>
 .profile-menu {
   z-index: 50; /* Ensure dropdown is above other elements */
+}
+header {
+  transition:
+    background-color 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out;
 }
 </style>

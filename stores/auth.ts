@@ -8,9 +8,10 @@ const UserSchema = z.object({
   id: z.number(),
   email: z.string().email(),
   fullname: z.string(),
+  profile_image_url: z.string().url().nullable().optional(),
 });
 
-type User = z.infer<typeof UserSchema>;
+export type User = z.infer<typeof UserSchema>;
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null);
@@ -92,13 +93,18 @@ export const useAuthStore = defineStore('auth', () => {
     initializationSource.value = 'ssr';
   }
 
-  // Method to set user data directly (for server-side operations)
-  function setUserData(userData: any): void {
+  function setUserData(userData: Partial<User> | User): void {
+    // userData can be partial for updates too
     try {
-      user.value = UserSchema.parse(userData);
+      if (user.value && typeof userData === 'object' && userData !== null) {
+        const updatedUserData = { ...user.value, ...userData };
+        user.value = UserSchema.parse(updatedUserData);
+      } else {
+        user.value = UserSchema.parse(userData);
+      }
     } catch (error) {
-      console.error('Invalid user data:', error);
-      user.value = null;
+      console.error('Invalid user data:', error, userData);
+      if (!user.value) user.value = null;
     }
   }
 
@@ -138,7 +144,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     // Only proceed if we're in a valid Nuxt context (client-side or within proper server context)
-    if (process.server && !getCurrentInstance() && !useNuxtApp()) {
+    if (import.meta.server && !getCurrentInstance() && !useNuxtApp()) {
       throw new Error('Cannot fetch profile: Invalid server context');
     }
 
@@ -150,12 +156,19 @@ export const useAuthStore = defineStore('auth', () => {
         const parsedUser = UserSchema.parse(profileData);
         user.value = parsedUser;
         return parsedUser;
-      } catch (error: any) {
-        if (error.response && error.response.status === 401 && !isAfterRefresh) {
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'response' in error &&
+          error.response &&
+          typeof error.response === 'object' &&
+          'status' in error.response &&
+          error.response.status === 401 &&
+          !isAfterRefresh
+        ) {
           await logoutSilently();
-          throw error;
         }
-        if (!isAfterRefresh) await logoutSilently();
         throw error;
       } finally {
         isFetchingProfile.value = false;
