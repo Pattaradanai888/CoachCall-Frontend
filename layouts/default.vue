@@ -32,7 +32,7 @@
               >
                 <div class="w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
                   <NuxtImg
-                    src="/default-avatar.png"
+                    src="/default-profile.jpg"
                     alt="User avatar"
                     class="w-full h-full object-cover"
                     placeholder
@@ -54,7 +54,7 @@
                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 profile-menu"
               >
                 <NuxtLink
-                  to="#"
+                  to="profile-management"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   @click="isProfileMenuOpen = false"
                 >
@@ -139,7 +139,7 @@
                 <div class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
                   <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
                     <NuxtImg
-                      src="/default-avatar.png"
+                      src="/default-profile.jpg"
                       alt="User avatar"
                       class="w-full h-full object-cover"
                       placeholder
@@ -152,7 +152,7 @@
                 </div>
 
                 <NuxtLink
-                  to="#"
+                  to="profile-management"
                   class="block py-2 px-3 text-base font-medium text-gray-900 hover:bg-gray-100 rounded-md"
                   @click="isMobileMenuOpen = false"
                 >
