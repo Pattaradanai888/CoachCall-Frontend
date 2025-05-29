@@ -20,7 +20,10 @@ export default defineEventHandler(async (event) => {
     });
     return profileData;
   } catch (error: unknown) {
-    const errorResponse = error as { response?: { status?: number }; data?: { detail?: string } };
+    const errorResponse = error as {
+      response?: { status?: number };
+      data?: { detail?: string };
+    };
     throw createError({
       statusCode: errorResponse.response?.status || 500,
       statusMessage: errorResponse.data?.detail || 'Failed to fetch user profile from backend',

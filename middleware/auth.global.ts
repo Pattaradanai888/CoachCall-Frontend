@@ -92,7 +92,11 @@ async function performServerAuth(
   const headers = useRequestHeaders(['cookie']);
 
   if (!headers.cookie) {
-    nuxtApp.payload.auth = { accessToken: null, user: null, processed: true } satisfies AuthPayload;
+    nuxtApp.payload.auth = {
+      accessToken: null,
+      user: null,
+      processed: true,
+    } satisfies AuthPayload;
     return;
   }
 
@@ -115,7 +119,11 @@ async function performServerAuth(
     } satisfies AuthPayload;
   } catch {
     // If refresh fails, clear auth state
-    nuxtApp.payload.auth = { accessToken: null, user: null, processed: true } satisfies AuthPayload;
+    nuxtApp.payload.auth = {
+      accessToken: null,
+      user: null,
+      processed: true,
+    } satisfies AuthPayload;
   }
 }
 
@@ -138,7 +146,11 @@ async function fetchProfileAndSetPayload(
     // If profile fetch fails, clear auth state
     auth.accessToken = null;
     auth.user = null;
-    nuxtApp.payload.auth = { accessToken: null, user: null, processed: true } satisfies AuthPayload;
+    nuxtApp.payload.auth = {
+      accessToken: null,
+      user: null,
+      processed: true,
+    } satisfies AuthPayload;
   }
 }
 

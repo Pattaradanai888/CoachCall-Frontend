@@ -48,7 +48,9 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.fullname" class="text-sm text-red-600 mt-1">{{ errors.fullname }}</p>
+          <p v-if="errors.fullname" class="text-sm text-red-600 mt-1">
+            {{ errors.fullname }}
+          </p>
         </div>
 
         <!-- Email -->
@@ -64,7 +66,9 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.email" class="text-sm text-red-600 mt-1">{{ errors.email }}</p>
+          <p v-if="errors.email" class="text-sm text-red-600 mt-1">
+            {{ errors.email }}
+          </p>
         </div>
 
         <!-- Password -->
@@ -80,7 +84,9 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.password" class="text-sm text-red-600 mt-1">{{ errors.password }}</p>
+          <p v-if="errors.password" class="text-sm text-red-600 mt-1">
+            {{ errors.password }}
+          </p>
         </div>
 
         <!-- Confirm Password -->
@@ -96,7 +102,9 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.confirm" class="text-sm text-red-600 mt-1">{{ errors.confirm }}</p>
+          <p v-if="errors.confirm" class="text-sm text-red-600 mt-1">
+            {{ errors.confirm }}
+          </p>
         </div>
 
         <!-- Submit -->
@@ -110,7 +118,8 @@
       </form>
 
       <p class="text-center mt-3 text-sm">
-        Already have an account? <NuxtLink to="/login" class="text-red-800">Login</NuxtLink>
+        Already have an account?
+        <NuxtLink to="/login" class="text-red-800">Login</NuxtLink>
       </p>
     </div>
   </div>
@@ -178,7 +187,9 @@ const onSubmit = handleSubmit(async (values) => {
     } else if (error instanceof Error && error.message) {
       setErrors({ fullname: error.message });
     } else {
-      setErrors({ fullname: 'An unexpected error occurred during registration.' });
+      setErrors({
+        fullname: 'An unexpected error occurred during registration.',
+      });
     }
   }
   // isSubmitting is automatically false here

@@ -32,7 +32,9 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
             @input="validateFullname"
           />
-          <p v-if="fullnameError" class="text-red-500 text-sm mt-1">{{ fullnameError }}</p>
+          <p v-if="fullnameError" class="text-red-500 text-sm mt-1">
+            {{ fullnameError }}
+          </p>
         </div>
 
         <div class="bg-blue-50 border border-blue-200 rounded-md p-4">

@@ -135,9 +135,17 @@ const mockTotalAthletes = ref(12); // Example mock data
 
 const tabs = [
   { id: 'overview', name: 'Overview', icon: 'mdi:account-details-outline' },
-  { id: 'display-name', name: 'Display Name', icon: 'mdi:account-edit-outline' },
+  {
+    id: 'display-name',
+    name: 'Display Name',
+    icon: 'mdi:account-edit-outline',
+  },
   { id: 'password', name: 'Password', icon: 'mdi:lock-outline' },
-  { id: 'profile-picture', name: 'Profile Picture', icon: 'mdi:camera-account' },
+  {
+    id: 'profile-picture',
+    name: 'Profile Picture',
+    icon: 'mdi:camera-account',
+  },
 ];
 
 // Notification utility (placeholder)

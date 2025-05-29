@@ -1,17 +1,20 @@
 // @ts-check
 import withNuxt from './.nuxt/eslint.config.mjs';
-import prettier from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
-export default withNuxt([
-  prettierConfig,
-  {
-    plugins: {
-      prettier,
+export default withNuxt(
+  [
+    {
+      rules: {
+        'prefer-const': 'error',
+        // Remove prettier/prettier rule to avoid conflicts
+        // Let Prettier handle formatting separately
+      },
     },
-    rules: {
-      'prettier/prettier': 'error',
-      'prefer-const': 'error',
+    // Add ignores for common files that don't need linting
+    {
+      ignores: ['dist/**', '.nuxt/**', '.output/**', 'node_modules/**'],
     },
-  },
-]);
+  ],
+  eslintConfigPrettier
+);

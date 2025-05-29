@@ -8,10 +8,10 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <!-- Cards grid responsive changes -->
         <div
-          v-motion-slide-visible-once-top
-          :delay="100"
           v-for="(card, index) in cards"
           :key="index"
+          v-motion-slide-visible-once-top
+          :delay="100"
           class="bg-white shadow-md p-4 rounded-md"
         >
           <div class="flex">
@@ -25,7 +25,9 @@
                 card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'
               "
               size="1.25rem"
-              :style="{ color: card.changeDirection === 'up' ? 'green' : 'red' }"
+              :style="{
+                color: card.changeDirection === 'up' ? 'green' : 'red',
+              }"
               class=""
             />
             <div
@@ -55,8 +57,8 @@
             <div class="flex justify-center w-full">
               <div class="w-full max-w-[320px] lg:max-w-none">
                 <VDatePicker
-                  expanded
                   v-model="selectedDate"
+                  expanded
                   mode="date"
                   :attributes="calendarAttributes"
                   class="border-2 border-[#9C1313] rounded-md"
@@ -91,7 +93,9 @@
                     },
                   }"
                 >
-                  <h2 class="font-semibold text-gray-700 mb-2">{{ course.name }}</h2>
+                  <h2 class="font-semibold text-gray-700 mb-2">
+                    {{ course.name }}
+                  </h2>
                   <ul class="list-disc pl-5">
                     <li
                       v-for="(session, sessionIndex) in course.sessions"
@@ -163,7 +167,10 @@ const courses = ref([
   {
     name: 'Strength Training 101',
     sessions: [
-      { name: 'Introduction to Strength Training', date: new Date(2025, 4, 26) },
+      {
+        name: 'Introduction to Strength Training',
+        date: new Date(2025, 4, 26),
+      },
       { name: 'Advanced Techniques', date: new Date(2025, 4, 28) },
     ],
   },
@@ -238,7 +245,11 @@ const calendarAttributes = computed(() => {
   if (!isSameDay(selectedDate.value, currentDate.value)) {
     attributes.push({
       key: 'selected-date',
-      highlight: { color: 'red', fillMode: 'outline', class: 'selected-date-outline' },
+      highlight: {
+        color: 'red',
+        fillMode: 'outline',
+        class: 'selected-date-outline',
+      },
       dates: selectedDate.value,
     });
   }

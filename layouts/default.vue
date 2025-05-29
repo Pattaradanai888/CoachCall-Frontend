@@ -152,7 +152,9 @@
                     />
                   </div>
                   <div>
-                    <p class="font-medium text-gray-900">{{ user?.fullname || 'User' }}</p>
+                    <p class="font-medium text-gray-900">
+                      {{ user?.fullname || 'User' }}
+                    </p>
                     <p class="text-sm text-gray-500">{{ user?.email || '' }}</p>
                   </div>
                 </div>

@@ -11,7 +11,7 @@
           left: `${indicatorLeft}px`,
           width: `${indicatorWidth}px`,
         }"
-      ></div>
+      />
 
       <!-- Navigation items -->
       <NuxtLink
@@ -37,10 +37,20 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'mdi:home', route: '/dashboard' },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: 'mdi:home',
+    route: '/dashboard',
+  },
   { id: 'course', label: 'Course', icon: 'mdi:book-open-variant', route: '#' },
   { id: 'athlete', label: 'Athlete', icon: 'mdi:account', route: '#' },
-  { id: 'leaderboard', label: 'Leaderboard', icon: 'mdi:chart-line', route: '#' },
+  {
+    id: 'leaderboard',
+    label: 'Leaderboard',
+    icon: 'mdi:chart-line',
+    route: '#',
+  },
   { id: 'coach-stat', label: 'Coach stat', icon: 'mdi:chart-box', route: '#' },
 ];
 

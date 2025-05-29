@@ -49,7 +49,9 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.email" class="text-red-600 text-sm">{{ errors.email }}</p>
+          <p v-if="errors.email" class="text-red-600 text-sm">
+            {{ errors.email }}
+          </p>
         </div>
 
         <!-- Password -->
@@ -65,7 +67,9 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.password" class="text-red-600 text-sm">{{ errors.password }}</p>
+          <p v-if="errors.password" class="text-red-600 text-sm">
+            {{ errors.password }}
+          </p>
         </div>
 
         <!-- Options + Submit -->

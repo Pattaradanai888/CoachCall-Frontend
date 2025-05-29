@@ -15,7 +15,9 @@
         <h2 class="text-2xl font-bold text-gray-900 break-words">
           {{ profile.fullname }}
         </h2>
-        <p class="text-gray-600 break-all text-sm sm:text-base">{{ profile.email }}</p>
+        <p class="text-gray-600 break-all text-sm sm:text-base">
+          {{ profile.email }}
+        </p>
 
         <div class="mt-6 space-y-2">
           <div class="flex items-center justify-center text-gray-700 text-sm sm:text-base">
