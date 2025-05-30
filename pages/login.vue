@@ -26,7 +26,7 @@
     </div>
 
     <!-- Right Side: Login Form -->
-    <div v-motion-pop class="w-1/2 p-12 flex flex-col justify-center">
+    <div v-motion-pop :delay="100" class="w-1/2 p-12 flex flex-col justify-center">
       <h2 class="text-2xl font-bold mb-2 text-center">
         Sign in to <span class="text-red-800">CoachCall</span>
       </h2>
@@ -34,11 +34,22 @@
         Welcome to CoachCall, please enter your login details below
       </p>
 
-      <!-- 4) Use onSubmit here -->
       <form class="space-y-3" @submit.prevent="onSubmit">
+        <!-- Server-side error message -->
+        <div
+          v-if="serverError"
+          class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
+          <span class="block sm:inline">{{ serverError }}</span>
+        </div>
+
         <!-- Email -->
         <div class="flex flex-col">
-          <div class="flex items-center border rounded-lg px-3 py-2 shadow-md">
+          <div
+            class="flex items-center border rounded-lg px-3 py-2 shadow-md"
+            :class="{ 'border-red-500': errors.email }"
+          >
             <Icon name="mdi:account" size="1.5rem" class="mr-2" />
             <input
               id="email"
@@ -49,14 +60,15 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.email" class="text-red-600 text-sm">
-            {{ errors.email }}
-          </p>
+          <p v-if="errors.email" class="text-red-600 text-sm mt-1">Please input an email</p>
         </div>
 
         <!-- Password -->
         <div class="flex flex-col">
-          <div class="flex items-center border rounded-lg px-3 py-2 shadow-md">
+          <div
+            class="flex items-center border rounded-lg px-3 py-2 shadow-md"
+            :class="{ 'border-red-500': errors.password }"
+          >
             <Icon name="mdi:password" size="1.5rem" class="mr-2" />
             <input
               id="password"
@@ -67,9 +79,7 @@
               class="w-full outline-none"
             />
           </div>
-          <p v-if="errors.password" class="text-red-600 text-sm">
-            {{ errors.password }}
-          </p>
+          <p v-if="errors.password" class="text-red-600 text-sm mt-1">Please input password</p>
         </div>
 
         <!-- Options + Submit -->
@@ -100,53 +110,41 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useForm, useField } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { z } from 'zod';
 import { useAuthStore } from '~/stores/auth';
-import { navigateTo } from '#app'; // Use Nuxt's navigateTo for consistency
+import { navigateTo } from '#app';
 
+// Define the validation schema
 const loginSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password too short'),
+  email: z.string().min(1, 'Please input an email').email('Please input an email'),
+  password: z.string().min(1, 'Please input password'),
 });
 
-// Destructure isSubmitting and setErrors
-const { handleSubmit, errors, setErrors } = useForm({
+const { handleSubmit, errors } = useForm({
   validationSchema: toTypedSchema(loginSchema),
 });
 const { value: email } = useField<string>('email');
 const { value: password } = useField<string>('password');
 
+// Server-side error handling
+const serverError = ref<string | null>(null);
+
 const auth = useAuthStore();
-const route = useRoute(); // Get current route for redirect query
+const route = useRoute();
 
 const onSubmit = handleSubmit(async (values) => {
-  // isSubmitting is automatically true here
   try {
     await auth.login({ email: values.email, password: values.password });
     const redirectPath = (route.query.redirect as string) || '/dashboard';
     await navigateTo(redirectPath, { replace: true });
   } catch (error: unknown) {
     console.error('Login failed:', error);
-    if (
-      error &&
-      typeof error === 'object' &&
-      'response' in error &&
-      error.response &&
-      typeof error.response === 'object' &&
-      'data' in error.response &&
-      error.response.data &&
-      typeof error.response.data === 'object' &&
-      'detail' in error.response.data
-    ) {
-      setErrors({ email: String(error.response.data.detail) });
-    } else if (error instanceof Error && error.message) {
-      setErrors({ email: error.message });
-    } else {
-      setErrors({ email: 'An unexpected error occurred during login.' });
-    }
+    const err = error as { response?: { data?: { detail?: string } } };
+    serverError.value =
+      err.response?.data?.detail || 'Email or password incorrect please try again';
   }
-  // isSubmitting is automatically false here
 });
 </script>
