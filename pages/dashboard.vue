@@ -1,124 +1,126 @@
 <template>
-  <Subnavbar />
-  <div
-    class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] lg:h-[600px] max-h-[none] lg:max-h-[80vh]"
-  >
-    <!-- Overview Cards -->
-    <div class="w-full mx-7 lg:mx-0">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <!-- Cards grid responsive changes -->
-        <div
-          v-for="(card, index) in cards"
-          :key="index"
-          v-motion-slide-visible-once-top
-          :delay="100"
-          class="bg-white shadow-md p-4 rounded-md"
-        >
-          <div class="flex">
-            <Icon :name="card.icon" size="1.25rem" style="color: black" class="mr-1" />
-            <div class="text-sm text-gray-600">{{ card.label }}</div>
-          </div>
-          <div class="text-2xl sm:text-3xl font-bold">{{ card.value }}</div>
-          <div class="flex">
-            <Icon
-              :name="
-                card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'
-              "
-              size="1.25rem"
-              :style="{
-                color: card.changeDirection === 'up' ? 'green' : 'red',
-              }"
-              class=""
-            />
-            <div
-              :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'"
-              class="text-sm"
-            >
-              {{ card.changePercentage }}% {{ card.changePeriod }}
+  <div>
+    <SubNavbar />
+    <div
+      class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] lg:h-[600px] max-h-[none] lg:max-h-[80vh]"
+    >
+      <!-- Overview Cards -->
+      <div class="w-full mx-7 lg:mx-0">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <!-- Cards grid responsive changes -->
+          <div
+            v-for="(card, index) in cards"
+            :key="index"
+            v-motion-slide-visible-once-top
+            :delay="100"
+            class="bg-white shadow-md p-4 rounded-md"
+          >
+            <div class="flex">
+              <Icon :name="card.icon" size="1.25rem" style="color: black" class="mr-1" />
+              <div class="text-sm text-gray-600">{{ card.label }}</div>
+            </div>
+            <div class="text-2xl sm:text-3xl font-bold">{{ card.value }}</div>
+            <div class="flex">
+              <Icon
+                :name="
+                  card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'
+                "
+                size="1.25rem"
+                :style="{
+                  color: card.changeDirection === 'up' ? 'green' : 'red',
+                }"
+                class=""
+              />
+              <div
+                :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'"
+                class="text-sm"
+              >
+                {{ card.changePercentage }}% {{ card.changePeriod }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <!-- Middle Sections -->
-      <div class="mb-4">
-        <!-- Calendar Section -->
-        <div
-          v-motion-slide-visible-once-bottom
-          :delay="100"
-          class="bg-white shadow-md p-4 sm:p-8 rounded-md flex-1"
-        >
-          <div class="flex">
-            <Icon name="mdi:calendar" size="2rem" style="color: black" class="mr-1" />
-            <h1 class="text-xl sm:text-2xl font-bold">Calendar</h1>
-          </div>
-          <p class="mb-4 text-sm sm:text-base">Your scheduled training sessions for this week</p>
-          <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
-            <!-- Changed to flex-col for mobile -->
-            <div class="flex justify-center w-full">
-              <div class="w-full max-w-[320px] lg:max-w-none">
-                <VDatePicker
-                  v-model="selectedDate"
-                  expanded
-                  mode="date"
-                  :attributes="calendarAttributes"
-                  class="border-2 border-[#9C1313] rounded-md"
-                />
-              </div>
+        <!-- Middle Sections -->
+        <div class="mb-4">
+          <!-- Calendar Section -->
+          <div
+            v-motion-slide-visible-once-bottom
+            :delay="100"
+            class="bg-white shadow-md p-4 sm:p-8 rounded-md flex-1"
+          >
+            <div class="flex">
+              <Icon name="mdi:calendar" size="2rem" style="color: black" class="mr-1" />
+              <h1 class="text-xl sm:text-2xl font-bold">Calendar</h1>
             </div>
-            <div class="mt-4 lg:mt-0 lg:ml-5 w-full">
-              <!-- Added top margin for mobile -->
-              <h1 class="font-bold text-lg">Upcoming Courses</h1>
-              <div v-if="upcomingCourses.length > 0">
-                <div
-                  v-for="(course, index) in upcomingCourses"
-                  :key="index"
-                  v-motion
-                  class="mt-2 bg-white shadow-md rounded-md p-4 transition-shadow hover:shadow-lg"
-                  :initial="{
-                    opacity: 0,
-                    x: 100,
-                  }"
-                  :enter="{
-                    opacity: 1,
-                    x: 0,
-                    transition: {
-                      delay: 200,
-                    },
-                  }"
-                  :leave="{
-                    x: -100,
-                    opacity: 0,
-                    transition: {
-                      delay: 200,
-                    },
-                  }"
-                >
-                  <h2 class="font-semibold text-gray-700 mb-2">
-                    {{ course.name }}
-                  </h2>
-                  <ul class="list-disc pl-5">
-                    <li
-                      v-for="(session, sessionIndex) in course.sessions"
-                      :key="sessionIndex"
-                      class="text-gray-600 text-sm"
-                    >
-                      {{ session.name }}
-                    </li>
-                  </ul>
+            <p class="mb-4 text-sm sm:text-base">Your scheduled training sessions for this week</p>
+            <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
+              <!-- Changed to flex-col for mobile -->
+              <div class="flex justify-center w-full">
+                <div class="w-full max-w-[320px] lg:max-w-none">
+                  <VDatePicker
+                    v-model="selectedDate"
+                    expanded
+                    mode="date"
+                    :attributes="calendarAttributes"
+                    class="border-2 border-[#9C1313] rounded-md"
+                  />
                 </div>
               </div>
-              <div
-                v-else
-                v-motion-pop-visible
-                class="flex flex-col justify-center items-center h-full py-8"
-              >
-                <Icon
-                  name="material-symbols:event-busy"
-                  size="2rem"
-                  style="color: black"
-                  class="mb-2"
-                />
-                <p class="text-center">No sessions scheduled.</p>
+              <div class="mt-4 lg:mt-0 lg:ml-5 w-full">
+                <!-- Added top margin for mobile -->
+                <h1 class="font-bold text-lg">Upcoming Courses</h1>
+                <div v-if="upcomingCourses.length > 0">
+                  <div
+                    v-for="(course, index) in upcomingCourses"
+                    :key="index"
+                    v-motion
+                    class="mt-2 bg-white shadow-md rounded-md p-4 transition-shadow hover:shadow-lg"
+                    :initial="{
+                      opacity: 0,
+                      x: 100,
+                    }"
+                    :enter="{
+                      opacity: 1,
+                      x: 0,
+                      transition: {
+                        delay: 200,
+                      },
+                    }"
+                    :leave="{
+                      x: -100,
+                      opacity: 0,
+                      transition: {
+                        delay: 200,
+                      },
+                    }"
+                  >
+                    <h2 class="font-semibold text-gray-700 mb-2">
+                      {{ course.name }}
+                    </h2>
+                    <ul class="list-disc pl-5">
+                      <li
+                        v-for="(session, sessionIndex) in course.sessions"
+                        :key="sessionIndex"
+                        class="text-gray-600 text-sm"
+                      >
+                        {{ session.name }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div
+                  v-else
+                  v-motion-pop-visible
+                  class="flex flex-col justify-center items-center h-full py-8"
+                >
+                  <Icon
+                    name="material-symbols:event-busy"
+                    size="2rem"
+                    style="color: black"
+                    class="mb-2"
+                  />
+                  <p class="text-center">No sessions scheduled.</p>
+                </div>
               </div>
             </div>
           </div>
