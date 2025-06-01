@@ -1,20 +1,32 @@
-// @ts-check
-import withNuxt from './.nuxt/eslint.config.mjs';
-import eslintConfigPrettier from 'eslint-config-prettier';
+import antfu from '@antfu/eslint-config';
 
-export default withNuxt(
-  [
-    {
-      rules: {
-        'prefer-const': 'error',
-        // Remove prettier/prettier rule to avoid conflicts
-        // Let Prettier handle formatting separately
-      },
+export default antfu(
+  {
+    vue: true,
+    typescript: true,
+    formatters: {
+      css: true,
+      html: true,
+      json: true,
+      markdown: 'prettier',
     },
-    // Add ignores for common files that don't need linting
-    {
-      ignores: ['dist/**', '.nuxt/**', '.output/**', 'node_modules/**'],
+    stylistic: {
+      indent: 2,
+      quotes: 'single',
+      semi: true,
     },
-  ],
-  eslintConfigPrettier
+  },
+  {
+    rules: {
+      'no-undef': 0,
+      'vue/multi-word-component-names': 0,
+      'unused-imports/no-unused-vars': 1,
+      'vue/block-order': [
+        'error',
+        {
+          order: ['template', 'script', 'style'],
+        },
+      ],
+    },
+  },
 );
