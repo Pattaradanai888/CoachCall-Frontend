@@ -17,7 +17,9 @@
       />
       <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-6">
         <div class="text-white">
-          <h2 class="text-2xl font-bold">ELEVATE YOUR GAME</h2>
+          <h2 class="text-2xl font-bold">
+            ELEVATE YOUR GAME
+          </h2>
           <p class="text-sm mt-1">
             Connect with coaches and players to take your basketball skills to the next level
           </p>
@@ -58,9 +60,11 @@
               placeholder="Email"
               autocomplete="email"
               class="w-full outline-none"
-            />
+            >
           </div>
-          <p v-if="errors.email" class="text-red-600 text-sm mt-1">Please input an email</p>
+          <p v-if="errors.email" class="text-red-600 text-sm mt-1">
+            Please input an email
+          </p>
         </div>
 
         <!-- Password -->
@@ -77,15 +81,17 @@
               placeholder="Password"
               autocomplete="current-password"
               class="w-full outline-none"
-            />
+            >
           </div>
-          <p v-if="errors.password" class="text-red-600 text-sm mt-1">Please input password</p>
+          <p v-if="errors.password" class="text-red-600 text-sm mt-1">
+            Please input password
+          </p>
         </div>
 
         <!-- Options + Submit -->
         <div class="flex items-center justify-between">
           <label class="flex items-center mb-2">
-            <input type="checkbox" class="mr-2" />
+            <input type="checkbox" class="mr-2">
             <span class="text-gray-700">Remember Password</span>
           </label>
           <NuxtLink to="#" class="text-red-800 text-sm underline underline-offset-2">
@@ -103,19 +109,21 @@
 
       <p class="text-center mt-3 text-sm">
         No account yet?
-        <NuxtLink to="/register" class="text-red-800">Register</NuxtLink>
+        <NuxtLink to="/register" class="text-red-800">
+          Register
+        </NuxtLink>
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useForm, useField } from 'vee-validate';
+import { navigateTo } from '#app';
 import { toTypedSchema } from '@vee-validate/zod';
+import { useField, useForm } from 'vee-validate';
+import { ref } from 'vue';
 import { z } from 'zod';
 import { useAuthStore } from '~/stores/auth';
-import { navigateTo } from '#app';
 
 // Define the validation schema
 const loginSchema = z.object({
@@ -140,11 +148,12 @@ const onSubmit = handleSubmit(async (values) => {
     await auth.login({ email: values.email, password: values.password });
     const redirectPath = (route.query.redirect as string) || '/dashboard';
     await navigateTo(redirectPath, { replace: true });
-  } catch (error: unknown) {
+  }
+  catch (error: unknown) {
     console.error('Login failed:', error);
     const err = error as { response?: { data?: { detail?: string } } };
-    serverError.value =
-      err.response?.data?.detail || 'Email or password incorrect please try again';
+    serverError.value
+      = err.response?.data?.detail || 'Email or password incorrect please try again';
   }
 });
 </script>

@@ -17,9 +17,13 @@
           >
             <div class="flex">
               <Icon :name="card.icon" size="1.25rem" style="color: black" class="mr-1" />
-              <div class="text-sm text-gray-600">{{ card.label }}</div>
+              <div class="text-sm text-gray-600">
+                {{ card.label }}
+              </div>
             </div>
-            <div class="text-2xl sm:text-3xl font-bold">{{ card.value }}</div>
+            <div class="text-2xl sm:text-3xl font-bold">
+              {{ card.value }}
+            </div>
             <div class="flex">
               <Icon
                 :name="
@@ -50,9 +54,13 @@
           >
             <div class="flex">
               <Icon name="mdi:calendar" size="2rem" style="color: black" class="mr-1" />
-              <h1 class="text-xl sm:text-2xl font-bold">Calendar</h1>
+              <h1 class="text-xl sm:text-2xl font-bold">
+                Calendar
+              </h1>
             </div>
-            <p class="mb-4 text-sm sm:text-base">Your scheduled training sessions for this week</p>
+            <p class="mb-4 text-sm sm:text-base">
+              Your scheduled training sessions for this week
+            </p>
             <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
               <!-- Changed to flex-col for mobile -->
               <div class="flex justify-center w-full">
@@ -68,7 +76,9 @@
               </div>
               <div class="mt-4 lg:mt-0 lg:ml-5 w-full">
                 <!-- Added top margin for mobile -->
-                <h1 class="font-bold text-lg">Upcoming Courses</h1>
+                <h1 class="font-bold text-lg">
+                  Upcoming Courses
+                </h1>
                 <div v-if="upcomingCourses.length > 0">
                   <div
                     v-for="(course, index) in upcomingCourses"
@@ -119,7 +129,9 @@
                     style="color: black"
                     class="mb-2"
                   />
-                  <p class="text-center">No sessions scheduled.</p>
+                  <p class="text-center">
+                    No sessions scheduled.
+                  </p>
                 </div>
               </div>
             </div>
@@ -133,7 +145,7 @@
 <!-- Script remains unchanged -->
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const currentDate = ref(new Date());
 const selectedDate = ref(new Date());
@@ -186,13 +198,13 @@ const courses = ref([
 ]);
 
 // Helper function to check if two dates are the same day
-const isSameDay = (date1: Date, date2: Date) => {
+function isSameDay(date1: Date, date2: Date) {
   return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
+    date1.getFullYear() === date2.getFullYear()
+    && date1.getMonth() === date2.getMonth()
+    && date1.getDate() === date2.getDate()
   );
-};
+}
 
 // show upcoming session for selected date
 const upcomingCourses = computed(() => {
@@ -202,36 +214,36 @@ const upcomingCourses = computed(() => {
   const selectedDay = selected.getDate();
 
   return courses.value
-    .map((course) => ({
+    .map(course => ({
       name: course.name,
       sessions: course.sessions.filter((session) => {
         const sessionDate = session.date;
         return (
-          sessionDate.getFullYear() === selectedYear &&
-          sessionDate.getMonth() === selectedMonth &&
-          sessionDate.getDate() === selectedDay
+          sessionDate.getFullYear() === selectedYear
+          && sessionDate.getMonth() === selectedMonth
+          && sessionDate.getDate() === selectedDay
         );
       }),
     }))
-    .filter((course) => course.sessions.length > 0);
+    .filter(course => course.sessions.length > 0);
 });
 
 const calendarAttributes = computed(() => {
   const attributes = [];
-  const sessionDates = courses.value.flatMap((course) =>
-    course.sessions.map((session) => session.date)
+  const sessionDates = courses.value.flatMap(course =>
+    course.sessions.map(session => session.date),
   );
 
   // Check if current date is a session date
-  const isCurrentDateSession = sessionDates.some((date) => isSameDay(date, currentDate.value));
+  const isCurrentDateSession = sessionDates.some(date => isSameDay(date, currentDate.value));
 
   // 1. Session dates with light highlight
   attributes.push(
-    ...sessionDates.map((date) => ({
+    ...sessionDates.map(date => ({
       key: `session-${date.toISOString()}`,
       highlight: { color: 'red', fillMode: 'light' },
       dates: date,
-    }))
+    })),
   );
 
   // 2. Current date (solid if it's a session)

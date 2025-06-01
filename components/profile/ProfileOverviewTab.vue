@@ -36,7 +36,9 @@
     <div v-motion-slide-visible-once-right :delay="200" class="lg:col-span-2 w-full min-w-0">
       <div class="flex items-center mb-6">
         <Icon name="mdi:trophy" class="w-6 h-6 text-yellow-500 mr-2 flex-shrink-0" />
-        <h3 class="text-xl font-semibold text-gray-900">Achievements</h3>
+        <h3 class="text-xl font-semibold text-gray-900">
+          Achievements
+        </h3>
       </div>
       <div v-if="achievements.length === 0" class="text-center text-gray-500 py-4">
         No achievements yet.
@@ -60,14 +62,18 @@
               <p class="text-sm text-gray-600 mb-2 break-words">
                 {{ achievement.description }}
               </p>
-              <p class="text-xs text-gray-500 break-words">Achieved on {{ achievement.date }}</p>
+              <p class="text-xs text-gray-500 break-words">
+                Achieved on {{ achievement.date }}
+              </p>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div v-else class="text-center py-10 text-gray-500">Loading profile information...</div>
+  <div v-else class="text-center py-10 text-gray-500">
+    Loading profile information...
+  </div>
 </template>
 
 <script setup lang="ts">

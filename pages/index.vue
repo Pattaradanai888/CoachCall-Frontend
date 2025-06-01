@@ -33,9 +33,13 @@
       <div class="mb-[5rem]">
         <div class="mt-20 text-center mb-[5rem]">
           <div class="flex justify-center mb-5">
-            <h1 class="bg-[#9C1313] px-4 py-1 rounded-xl text-white">Feature</h1>
+            <h1 class="bg-[#9C1313] px-4 py-1 rounded-xl text-white">
+              Feature
+            </h1>
           </div>
-          <h1 class="text-3xl font-bold">Everything you need to elevate your coaching</h1>
+          <h1 class="text-3xl font-bold">
+            Everything you need to elevate your coaching
+          </h1>
           <p class="mt-2">
             Our platform provides powerful tools to streamline your coaching workflow and maximize
             athlete potential.
@@ -51,7 +55,9 @@
                       <Icon name="mdi:check" size="2rem" style="color: white" class="mx-1" />
                     </div>
                   </div>
-                  <h1 class="text-2xl font-bold">Authentication</h1>
+                  <h1 class="text-2xl font-bold">
+                    Authentication
+                  </h1>
                   <p>Secure registration and profile management with easy onboarding.</p>
                 </div>
               </div>
@@ -62,7 +68,9 @@
                       <Icon name="mdi:check" size="2rem" style="color: white" class="mx-1" />
                     </div>
                   </div>
-                  <h1 class="text-2xl font-bold">Course Management</h1>
+                  <h1 class="text-2xl font-bold">
+                    Course Management
+                  </h1>
                   <p>
                     Create, organize, and assign courses with drag-and-drop tasks and templates.
                   </p>
@@ -75,7 +83,9 @@
                       <Icon name="mdi:check" size="2rem" style="color: white" class="mx-1" />
                     </div>
                   </div>
-                  <h1 class="text-2xl font-bold">Performance Scoring</h1>
+                  <h1 class="text-2xl font-bold">
+                    Performance Scoring
+                  </h1>
                   <p>Automated performance tracking with radar charts for skill metrics.</p>
                 </div>
               </div>
@@ -88,7 +98,9 @@
                       <Icon name="mdi:check" size="2rem" style="color: white" class="mx-1" />
                     </div>
                   </div>
-                  <h1 class="text-2xl font-bold">Main Dashboard</h1>
+                  <h1 class="text-2xl font-bold">
+                    Main Dashboard
+                  </h1>
                   <p>
                     Unified interface with key metrics, interactive charts, and session calendar.
                   </p>
@@ -101,7 +113,9 @@
                       <Icon name="mdi:check" size="2rem" style="color: white" class="mx-1" />
                     </div>
                   </div>
-                  <h1 class="text-2xl font-bold">Coach Efficiency Dashboard</h1>
+                  <h1 class="text-2xl font-bold">
+                    Coach Efficiency Dashboard
+                  </h1>
                   <p>Track productivity and impact with motivational milestones.</p>
                 </div>
               </div>
@@ -112,7 +126,9 @@
                       <Icon name="mdi:check" size="2rem" style="color: white" class="mx-1" />
                     </div>
                   </div>
-                  <h1 class="text-2xl font-bold">Athlete Management</h1>
+                  <h1 class="text-2xl font-bold">
+                    Athlete Management
+                  </h1>
                   <p>Manage athlete profiles, visualize performance, and rank athletes.</p>
                 </div>
               </div>
@@ -132,7 +148,9 @@
               Testimonials
             </h1>
           </div>
-          <h1 class="text-3xl font-bold mb-2">Trusted by coaches everywhere</h1>
+          <h1 class="text-3xl font-bold mb-2">
+            Trusted by coaches everywhere
+          </h1>
           <p class="text-gray-600 max-w-xl mx-auto">
             See what coaches are saying about our platform.
           </p>
@@ -146,9 +164,13 @@
               src="/coach1.avif"
               class="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-[#9C1313]"
               alt="Michael Rodriguez"
-            />
-            <h3 class="font-bold text-lg">Michael Rodriguez</h3>
-            <p class="text-gray-500 text-sm">College Basketball Coach</p>
+            >
+            <h3 class="font-bold text-lg">
+              Michael Rodriguez
+            </h3>
+            <p class="text-gray-500 text-sm">
+              College Basketball Coach
+            </p>
             <p class="text-gray-700 italic mt-4">
               "This platform has completely transformed how I manage my team. The analytics and
               tracking features have helped my athletes improve significantly."
@@ -161,9 +183,13 @@
               src="/coach2.webp"
               class="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-[#9C1313]"
               alt="Sarah Johnson"
-            />
-            <h3 class="font-bold text-lg">Sarah Johnson</h3>
-            <p class="text-gray-500 text-sm">High School Basketball Coach</p>
+            >
+            <h3 class="font-bold text-lg">
+              Sarah Johnson
+            </h3>
+            <p class="text-gray-500 text-sm">
+              High School Basketball Coach
+            </p>
             <p class="text-gray-700 italic mt-4">
               "The gamification elements have increased my team's engagement and motivation. I can
               easily track progress and identify areas for improvement."
@@ -178,19 +204,29 @@
       <div class="mb-[5rem]">
         <div class="mt-20 text-center mb-[5rem]">
           <div class="flex justify-center mb-5">
-            <h1 class="bg-[#9C1313] px-4 py-1 rounded-xl text-white">Pricing</h1>
+            <h1 class="bg-[#9C1313] px-4 py-1 rounded-xl text-white">
+              Pricing
+            </h1>
           </div>
-          <h1 class="text-3xl font-bold">Simple, transparent pricing</h1>
-          <p class="mt-2">Choose the plan that's right for you and your team.</p>
+          <h1 class="text-3xl font-bold">
+            Simple, transparent pricing
+          </h1>
+          <p class="mt-2">
+            Choose the plan that's right for you and your team.
+          </p>
         </div>
 
-        <!--Plan section-->
+        <!-- Plan section -->
         <div class="grid grid-cols-3 gap-2">
           <div class="bg-white shadow-xl mb-5 px-4 py-2">
             <div class="p-5">
-              <h1 class="text-xl font-bold">Starter</h1>
+              <h1 class="text-xl font-bold">
+                Starter
+              </h1>
               <p>For individual coaches</p>
-              <h1 class="text-3xl font-bold my-2">FREE</h1>
+              <h1 class="text-3xl font-bold my-2">
+                FREE
+              </h1>
               <div class="flex">
                 <Icon name="mdi:check-bold" size="1.5rem" style="color: green" class="mr-2" />
                 <p>Up to 10 athletes</p>
@@ -207,11 +243,17 @@
           </div>
           <div class="bg-white shadow-xl mb-5 px-4 py-2">
             <div class="p-5">
-              <h1 class="text-xl font-bold">Pro</h1>
+              <h1 class="text-xl font-bold">
+                Pro
+              </h1>
               <p>For small teams</p>
               <div class="flex my-2">
-                <h1 class="text-3xl font-bold">$79</h1>
-                <h1 class="align-bottom">/month</h1>
+                <h1 class="text-3xl font-bold">
+                  $79
+                </h1>
+                <h1 class="align-bottom">
+                  /month
+                </h1>
               </div>
               <div class="flex">
                 <Icon name="mdi:check-bold" size="1.5rem" style="color: green" class="mr-2" />
@@ -237,11 +279,17 @@
           </div>
           <div class="bg-white shadow-xl mb-5 px-4 py-2">
             <div class="p-5">
-              <h1 class="text-xl font-bold">Enterprise</h1>
+              <h1 class="text-xl font-bold">
+                Enterprise
+              </h1>
               <p>For large organizations</p>
               <div class="flex my-2">
-                <h1 class="text-3xl font-bold">$199</h1>
-                <h1 class="align-bottom">/month</h1>
+                <h1 class="text-3xl font-bold">
+                  $199
+                </h1>
+                <h1 class="align-bottom">
+                  /month
+                </h1>
               </div>
               <div class="flex">
                 <Icon name="mdi:check-bold" size="1.5rem" style="color: green" class="mr-2" />
@@ -278,7 +326,9 @@
       <div class="container mx-auto px-4">
         <!-- Header Section -->
         <div class="mt-20 text-center mb-5">
-          <h1 class="text-3xl font-bold mb-4">Ready to transform your coaching?</h1>
+          <h1 class="text-3xl font-bold mb-4">
+            Ready to transform your coaching?
+          </h1>
           <p class="text-gray-600 max-w-xl mx-auto">
             Join thousands of coaches who are elevating their game with our platform.
           </p>

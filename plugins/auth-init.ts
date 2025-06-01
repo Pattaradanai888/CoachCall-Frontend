@@ -25,7 +25,8 @@ export default defineNuxtPlugin(async () => {
   if (!auth.isInitialized && !auth.isAuthenticated && !auth.isRefreshing) {
     try {
       await auth.initializeAuth('client');
-    } catch (error) {
+    }
+    catch (error) {
       // Silently handle initialization errors
       console.warn('Auth initialization failed:', error);
     }

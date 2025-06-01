@@ -18,8 +18,7 @@
         v-for="item in navItems"
         :key="item.id"
         :to="item.route"
-        :class="[
-          'relative z-10 flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap',
+        class="relative z-10 flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap" :class="[
           activeTab === item.id ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900',
         ]"
       >
@@ -31,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
@@ -59,9 +58,10 @@ const indicatorLeft = ref(0);
 const indicatorWidth = ref(0);
 const navContainer = ref<HTMLElement | null>(null);
 
-const updateIndicator = () => {
+function updateIndicator() {
   nextTick(() => {
-    if (!navContainer.value) return;
+    if (!navContainer.value)
+      return;
     const activeButton = navContainer.value.querySelector(`a[href="${route.path}"]`) as HTMLElement;
     if (activeButton) {
       const containerRect = navContainer.value.getBoundingClientRect();
@@ -70,7 +70,7 @@ const updateIndicator = () => {
       indicatorWidth.value = buttonRect.width;
     }
   });
-};
+}
 
 onMounted(() => {
   activeTab.value = route.path;
@@ -90,7 +90,7 @@ watch(
   (newPath) => {
     activeTab.value = newPath;
     updateIndicator();
-  }
+  },
 );
 </script>
 

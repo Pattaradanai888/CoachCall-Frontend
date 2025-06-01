@@ -17,7 +17,9 @@
       />
       <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-6">
         <div class="text-white">
-          <h2 class="text-2xl font-bold">ELEVATE YOUR GAME</h2>
+          <h2 class="text-2xl font-bold">
+            ELEVATE YOUR GAME
+          </h2>
           <p class="text-sm mt-1">
             Connect with coaches and players to take your basketball skills to the next level
           </p>
@@ -46,9 +48,11 @@
               placeholder="Name"
               autocomplete="name"
               class="w-full outline-none"
-            />
+            >
           </div>
-          <p v-if="errors.fullname" class="text-sm text-red-600 mt-1">{{ errors.fullname }}</p>
+          <p v-if="errors.fullname" class="text-sm text-red-600 mt-1">
+            {{ errors.fullname }}
+          </p>
         </div>
 
         <!-- Email -->
@@ -62,9 +66,11 @@
               placeholder="Email"
               autocomplete="email"
               class="w-full outline-none"
-            />
+            >
           </div>
-          <p v-if="errors.email" class="text-sm text-red-600 mt-1">{{ errors.email }}</p>
+          <p v-if="errors.email" class="text-sm text-red-600 mt-1">
+            {{ errors.email }}
+          </p>
         </div>
 
         <!-- Password -->
@@ -78,7 +84,7 @@
               placeholder="Password"
               autocomplete="new-password"
               class="w-full outline-none pr-10"
-            />
+            >
             <button
               type="button"
               class="absolute right-3 text-gray-400 hover:text-gray-600"
@@ -88,7 +94,9 @@
               <Icon :name="showPasswords.password ? 'mdi:eye-off' : 'mdi:eye'" class="w-5 h-5" />
             </button>
           </div>
-          <p v-if="errors.password" class="text-sm text-red-600 mt-1">{{ errors.password }}</p>
+          <p v-if="errors.password" class="text-sm text-red-600 mt-1">
+            {{ errors.password }}
+          </p>
         </div>
 
         <!-- Confirm Password -->
@@ -102,7 +110,7 @@
               placeholder="Confirm Password"
               autocomplete="new-password"
               class="w-full outline-none pr-10"
-            />
+            >
             <button
               type="button"
               class="absolute right-3 text-gray-400 hover:text-gray-600"
@@ -119,7 +127,9 @@
 
         <!-- Password Requirements -->
         <div>
-          <h4 class="font-medium text-gray-900 mb-2">Password Requirements:</h4>
+          <h4 class="font-medium text-gray-900 mb-2">
+            Password Requirements:
+          </h4>
           <ul class="text-sm space-y-1">
             <li
               :class="passwordValidation.length ? 'text-green-600' : 'text-red-600'"
@@ -185,19 +195,21 @@
       </form>
 
       <p class="text-center mt-3 text-sm">
-        Already have an account? <NuxtLink to="/login" class="text-red-800">Login</NuxtLink>
+        Already have an account? <NuxtLink to="/login" class="text-red-800">
+          Login
+        </NuxtLink>
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useForm, useField } from 'vee-validate';
-import { toTypedSchema } from '@vee-validate/zod';
-import { z } from 'zod';
-import { reactive, computed } from 'vue';
-import { useAuthStore } from '~/stores/auth';
 import { navigateTo } from '#app';
+import { toTypedSchema } from '@vee-validate/zod';
+import { useField, useForm } from 'vee-validate';
+import { computed, reactive } from 'vue';
+import { z } from 'zod';
+import { useAuthStore } from '~/stores/auth';
 
 const registerSchema = z
   .object({
@@ -212,8 +224,8 @@ const registerSchema = z
       .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
     confirm: z.string().min(8),
   })
-  .refine((data) => data.password === data.confirm, {
-    message: "Passwords don't match",
+  .refine(data => data.password === data.confirm, {
+    message: 'Passwords don\'t match',
     path: ['confirm'],
   });
 
@@ -245,10 +257,10 @@ const passwordValidation = computed(() => {
 
 const isPasswordFormValid = computed(() => {
   return (
-    Object.values(passwordValidation.value).every(Boolean) &&
-    password.value === confirm.value &&
-    fullname.value &&
-    email.value
+    Object.values(passwordValidation.value).every(Boolean)
+    && password.value === confirm.value
+    && fullname.value
+    && email.value
   );
 });
 
@@ -262,28 +274,32 @@ const onSubmit = handleSubmit(async (values) => {
       password: values.password,
     });
     await navigateTo('/dashboard', { replace: true });
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Registration failed:', error);
     if (
-      error &&
-      typeof error === 'object' &&
-      'response' in error &&
-      error.response &&
-      typeof error.response === 'object' &&
-      'data' in error.response &&
-      error.response.data &&
-      typeof error.response.data === 'object' &&
-      'detail' in error.response.data
+      error
+      && typeof error === 'object'
+      && 'response' in error
+      && error.response
+      && typeof error.response === 'object'
+      && 'data' in error.response
+      && error.response.data
+      && typeof error.response.data === 'object'
+      && 'detail' in error.response.data
     ) {
       const detail = error.response.data.detail;
       if (typeof detail === 'string' && detail.toLowerCase().includes('email already registered')) {
         setErrors({ email: detail });
-      } else {
+      }
+      else {
         setErrors({ fullname: String(detail) });
       }
-    } else if (error instanceof Error && error.message) {
+    }
+    else if (error instanceof Error && error.message) {
       setErrors({ fullname: error.message });
-    } else {
+    }
+    else {
       setErrors({ fullname: 'An unexpected error occurred during registration.' });
     }
   }

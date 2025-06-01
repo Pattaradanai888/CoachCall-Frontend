@@ -1,8 +1,8 @@
+import type { TokenResponse } from '~/types/auth';
 // stores/auth.ts - Fixed version with better state management
 import { defineStore } from 'pinia';
-import { ref, computed, getCurrentInstance } from 'vue';
+import { computed, getCurrentInstance, ref } from 'vue';
 import { z } from 'zod';
-import type { TokenResponse } from '~/types/auth';
 
 const UserSchema = z.object({
   id: z.number(),
@@ -36,7 +36,8 @@ export const useAuthStore = defineStore('auth', () => {
       });
       accessToken.value = refreshResponse.access_token;
       await fetchProfile(true);
-    } catch (err) {
+    }
+    catch (err) {
       await logoutSilently();
       throw err;
     }
@@ -65,16 +66,19 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         if (accessToken.value && !user.value) {
           await fetchProfile();
-        } else if (!accessToken.value) {
+        }
+        else if (!accessToken.value) {
           await _performRefreshAndFetchProfile();
         }
         isInitialized.value = true;
         initializationSource.value = source;
-      } catch (error) {
+      }
+      catch (error) {
         // Reset state on error
         await logoutSilently();
         throw error;
-      } finally {
+      }
+      finally {
         isRefreshing.value = false;
         refreshPromise = null;
       }
@@ -99,12 +103,15 @@ export const useAuthStore = defineStore('auth', () => {
       if (user.value && typeof userData === 'object' && userData !== null) {
         const updatedUserData = { ...user.value, ...userData };
         user.value = UserSchema.parse(updatedUserData);
-      } else {
+      }
+      else {
         user.value = UserSchema.parse(userData);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Invalid user data:', error, userData);
-      if (!user.value) user.value = null;
+      if (!user.value)
+        user.value = null;
     }
   }
 
@@ -131,7 +138,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchProfile(isAfterRefresh: boolean = false): Promise<User> {
     // Return existing user if we have one and not forcing refresh
-    if (user.value && !isAfterRefresh) return user.value;
+    if (user.value && !isAfterRefresh)
+      return user.value;
 
     // If already fetching profile, wait for that promise
     if (isFetchingProfile.value && profilePromise) {
@@ -156,21 +164,23 @@ export const useAuthStore = defineStore('auth', () => {
         const parsedUser = UserSchema.parse(profileData);
         user.value = parsedUser;
         return parsedUser;
-      } catch (error: unknown) {
+      }
+      catch (error: unknown) {
         if (
-          error &&
-          typeof error === 'object' &&
-          'response' in error &&
-          error.response &&
-          typeof error.response === 'object' &&
-          'status' in error.response &&
-          error.response.status === 401 &&
-          !isAfterRefresh
+          error
+          && typeof error === 'object'
+          && 'response' in error
+          && error.response
+          && typeof error.response === 'object'
+          && 'status' in error.response
+          && error.response.status === 401
+          && !isAfterRefresh
         ) {
           await logoutSilently();
         }
         throw error;
-      } finally {
+      }
+      finally {
         isFetchingProfile.value = false;
         profilePromise = null;
       }
@@ -193,9 +203,11 @@ export const useAuthStore = defineStore('auth', () => {
     const { $api } = useNuxtApp();
     try {
       await $api('/auth/logout', { method: 'POST' });
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Logout API call failed:', error);
-    } finally {
+    }
+    finally {
       await logoutSilently();
     }
   }

@@ -4,8 +4,12 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-[5rem]">
       <!-- Page Header -->
       <div v-motion-slide-visible-once-bottom class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Profile Management</h1>
-        <p class="text-gray-600 mt-2">Manage your account settings and preferences</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Profile Management
+        </h1>
+        <p class="text-gray-600 mt-2">
+          Manage your account settings and preferences
+        </p>
       </div>
 
       <!-- Navigation Tabs -->
@@ -14,8 +18,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            :class="[
-              'flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
+            class="flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap" :class="[
               activeTab === tab.id
                 ? 'border-red-700 text-red-700'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
@@ -30,7 +33,9 @@
 
       <!-- Loading and Error States -->
       <div v-if="loadingPage" class="text-center py-10">
-        <p class="text-gray-500">Loading profile...</p>
+        <p class="text-gray-500">
+          Loading profile...
+        </p>
         <!-- You can add a spinner here -->
       </div>
       <div
@@ -85,14 +90,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useAuthStore, type User } from '~/stores/auth';
+import type { User } from '~/stores/auth';
+import { computed, onMounted, ref, watch } from 'vue';
 
-// Import new components
-import ProfileOverviewTab from '~/components/profile/ProfileOverviewTab.vue';
 import DisplayNameTab from '~/components/profile/DisplayNameTab.vue';
 import PasswordTab from '~/components/profile/PasswordTab.vue';
+// Import new components
+import ProfileOverviewTab from '~/components/profile/ProfileOverviewTab.vue';
 import ProfilePictureTab from '~/components/profile/ProfilePictureTab.vue';
+import { useAuthStore } from '~/stores/auth';
 
 interface Achievement {
   id: string;
@@ -149,49 +155,51 @@ const tabs = [
 ];
 
 // Notification utility (placeholder)
-const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+function showNotification(message: string, type: 'success' | 'error' = 'success') {
   // Replace with your actual notification system (e.g., a toast library)
   if (type === 'error') {
     console.error(`NOTIFICATION: ${message}`);
     pageError.value = message; // Display error on page if desired
-  } else {
+  }
+  else {
     console.log(`NOTIFICATION: ${message}`);
     pageError.value = null; // Clear previous errors on success
   }
   // Auto-clear error message after a few seconds
   if (type === 'error') {
     setTimeout(() => {
-      if (pageError.value === message) pageError.value = null;
+      if (pageError.value === message)
+        pageError.value = null;
     }, 5000);
   }
-};
+}
 
 // Event Handlers from child components
-const handleDisplayNameUpdated = (newName: string) => {
+function handleDisplayNameUpdated(newName: string) {
   showNotification(`Display name updated to: ${newName}`, 'success');
   // profileData (auth.user) is already updated by the child component via store
-};
+}
 
-const handlePasswordUpdated = () => {
+function handlePasswordUpdated() {
   showNotification('Password updated successfully', 'success');
-};
+}
 
-const handleProfileImageUpdated = () => {
+function handleProfileImageUpdated() {
   showNotification('Profile picture updated successfully', 'success');
   // profileData (auth.user) is already updated by the child component via store
-};
+}
 
-const handleProfileImageDeleted = () => {
+function handleProfileImageDeleted() {
   showNotification('Profile picture deleted successfully', 'success');
   // profileData (auth.user) is already updated by the child component via store
-};
+}
 
-const handleProfileUpdateError = (message: string) => {
+function handleProfileUpdateError(message: string) {
   showNotification(message, 'error');
-};
+}
 
 // Fetch initial page data or ensure auth.user is populated
-const fetchPageProfileData = async () => {
+async function fetchPageProfileData() {
   loadingPage.value = true;
   pageError.value = null;
   try {
@@ -207,7 +215,8 @@ const fetchPageProfileData = async () => {
       console.warn('User is authenticated but user data is null. Attempting fetch.');
       await auth.fetchProfile();
     }
-  } catch (err: unknown) {
+  }
+  catch (err: unknown) {
     const error = err as Error & {
       data?: { detail?: string };
       response?: { status: number };
@@ -218,10 +227,11 @@ const fetchPageProfileData = async () => {
     if (error.response?.status === 401 || error.message?.includes('Authentication required')) {
       navigateTo('/login?redirect=/profile-management');
     }
-  } finally {
+  }
+  finally {
     loadingPage.value = false;
   }
-};
+}
 
 onMounted(async () => {
   if (!auth.isAuthenticated) {
@@ -239,7 +249,7 @@ watch(
       // Ensure this runs client-side
       navigateTo('/login');
     }
-  }
+  },
 );
 
 // If profileData becomes null while on this page (e.g. after a failed token refresh elsewhere)
@@ -251,6 +261,6 @@ watch(
       console.warn('Profile data became null unexpectedly. Re-fetching.');
       fetchPageProfileData();
     }
-  }
+  },
 );
 </script>

@@ -7,7 +7,7 @@
     <div class="relative w-full h-4 overflow-hidden rounded-lg bg-gray-200">
       <div
         class="absolute top-0 left-0 h-full bg-[#9C1313] transition-all duration-300"
-        :style="{ width: percentage + '%' }"
+        :style="{ width: `${percentage}%` }"
       />
     </div>
   </div>

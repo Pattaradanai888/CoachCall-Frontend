@@ -3,7 +3,9 @@
   <div class="bg-white p-5">
     <div class="flex justify-between">
       <div>
-        <h1 class="text-2xl font-bold">Template</h1>
+        <h1 class="text-2xl font-bold">
+          Template
+        </h1>
       </div>
       <div class="flex">
         <button
@@ -11,7 +13,9 @@
         >
           <div class="flex items-center justify-center">
             <Icon name="mdi:plus" size="1rem" class="mr-1" />
-            <p class="text-sm">Create Template</p>
+            <p class="text-sm">
+              Create Template
+            </p>
           </div>
         </button>
         <div class="ml-2">
@@ -22,7 +26,7 @@
               type="text"
               placeholder="Search..."
               class="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:border-[#9C1313] transition duration-300 ease-in-out"
-            />
+            >
             <!-- Magnifying Glass Icon -->
             <Icon
               name="mdi:magnify"
@@ -38,7 +42,9 @@
       <div v-for="(template, index) in paginatedTemplates" :key="index" class="shadow-lg px-4">
         <div class="flex justify-between">
           <div>
-            <h1 class="font-bold">{{ template.title }}</h1>
+            <h1 class="font-bold">
+              {{ template.title }}
+            </h1>
             <p>{{ template.description }}</p>
           </div>
           <div>
@@ -82,18 +88,26 @@
                 v-if="isOpen[index]"
                 class="fixed inset-0 bg-transparent z-0"
                 @click="isOpen[index] = false"
-              ></div>
+              />
             </div>
           </div>
         </div>
         <div class="flex mt-2">
           <div class="flex bg-[#F1F5F9] px-2 rounded-lg mr-1">
-            <p class="font-bold text-sm">Difficulty:</p>
-            <p class="text-sm ml-1">{{ template.difficulty }}</p>
+            <p class="font-bold text-sm">
+              Difficulty:
+            </p>
+            <p class="text-sm ml-1">
+              {{ template.difficulty }}
+            </p>
           </div>
           <div class="flex bg-[#F1F5F9] px-2 rounded-lg">
-            <p class="font-bold text-sm">Time:</p>
-            <p class="text-sm ml-1">{{ template.time }}</p>
+            <p class="font-bold text-sm">
+              Time:
+            </p>
+            <p class="text-sm ml-1">
+              {{ template.time }}
+            </p>
           </div>
         </div>
         <div class="flex justify-center my-3">
@@ -138,7 +152,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watchEffect } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 
 // Define interface for Template
 interface Template {
@@ -198,43 +212,45 @@ const paginatedTemplates = computed(() => {
 });
 
 // Methods for pagination
-const goToPage = (page: number) => {
+function goToPage(page: number) {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
   }
-};
-const prevPage = () => {
+}
+function prevPage() {
   if (currentPage.value > 1) {
     currentPage.value--;
   }
-};
-const nextPage = () => {
+}
+function nextPage() {
   if (currentPage.value < totalPages.value) {
     currentPage.value++;
   }
-};
+}
 
 // Dropdown menu state
 const isOpen = ref<boolean[]>([]);
 
 // Initialize isOpen array whenever templates change
 watchEffect(() => {
-  isOpen.value = Array(templates.value.length).fill(false);
+  isOpen.value = Array.from({ length: templates.value.length }).fill(false);
 });
 
-const toggle = (index: number) => {
+function toggle(index: number) {
   isOpen.value[index] = !isOpen.value[index];
-};
+}
 
-const handleEdit = (template: Template) => {
+function handleEdit(template: Template) {
   console.log('Edit clicked:', template);
-  const index = templates.value.findIndex((t) => t === template);
-  if (index !== -1) isOpen.value[index] = false;
-};
+  const index = templates.value.findIndex(t => t === template);
+  if (index !== -1)
+    isOpen.value[index] = false;
+}
 
-const handleRemove = (template: Template) => {
+function handleRemove(template: Template) {
   console.log('Remove clicked:', template);
-  const index = templates.value.findIndex((t) => t === template);
-  if (index !== -1) isOpen.value[index] = false;
-};
+  const index = templates.value.findIndex(t => t === template);
+  if (index !== -1)
+    isOpen.value[index] = false;
+}
 </script>

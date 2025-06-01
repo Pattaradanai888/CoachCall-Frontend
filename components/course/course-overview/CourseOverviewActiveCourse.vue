@@ -2,7 +2,9 @@
   <div class="bg-white p-5">
     <!-- Header + Tabs -->
     <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-bold">Courses Overview</h1>
+      <h1 class="text-2xl font-bold">
+        Courses Overview
+      </h1>
       <div
         ref="tabContainer"
         class="relative flex bg-gray-100 rounded-lg p-1 overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full"
@@ -11,7 +13,7 @@
         <div
           class="absolute top-1 bottom-1 bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out"
           :style="{ left: `${indicatorLeft}px`, width: `${indicatorWidth}px` }"
-        ></div>
+        />
 
         <!-- Tab Buttons -->
         <button
@@ -49,8 +51,12 @@
         <!-- Title / Description + “⋯” Menu -->
         <div class="flex justify-between">
           <div>
-            <h1 class="font-bold">{{ course.title }}</h1>
-            <p class="text-sm text-gray-600">{{ course.description }}</p>
+            <h1 class="font-bold">
+              {{ course.title }}
+            </h1>
+            <p class="text-sm text-gray-600">
+              {{ course.description }}
+            </p>
           </div>
           <div class="relative inline-block text-left">
             <!-- Trigger Button -->
@@ -94,7 +100,7 @@
               v-if="openMenuFor === course.id"
               class="fixed inset-0 bg-transparent z-0"
               @click="openMenuFor = null"
-            ></div>
+            />
           </div>
         </div>
 
@@ -112,11 +118,15 @@
         <!-- Start / End Dates -->
         <div class="flex justify-between mt-2 text-sm text-gray-700">
           <div class="flex">
-            <p class="font-bold mr-1">Start:</p>
+            <p class="font-bold mr-1">
+              Start:
+            </p>
             <p>{{ course.startDate }}</p>
           </div>
           <div class="flex">
-            <p class="font-bold mr-1">End:</p>
+            <p class="font-bold mr-1">
+              End:
+            </p>
             <p>{{ course.endDate }}</p>
           </div>
         </div>
@@ -177,16 +187,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
-/** Tab definitions **/
+/** Tab definitions */
 const tabs = [
   { label: 'Active', status: 'Active' },
   { label: 'Archive', status: 'Archive' },
 ];
 const activeTab = ref<string>('Active');
 
-/** Example course data array **/
+/** Example course data array */
 interface Course {
   id: number;
   image: string;
@@ -269,12 +279,12 @@ const courses = ref<Course[]>([
   // …add more objects as needed
 ]);
 
-/** Filter courses based on the active tab **/
+/** Filter courses based on the active tab */
 const filteredCourses = computed(() => {
-  return courses.value.filter((c) => c.status === activeTab.value);
+  return courses.value.filter(c => c.status === activeTab.value);
 });
 
-/** PAGINATION SETUP **/
+/** PAGINATION SETUP */
 // How many courses per page
 const itemsPerPage = 3;
 // Current page (1-based)
@@ -297,40 +307,43 @@ const paginatedCourses = computed(() => {
 
 // Compute “Showing X–Y of Z” indexes
 const startIndex = computed(() => {
-  if (filteredCourses.value.length === 0) return 0;
+  if (filteredCourses.value.length === 0)
+    return 0;
   return (currentPage.value - 1) * itemsPerPage + 1;
 });
 const endIndex = computed(() =>
-  Math.min(currentPage.value * itemsPerPage, filteredCourses.value.length)
+  Math.min(currentPage.value * itemsPerPage, filteredCourses.value.length),
 );
 
 // Methods to navigate pages
-const goToPage = (page: number) => {
+function goToPage(page: number) {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
   }
-};
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--;
-};
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++;
-};
+}
+function prevPage() {
+  if (currentPage.value > 1)
+    currentPage.value--;
+}
+function nextPage() {
+  if (currentPage.value < totalPages.value)
+    currentPage.value++;
+}
 
-/** TAB‐INDICATOR LOGIC **/
+/** TAB‐INDICATOR LOGIC */
 const tabRefs = ref<HTMLElement[]>([]);
 const tabContainer = ref<HTMLElement | null>(null);
 const indicatorLeft = ref<number>(0);
 const indicatorWidth = ref<number>(0);
 
-const setActiveTab = (label: string) => {
+function setActiveTab(label: string) {
   activeTab.value = label;
   updateIndicator();
-};
+}
 
-const updateIndicator = () => {
+function updateIndicator() {
   nextTick(() => {
-    const index = tabs.findIndex((t) => t.label === activeTab.value);
+    const index = tabs.findIndex(t => t.label === activeTab.value);
     const el = tabRefs.value[index];
     if (el && tabContainer.value) {
       const containerRect = tabContainer.value.getBoundingClientRect();
@@ -339,7 +352,7 @@ const updateIndicator = () => {
       indicatorWidth.value = elRect.width;
     }
   });
-};
+}
 
 onMounted(() => {
   updateIndicator();
@@ -348,23 +361,23 @@ onMounted(() => {
   }
 });
 
-/** DROPDOWN MENU STATE **/
+/** DROPDOWN MENU STATE */
 const openMenuFor = ref<number | null>(null);
-const toggleMenu = (courseId: number) => {
+function toggleMenu(courseId: number) {
   openMenuFor.value = openMenuFor.value === courseId ? null : courseId;
-};
+}
 
-const handleEdit = (courseId: number) => {
+function handleEdit(courseId: number) {
   console.log('Edit clicked for course', courseId);
   openMenuFor.value = null;
-};
-const handleRemove = (courseId: number) => {
+}
+function handleRemove(courseId: number) {
   console.log('Remove clicked for course', courseId);
   openMenuFor.value = null;
-};
-const handleDetails = (courseId: number) => {
+}
+function handleDetails(courseId: number) {
   console.log('See details for course', courseId);
-};
+}
 </script>
 
 <style scoped></style>

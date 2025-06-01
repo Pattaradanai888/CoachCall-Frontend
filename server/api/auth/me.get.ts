@@ -1,5 +1,5 @@
 // server/api/auth/me.get.ts
-import { defineEventHandler, getHeader, createError, useRuntimeConfig } from '#imports';
+import { createError, defineEventHandler, getHeader, useRuntimeConfig } from '#imports';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -19,7 +19,8 @@ export default defineEventHandler(async (event) => {
       },
     });
     return profileData;
-  } catch (error: unknown) {
+  }
+  catch (error: unknown) {
     const errorResponse = error as {
       response?: { status?: number };
       data?: { detail?: string };

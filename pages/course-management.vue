@@ -6,7 +6,9 @@
       <div class="w-full mx-7 lg:mx-0">
         <div v-motion-slide-visible-once-top class="flex justify-between mb-5">
           <div>
-            <h1 class="text-3xl font-bold">Course Management</h1>
+            <h1 class="text-3xl font-bold">
+              Course Management
+            </h1>
             <p>Manage your athletes and track their progress</p>
           </div>
           <div>

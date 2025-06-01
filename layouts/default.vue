@@ -2,8 +2,7 @@
   <div class="min-h-screen flex flex-col bg-[#FAFAFA]">
     <!-- Header -->
     <header
-      :class="[
-        'fixed top-0 left-0 right-0 z-50',
+      class="fixed top-0 left-0 right-0 z-50" :class="[
         isHeaderTransparent ? 'bg-transparent' : 'bg-white shadow-sm border-b border-gray-200',
       ]"
     >
@@ -16,7 +15,7 @@
             CC
           </div>
           <span
-            :class="['text-lg font-semibold', isHeaderTransparent ? 'text-white' : 'text-gray-900']"
+            class="text-lg font-semibold" :class="[isHeaderTransparent ? 'text-white' : 'text-gray-900']"
           >
             CoachCall
           </span>
@@ -42,8 +41,7 @@
                   />
                 </div>
                 <span
-                  :class="[
-                    'text-sm font-semibold',
+                  class="text-sm font-semibold" :class="[
                     isHeaderTransparent ? 'text-white' : 'text-gray-900',
                   ]"
                 >
@@ -74,12 +72,10 @@
             <div v-else>
               <NuxtLink
                 to="/login"
-                :class="[
-                  'text-sm font-semibold',
+                class="text-sm font-semibold transition" :class="[
                   isHeaderTransparent
                     ? 'text-white hover:text-gray-300'
                     : 'text-gray-900 hover:text-[#991B1B]',
-                  'transition',
                 ]"
               >
                 Log in <span aria-hidden="true">→</span>
@@ -155,7 +151,9 @@
                     <p class="font-medium text-gray-900">
                       {{ user?.fullname || 'User' }}
                     </p>
-                    <p class="text-sm text-gray-500">{{ user?.email || '' }}</p>
+                    <p class="text-sm text-gray-500">
+                      {{ user?.email || '' }}
+                    </p>
                   </div>
                 </div>
 
@@ -197,17 +195,23 @@
     <footer class="bg-[#FAFAFA] border-t border-gray-200 text-center text-sm text-gray-500 py-6">
       <p>© 2025 CoachCall. All rights reserved.</p>
       <div class="mt-2 space-x-4">
-        <NuxtLink to="#" class="hover:underline">Terms</NuxtLink>
-        <NuxtLink to="#" class="hover:underline">Privacy</NuxtLink>
-        <NuxtLink to="#" class="hover:underline">Contact</NuxtLink>
+        <NuxtLink to="#" class="hover:underline">
+          Terms
+        </NuxtLink>
+        <NuxtLink to="#" class="hover:underline">
+          Privacy
+        </NuxtLink>
+        <NuxtLink to="#" class="hover:underline">
+          Contact
+        </NuxtLink>
       </div>
     </footer>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from '#app';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
 const auth = useAuthStore();
@@ -232,7 +236,7 @@ const isLandingPage = computed(() => route.path === '/');
 const isHeaderTransparent = computed(() => isLandingPage.value && !isScrolled.value);
 
 // Handle scroll event
-const handleScroll = () => {
+function handleScroll() {
   // The background image section has h-screen (100vh)
   // We want the navbar to stay transparent while any part of it overlaps with the bg image
   const navbar = document.querySelector('header');
@@ -241,39 +245,40 @@ const handleScroll = () => {
   // Switch to white navbar when we've scrolled past the background image section
   const bgImageHeight = window.innerHeight; // h-screen = 100vh
   isScrolled.value = window.scrollY >= bgImageHeight - navbarHeight;
-};
+}
 
 // Toggle profile dropdown
-const toggleProfileMenu = (event: Event) => {
+function toggleProfileMenu(event: Event) {
   event.stopPropagation();
   isProfileMenuOpen.value = !isProfileMenuOpen.value;
-};
+}
 
 // Handle logout
-const handleLogout = async () => {
+async function handleLogout() {
   try {
     await auth.logout();
     isProfileMenuOpen.value = false;
     isMobileMenuOpen.value = false;
     await router.push('/');
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Logout failed:', error);
   }
-};
+}
 
 // Close profile menu when clicking outside
-const handleClickOutside = (event: MouseEvent) => {
+function handleClickOutside(event: MouseEvent) {
   const profileMenu = document.querySelector('.profile-menu');
   const profileButton = document.querySelector('.profile-button');
   if (
-    profileMenu &&
-    !profileMenu.contains(event.target as Node) &&
-    profileButton &&
-    !profileButton.contains(event.target as Node)
+    profileMenu
+    && !profileMenu.contains(event.target as Node)
+    && profileButton
+    && !profileButton.contains(event.target as Node)
   ) {
     isProfileMenuOpen.value = false;
   }
-};
+}
 
 onMounted(() => {
   if (import.meta.client) {

@@ -3,7 +3,9 @@
     <div v-motion-slide-visible-once-bottom class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
       <div class="flex items-center mb-6">
         <Icon name="mdi:lock" class="w-6 h-6 text-gray-700 mr-2 flex-shrink-0" />
-        <h3 class="text-xl font-semibold text-gray-900">Change Password</h3>
+        <h3 class="text-xl font-semibold text-gray-900">
+          Change Password
+        </h3>
       </div>
       <p class="text-gray-600 mb-6 text-sm sm:text-base">
         Update your password to keep your account secure.
@@ -19,7 +21,7 @@
               placeholder="Enter current password"
               autocomplete="current-password"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
-            />
+            >
             <button
               type="button"
               class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
@@ -40,7 +42,7 @@
               placeholder="Enter new password"
               autocomplete="new-password"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
-            />
+            >
             <button
               type="button"
               class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
@@ -61,7 +63,7 @@
               placeholder="Confirm New Password"
               autocomplete="new-password"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
-            />
+            >
             <button
               type="button"
               class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
@@ -80,7 +82,9 @@
         </div>
 
         <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-          <h4 class="font-medium text-gray-900 mb-2">Password Requirements:</h4>
+          <h4 class="font-medium text-gray-900 mb-2">
+            Password Requirements:
+          </h4>
           <ul class="text-sm space-y-1">
             <li
               :class="passwordValidation.length ? 'text-green-600' : 'text-red-600'"
@@ -148,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 const emit = defineEmits<{
   (e: 'updated'): void;
@@ -184,18 +188,20 @@ const passwordValidation = computed(() => {
 
 const isPasswordFormValid = computed(() => {
   return (
-    Object.values(passwordValidation.value).every(Boolean) &&
-    passwordForm.new === passwordForm.confirm &&
-    passwordForm.current.length > 0 &&
-    passwordForm.new.length > 0 // Ensure new password is not empty
+    Object.values(passwordValidation.value).every(Boolean)
+    && passwordForm.new === passwordForm.confirm
+    && passwordForm.current.length > 0
+    && passwordForm.new.length > 0 // Ensure new password is not empty
   );
 });
 
-const submitUpdatePassword = async () => {
+async function submitUpdatePassword() {
   if (!isPasswordFormValid.value) {
     let errorMsg = 'Please ensure all password requirements are met.';
-    if (passwordForm.new !== passwordForm.confirm) errorMsg = 'New passwords do not match.';
-    if (!passwordForm.current) errorMsg = 'Current password is required.';
+    if (passwordForm.new !== passwordForm.confirm)
+      errorMsg = 'New passwords do not match.';
+    if (!passwordForm.current)
+      errorMsg = 'Current password is required.';
     emit('error', errorMsg);
     return;
   }
@@ -215,14 +221,16 @@ const submitUpdatePassword = async () => {
     passwordForm.new = '';
     passwordForm.confirm = '';
     Object.keys(showPasswords).forEach(
-      (key) => (showPasswords[key as keyof typeof showPasswords] = false)
+      key => (showPasswords[key as keyof typeof showPasswords] = false),
     );
     emit('updated');
-  } catch {
+  }
+  catch {
     const message = 'Failed to update password. Check current password.';
     emit('error', message);
-  } finally {
+  }
+  finally {
     loading.value = false;
   }
-};
+}
 </script>

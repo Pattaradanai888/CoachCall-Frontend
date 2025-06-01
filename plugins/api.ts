@@ -30,7 +30,8 @@ export default defineNuxtPlugin((nuxtApp) => {
         // Check if body is URLSearchParams (for form data like login)
         if (options.body instanceof URLSearchParams) {
           headers.set('Content-Type', 'application/x-www-form-urlencoded');
-        } else if (options.body) {
+        }
+        else if (options.body) {
           headers.set('Content-Type', 'application/json');
         }
       }

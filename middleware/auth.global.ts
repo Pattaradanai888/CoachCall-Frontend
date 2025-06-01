@@ -1,12 +1,12 @@
+import type { RouteLocationNormalized } from 'vue-router';
 // middleware/auth.global.ts
 import {
   defineNuxtRouteMiddleware,
   navigateTo,
-  useRequestHeaders,
   useAuthStore,
   useNuxtApp,
+  useRequestHeaders,
 } from '#imports';
-import type { RouteLocationNormalized } from 'vue-router';
 
 let serverAuthPromise: Promise<void> | null = null;
 
@@ -43,8 +43,10 @@ export default defineNuxtRouteMiddleware(
       // Hydrate from payload if present
       const authPayload = nuxtApp.payload.auth as AuthPayload | undefined;
       if (authPayload?.accessToken && authPayload?.user) {
-        if (!auth.accessToken) auth.accessToken = authPayload.accessToken;
-        if (!auth.user) auth.user = authPayload.user;
+        if (!auth.accessToken)
+          auth.accessToken = authPayload.accessToken;
+        if (!auth.user)
+          auth.user = authPayload.user;
       }
 
       // If no token and not yet processed, attempt refresh+profile
@@ -54,22 +56,24 @@ export default defineNuxtRouteMiddleware(
         }
         try {
           await serverAuthPromise;
-        } finally {
+        }
+        finally {
           serverAuthPromise = null;
         }
       }
       // If token exists but user missing and not yet processed, fetch profile
       else if (
-        auth.accessToken &&
-        !auth.user &&
-        !(nuxtApp.payload.auth as AuthPayload)?.processed
+        auth.accessToken
+        && !auth.user
+        && !(nuxtApp.payload.auth as AuthPayload)?.processed
       ) {
         if (!serverAuthPromise) {
           serverAuthPromise = fetchProfileAndSetPayload(auth, nuxtApp);
         }
         try {
           await serverAuthPromise;
-        } finally {
+        }
+        finally {
           serverAuthPromise = null;
         }
       }
@@ -82,12 +86,12 @@ export default defineNuxtRouteMiddleware(
     if (import.meta.client) {
       return handleClientRouteGuarding(to, auth);
     }
-  }
+  },
 );
 
 async function performServerAuth(
   auth: ReturnType<typeof useAuthStore>,
-  nuxtApp: ReturnType<typeof useNuxtApp>
+  nuxtApp: ReturnType<typeof useNuxtApp>,
 ): Promise<void> {
   const headers = useRequestHeaders(['cookie']);
 
@@ -117,7 +121,8 @@ async function performServerAuth(
       user: JSON.parse(JSON.stringify(auth.user)),
       processed: true,
     } satisfies AuthPayload;
-  } catch {
+  }
+  catch {
     // If refresh fails, clear auth state
     nuxtApp.payload.auth = {
       accessToken: null,
@@ -129,7 +134,7 @@ async function performServerAuth(
 
 async function fetchProfileAndSetPayload(
   auth: ReturnType<typeof useAuthStore>,
-  nuxtApp: ReturnType<typeof useNuxtApp>
+  nuxtApp: ReturnType<typeof useNuxtApp>,
 ): Promise<void> {
   try {
     const profileData = await $fetch('/api/auth/me', {
@@ -142,7 +147,8 @@ async function fetchProfileAndSetPayload(
       user: JSON.parse(JSON.stringify(auth.user)),
       processed: true,
     } satisfies AuthPayload;
-  } catch {
+  }
+  catch {
     // If profile fetch fails, clear auth state
     auth.accessToken = null;
     auth.user = null;
@@ -156,7 +162,7 @@ async function fetchProfileAndSetPayload(
 
 function handleServerRouteGuarding(
   to: RouteLocationNormalized,
-  auth: ReturnType<typeof useAuthStore>
+  auth: ReturnType<typeof useAuthStore>,
 ) {
   const publicRoutes = ['/login', '/register'];
 
@@ -167,15 +173,15 @@ function handleServerRouteGuarding(
     return navigateTo('/dashboard', { replace: true });
   }
   if (!publicRoutes.includes(to.path) && to.path !== '/' && !auth.isAuthenticated) {
-    const redirectQuery =
-      to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
+    const redirectQuery
+      = to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
     return navigateTo(`/login${redirectQuery}`, { replace: true });
   }
 }
 
 async function handleClientRouteGuarding(
   to: RouteLocationNormalized,
-  auth: ReturnType<typeof useAuthStore>
+  auth: ReturnType<typeof useAuthStore>,
 ) {
   const publicRoutes = ['/login', '/register'];
 
@@ -198,8 +204,8 @@ async function handleClientRouteGuarding(
   }
 
   if (!auth.isAuthenticated) {
-    const redirectQuery =
-      to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
+    const redirectQuery
+      = to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
     if (auth.isInitialized) {
       return navigateTo(`/login${redirectQuery}`, { replace: true });
     }
@@ -209,7 +215,8 @@ async function handleClientRouteGuarding(
         if (!auth.isAuthenticated) {
           return navigateTo(`/login${redirectQuery}`, { replace: true });
         }
-      } catch {
+      }
+      catch {
         return navigateTo(`/login${redirectQuery}`, { replace: true });
       }
     }
