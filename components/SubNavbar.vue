@@ -43,7 +43,7 @@ const navItems = [
     route: '/dashboard',
   },
   { id: 'course', label: 'Course', icon: 'mdi:book-open-variant', route: 'course-management' },
-  { id: 'athlete', label: 'Athlete', icon: 'mdi:account', route: '#' },
+  { id: 'athlete', label: 'Athlete', icon: 'mdi:account', route: 'athlete-management' },
   {
     id: 'leaderboard',
     label: 'Leaderboard',

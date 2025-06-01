@@ -1,3 +1,4 @@
+// plugins/chart.js
 import Vue from 'vue';
 import { Bar } from 'vue-chartjs';
 
