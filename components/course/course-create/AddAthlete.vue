@@ -96,9 +96,7 @@
           class="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="previousPage"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
+          <Icon name="mdi:arrow-left" size="1rem" />
         </button>
 
         <button
@@ -119,9 +117,7 @@
           class="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="nextPage"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
+          <Icon name="mdi:arrow-right" size="1rem" />
         </button>
       </div>
     </div>
@@ -131,12 +127,20 @@
 <script>
 export default {
   name: 'AddAthletesToCourse',
+  props: {
+    athleteData: {
+      type: Array,
+      default: () => [],
+    },
+  },
   data() {
     return {
       searchQuery: '',
       currentPage: 1,
       itemsPerPage: 8,
-      selectedAthletes: [],
+      selectedAthletes: this.athleteData.map(athlete => athlete.id), // Initialize with existing athlete IDs
+      showFilter: false,
+      filterDifficulty: '',
       athletes: [
         { id: 1, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
         { id: 2, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
@@ -155,13 +159,19 @@ export default {
   },
   computed: {
     filteredAthletes() {
-      return this.athletes.filter(athlete =>
-        athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-        || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()),
-      ).slice(
-        (this.currentPage - 1) * this.itemsPerPage,
-        this.currentPage * this.itemsPerPage,
-      );
+      const filtered = this.athletes;
+      if (this.filterDifficulty) {
+        // Add filtering logic if difficulty is used (currently not in athletes data)
+      }
+      return filtered
+        .filter(athlete =>
+          athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+          || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()),
+        )
+        .slice(
+          (this.currentPage - 1) * this.itemsPerPage,
+          this.currentPage * this.itemsPerPage,
+        );
     },
     totalAthletes() {
       return this.athletes.filter(athlete =>
@@ -182,7 +192,6 @@ export default {
       const pages = [];
       const start = Math.max(1, this.currentPage - 1);
       const end = Math.min(this.totalPages, this.currentPage + 1);
-
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
@@ -192,6 +201,12 @@ export default {
   watch: {
     searchQuery() {
       this.currentPage = 1; // Reset to first page when searching
+    },
+    athleteData: {
+      handler(newData) {
+        this.selectedAthletes = newData.map(athlete => athlete.id);
+      },
+      deep: true,
     },
   },
   methods: {
@@ -217,10 +232,12 @@ export default {
     goToPage(page) {
       this.currentPage = page;
     },
+    toggleFilter() {
+      this.showFilter = !this.showFilter;
+    },
+    getData() {
+      return this.athletes.filter(athlete => this.selectedAthletes.includes(athlete.id));
+    },
   },
 };
 </script>
-
-<style scoped>
-/* Additional custom styles if needed */
-</style>

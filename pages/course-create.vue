@@ -5,7 +5,15 @@
         Create Your Course
       </h1>
       <StageProgressBar :current-step="currentStep" />
-      <component :is="currentStageComponent" />
+      <component
+        :is="currentStageComponent"
+        ref="currentComponent"
+        :course-data="courseData"
+        :session-data="sessionData"
+        :athlete-data="athleteData"
+        @edit-step="goToStep"
+        @publish-course="handlePublish"
+      />
       <div class="mt-4">
         <button
           v-if="currentStep > 1"
@@ -45,6 +53,9 @@ export default {
     return {
       currentStep: 1,
       totalSteps: 4,
+      courseData: {},
+      sessionData: [],
+      athleteData: [],
     };
   },
   computed: {
@@ -61,6 +72,19 @@ export default {
   methods: {
     goToNextStep() {
       if (this.currentStep < this.totalSteps) {
+        const currentComponent = this.$refs.currentComponent;
+        if (currentComponent && currentComponent.getData) {
+          const data = currentComponent.getData();
+          if (this.currentStep === 1) {
+            this.courseData = data;
+          }
+          else if (this.currentStep === 2) {
+            this.sessionData = data;
+          }
+          else if (this.currentStep === 3) {
+            this.athleteData = data;
+          }
+        }
         this.currentStep++;
       }
     },
@@ -68,6 +92,29 @@ export default {
       if (this.currentStep > 1) {
         this.currentStep--;
       }
+    },
+    goToStep(step) {
+      if (step >= 1 && step <= this.totalSteps) {
+        this.currentStep = step;
+      }
+    },
+    handlePublish(data) {
+      Console.log('Publishing course with data:', data);
+      // Add backend API call here if needed
+      // fetch('/api/publish-course', {
+      //   method: 'POST',
+      //   body: JSON.stringify(data),
+      //   headers: { 'Content-Type': 'application/json' },
+      // }).then(response => {
+      //   console.log('Course published:', response);
+      //   this.resetForm();
+      // });
+    },
+    resetForm() {
+      this.currentStep = 1;
+      this.courseData = {};
+      this.sessionData = [];
+      this.athleteData = [];
     },
   },
 };

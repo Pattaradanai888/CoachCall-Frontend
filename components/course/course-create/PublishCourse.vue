@@ -30,7 +30,8 @@
           </p>
           <div class="text-sm text-gray-500">
             <span class="mr-6">Start: {{ courseData.startDate }}</span>
-            <span>End: {{ courseData.endDate }}</span>
+            <span v-if="courseData.endDate">End: {{ courseData.endDate }}</span>
+            <span v-else>End: Not specified</span>
           </div>
         </div>
         <div class="ml-6">
@@ -173,6 +174,7 @@ export default {
       default: () => [],
     },
   },
+  emits: ['publishCourse', 'editStep'],
   computed: {
     isDataComplete() {
       return this.courseData.title && this.sessionData.length > 0 && this.athleteData.length > 0;
@@ -180,21 +182,21 @@ export default {
   },
   methods: {
     publishCourse() {
-      this.$emit('publish-course', {
+      this.$emit('publishCourse', {
         courseInfo: this.courseData,
         sessions: this.sessionData,
         athletes: this.athleteData,
       });
-      console.log('Course published successfully!');
+      Console.log('Course published successfully!');
     },
     editCourseInfo() {
-      this.$emit('edit-step', 1);
+      this.$emit('editStep', 1);
     },
     editSessions() {
-      this.$emit('edit-step', 2);
+      this.$emit('editStep', 2);
     },
     editAthletes() {
-      this.$emit('edit-step', 3);
+      this.$emit('editStep', 3);
     },
   },
 };

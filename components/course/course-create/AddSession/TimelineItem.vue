@@ -39,7 +39,7 @@
       <div class="flex items-center space-x-2 no-drag">
         <button
           class="flex items-center text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
-          @click="$emit('edit-date', index)"
+          @click="$emit('editDate', index)"
         >
           <Icon name="mdi:calendar" size="1rem" class="mr-1" />
           <span class="hidden sm:inline">{{ formatDate(item.date) }}</span>
@@ -57,6 +57,7 @@
 
 <script setup>
 const props = defineProps(['item', 'index']);
+const emit = defineEmits(['editDate', 'remove']);
 
 function formatDate(date) {
   const d = new Date(date);

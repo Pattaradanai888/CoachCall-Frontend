@@ -178,10 +178,19 @@
 
 <script setup>
 import Sortable from 'sortablejs';
+import { computed, defineProps, onUnmounted, ref, watch } from 'vue';
 import SessionTemplate from './AddSession/SessionTemplate.vue';
 import TimelineItem from './AddSession/TimelineItem.vue';
 
-// --- Pagination Logic ---
+// ─── 1) Accept “sessionData” from parent ─────────────────────────────────────
+const props = defineProps({
+  sessionData: {
+    type: Array,
+    default: () => [],
+  },
+});
+
+// ─── Pagination state (unchanged) ────────────────────────────────────────────
 const currentPage = ref(1);
 const itemsPerPage = 5;
 const searchQuery = ref('');
@@ -200,30 +209,30 @@ const templates = ref([
 ]);
 
 const filteredTemplates = computed(() => {
-  let filtered = templates.value;
+  let arr = templates.value;
   if (searchQuery.value) {
-    filtered = filtered.filter(template =>
-      template.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-      || template.tags.some(tag => tag.toLowerCase().includes(searchQuery.value.toLowerCase())),
+    arr = arr.filter(t =>
+      t.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+      || t.tags.some(tag => tag.toLowerCase().includes(searchQuery.value.toLowerCase())),
     );
   }
   if (filterDifficulty.value) {
-    filtered = filtered.filter(template => template.difficulty === filterDifficulty.value);
+    arr = arr.filter(t => t.difficulty === filterDifficulty.value);
   }
-  return filtered;
+  return arr;
 });
 
 const totalItems = computed(() => filteredTemplates.value.length);
 const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage));
 const paginatedTemplates = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredTemplates.value.slice(start, end);
+  return filteredTemplates.value.slice(start, start + itemsPerPage);
 });
 
 function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value)
+  if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
+  }
 }
 function prevPage() {
   if (currentPage.value > 1)
@@ -237,20 +246,53 @@ function toggleFilter() {
   showFilter.value = !showFilter.value;
 }
 
-// --- Timeline and Drag-Drop Logic ---
+// ─── 2) Timeline / Drag‐Drop state ────────────────────────────────────────────
 const droppedItems = ref([]);
 const isDragOver = ref(false);
 const timelineContainer = ref(null);
 const dropZone = ref(null);
 let sortableInstance = null;
 
-const totalDuration = computed(() => {
-  return droppedItems.value.reduce((sum, item) => sum + item.duration, 0);
-});
+const totalDuration = computed(() =>
+  droppedItems.value.reduce((sum, item) => sum + item.duration, 0),
+);
 
+// ─── 3) Sync parent→child: if parent’s `sessionData` changes, overwrite droppedItems ─────────────
+watch(
+  () => props.sessionData,
+  (newSessions) => {
+    if (Array.isArray(newSessions) && newSessions.length) {
+      droppedItems.value = newSessions.map(item => ({
+        ...item,
+        date: typeof item.date === 'string' ? new Date(item.date) : item.date,
+      }));
+    }
+    else {
+      droppedItems.value = [];
+    }
+  },
+  { immediate: true },
+);
+
+// ─── 4) Sortable.js setup (same as before) ────────────────────────────────────
 watch(timelineContainer, (newContainer) => {
   if (newContainer) {
-    initSortable();
+    sortableInstance = Sortable.create(timelineContainer.value, {
+      animation: 200,
+      easing: 'cubic-bezier(1, 0, 0, 1)',
+      dragClass: 'timeline-drag',
+      ghostClass: 'timeline-ghost',
+      chosenClass: 'timeline-chosen',
+      handle: '.drag-handle',
+      filter: '.no-drag',
+      preventOnFilter: false,
+      onEnd: (evt) => {
+        if (evt.oldIndex !== evt.newIndex) {
+          const moved = droppedItems.value.splice(evt.oldIndex, 1)[0];
+          droppedItems.value.splice(evt.newIndex, 0, moved);
+        }
+      },
+    });
   }
   else if (sortableInstance) {
     sortableInstance.destroy();
@@ -258,55 +300,42 @@ watch(timelineContainer, (newContainer) => {
   }
 });
 
-function initSortable() {
-  sortableInstance = Sortable.create(timelineContainer.value, {
-    animation: 200,
-    easing: 'cubic-bezier(1, 0, 0, 1)',
-    dragClass: 'timeline-drag',
-    ghostClass: 'timeline-ghost',
-    chosenClass: 'timeline-chosen',
-    handle: '.drag-handle',
-    filter: '.no-drag',
-    preventOnFilter: false,
-    onEnd: (event) => {
-      if (event.oldIndex !== event.newIndex) {
-        const movedItem = droppedItems.value.splice(event.oldIndex, 1)[0];
-        droppedItems.value.splice(event.newIndex, 0, movedItem);
-      }
-    },
-  });
-}
-
-function handleDragOver(event) {
-  event.preventDefault();
+function handleDragOver(evt) {
+  evt.preventDefault();
   isDragOver.value = true;
 }
 function handleDragLeave() {
   isDragOver.value = false;
 }
-function handleDrop(event) {
-  event.preventDefault();
-  const templateData = event.dataTransfer.getData('template');
+function handleDrop(evt) {
+  evt.preventDefault();
+  const templateData = evt.dataTransfer.getData('template');
   if (templateData) {
     const template = JSON.parse(templateData);
     addItemToTimeline(template);
   }
   isDragOver.value = false;
 }
+
 function addItemToTimeline(template) {
-  const newItem = { ...template, date: new Date(), id: `${template.id}-${Date.now()}` };
+  const newItem = {
+    ...template,
+    date: new Date(),
+    id: `${template.id}-${Date.now()}`, // ensure unique key
+  };
   droppedItems.value.push(newItem);
 }
+
 function removeItem(index) {
-  const removedItem = droppedItems.value[index];
   droppedItems.value.splice(index, 1);
-  if (droppedItems.value.length === 0 && sortableInstance) {
+  if (!droppedItems.value.length && sortableInstance) {
     sortableInstance.destroy();
     sortableInstance = null;
   }
 }
+
 function clearTimeline() {
-  if (droppedItems.value.length > 0) {
+  if (droppedItems.value.length) {
     droppedItems.value = [];
     if (sortableInstance) {
       sortableInstance.destroy();
@@ -315,7 +344,7 @@ function clearTimeline() {
   }
 }
 
-// --- Date Picker Logic ---
+// ─── 5) Date Picker (unchanged) ──────────────────────────────────────────────
 const editingDateIndex = ref(null);
 const selectedDate = ref(null);
 
@@ -336,10 +365,22 @@ function saveDateSelection() {
   }
 }
 
-// --- Cleanup ---
+// ─── 6) Expose a `getData()` method so parent can pull droppedItems out ───────
+function getData() {
+  // If the parent wants only ISO-strings for date, you could do:
+  // return droppedItems.value.map(i => ({
+  //   ...i,
+  //   date: i.date.toISOString().split('T')[0]
+  // }));
+  return droppedItems.value;
+}
+defineExpose({ getData });
+
+// ─── 7) Cleanup on unmount (unchanged) ───────────────────────────────────────
 onUnmounted(() => {
-  if (sortableInstance)
+  if (sortableInstance) {
     sortableInstance.destroy();
+  }
 });
 </script>
 
