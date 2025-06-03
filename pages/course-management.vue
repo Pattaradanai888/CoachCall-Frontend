@@ -12,14 +12,16 @@
             <p>Manage your athletes and track their progress</p>
           </div>
           <div>
-            <button
-              class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-2 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto"
-            >
-              <div class="flex items-center justify-center">
-                <Icon name="mdi:plus" size="1.5rem" class="mr-2" />
-                <p>Create Course</p>
-              </div>
-            </button>
+            <NuxtLink to="course-create">
+              <button
+                class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-2 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto"
+              >
+                <div class="flex items-center justify-center">
+                  <Icon name="mdi:plus" size="1.5rem" class="mr-2" />
+                  <p>Create Course</p>
+                </div>
+              </button>
+            </NuxtLink>
           </div>
         </div>
 
