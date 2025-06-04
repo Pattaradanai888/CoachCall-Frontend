@@ -1,59 +1,86 @@
-//StageProgressBar
 <template>
-  <div class="bg-white p-4">
-    <!-- Progress Steps -->
-    <div class="relative flex items-center space-x-8 overflow-hidden">
-      <!-- Progress Line -->
-      <div
-        class="absolute left-0 top-1/2 w-full h-1 bg-gray-300"
-        :style="{ width: `${(currentStep / totalSteps) * 100}%` }"
-      />
+  <div class="">
+    <!-- Scrollable progress container -->
+    <div ref="container" class="relative overflow-x-auto pb-4 hide-scrollbar flex justify-center">
+      <!-- Progress Steps -->
+      <div class="steps relative flex min-w-max mx-auto">
+        <!-- Background Line (Full line) -->
+        <div class="progress absolute top-4 left-0 w-full h-[2px] bg-[#ACACA6] z-[-1]" />
 
-      <!-- Progress Circles -->
-      <template v-for="(step, index) in steps" :key="index">
+        <!-- Active Progress Line -->
         <div
-          :class="[
-            {
-              'border-red-500 bg-red-500': index < currentStep,
-              'border-red-500 bg-red-500 text-white': index === currentStep,
-              'border-gray-300 bg-white': index > currentStep,
+          v-motion="{
+            initial: { width: 0 },
+            enter: {
+              width: `${progressWidth}px`,
+              transition: { duration: 1000, ease: 'easeInOut' },
             },
-          ]"
-          :style="{ left: `${(index / (totalSteps - 1)) * 100}%` }"
-          class="absolute inset-y-0 w-6 h-6 rounded-full border-2 flex items-center justify-center"
-        >
-          <span v-if="index < currentStep" class="text-white text-xl font-bold">✓</span>
-        </div>
-      </template>
-    </div>
+          }"
+          class="percent absolute top-4 h-[2px] bg-[#9C1313] z-1"
+          :style="{ width: `${progressWidth}px`, left: `${progressLeft}px` }"
+        />
 
-    <!-- Step Labels -->
-    <div class="mt-2 flex space-x-8">
-      <span
-        v-for="(label, index) in labels"
-        :key="index"
-        class="text-sm font-medium" :class="[
-          {
-            'text-red-500': index === currentStep - 1, // Highlight only the current step
-            'text-gray-500': index < currentStep - 1, // Completed steps remain gray
-            'text-gray-500': index > currentStep - 1, // Pending steps remain gray
-          },
-        ]"
-      >
-        {{ label }}
-      </span>
+        <!-- Progress Circles -->
+        <div
+          v-for="(step, index) in steps"
+          :key="index"
+          ref="stepRefs"
+          class="relative z-10 flex flex-col items-center flex-shrink-0"
+          @click="$emit('stepClicked', index + 1)"
+        >
+          <div
+            class="step w-8 h-8 rounded-full flex items-center justify-center transition-all duration-1000"
+            :class="{
+              selected: index === currentStep - 1,
+              completed: index < currentStep - 1,
+            }"
+          >
+            <Icon
+              v-if="index < currentStep - 1"
+              v-motion="{
+                initial: { scale: 0 },
+                enter: {
+                  scale: 1,
+                  transition: { duration: 300, ease: 'easeOut' },
+                },
+              }"
+              name="mdi:check"
+              size="1.5rem"
+              class="text-white"
+            />
+            <span
+              v-else
+              class="font-bold"
+              :class="index === currentStep - 1 ? 'text-[#9C1313]' : 'text-[#ACACA6]'"
+            >
+              {{ index + 1 }}
+            </span>
+          </div>
+
+          <!-- Step Labels -->
+          <div
+            class="mt-3 text-sm font-medium transition-all duration-1000 whitespace-nowrap"
+            :class="index === currentStep - 1 ? 'text-[#9C1313]' : index < currentStep - 1 ? 'text-[#9C1313]' : 'text-[#ACACA6]'"
+          >
+            {{ labels[index] }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { useMotion } from '@vueuse/motion';
+import { nextTick, ref, watch } from 'vue';
+
 export default {
   props: {
     currentStep: {
       type: Number,
       required: true,
       validator(value) {
-        return value >= 0 && value <= 4; // Assuming 4 steps
+        return value >= 0 && value <= 4;
       },
     },
     totalSteps: {
@@ -69,14 +96,103 @@ export default {
       default: () => ['Course Information', 'Add Session', 'Add Athlete', 'Publish Course'],
     },
   },
+
+  emits: ['stepClicked'],
+
+  setup(props) {
+    const container = ref(null);
+    const stepRefs = ref([]);
+    const progressLeft = ref(0);
+    const progressWidth = ref(0);
+
+    const updateProgress = () => {
+      nextTick(() => {
+        if (
+          props.currentStep > 1
+          && stepRefs.value.length >= props.currentStep
+        ) {
+          const firstEl = stepRefs.value[0];
+          const currentEl = stepRefs.value[props.currentStep - 1];
+
+          const start = firstEl.offsetLeft + firstEl.offsetWidth / 2;
+          const end = currentEl.offsetLeft + currentEl.offsetWidth / 2;
+
+          progressLeft.value = start;
+          progressWidth.value = end - start;
+        }
+        else {
+          progressLeft.value = 0;
+          progressWidth.value = 0;
+        }
+      });
+    };
+
+    const scrollToCurrent = () => {
+      nextTick(() => {
+        if (!container.value || !stepRefs.value.length)
+          return;
+
+        const containerWidth = container.value.offsetWidth;
+        const currentStepIndex = props.currentStep - 1;
+        const currentStepEl = stepRefs.value[currentStepIndex];
+
+        if (!currentStepEl)
+          return;
+
+        const center = currentStepEl.offsetLeft + currentStepEl.offsetWidth / 2;
+        const scrollPosition = center - containerWidth / 2;
+
+        container.value.scrollTo({
+          left: scrollPosition,
+          behavior: 'smooth',
+        });
+      });
+    };
+
+    watch(
+      () => props.currentStep,
+      () => {
+        updateProgress();
+        scrollToCurrent();
+      },
+      { immediate: true },
+    );
+
+    return {
+      container,
+      stepRefs,
+      progressLeft,
+      progressWidth,
+    };
+  },
 };
 </script>
 
 <style scoped>
-/* Ensure the progress line is positioned correctly */
-.progress-line {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.min-w-max {
+  min-width: max-content;
+}
+.steps {
+  position: relative;
+  display: flex;
+  gap: 8rem;
+}
+.step {
+  background: #fff;
+  border: 2px solid #acaca6;
+}
+.step.selected {
+  border: 2px solid #9c1313;
+}
+.step.completed {
+  border: 2px solid #9c1313;
+  background: #9c1313;
 }
 </style>

@@ -5,7 +5,7 @@
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <!-- Left Column (Course Details) -->
-      <div>
+      <div v-motion-slide-visible-once-left :delay="200">
         <div class="mb-4">
           <h1 class="font-bold mb-2 text-gray-700">
             Title
@@ -166,6 +166,7 @@ export default {
       default: () => ({}),
     },
   },
+  emits: ['error'],
   data() {
     return {
       dragOver: false,
@@ -216,13 +217,13 @@ export default {
       // File type validation
       const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!validTypes.includes(file.type)) {
-        alert('Please select a valid image file (JPEG, PNG, WEBP, GIF)');
+        this.$emit('error', 'Please select a valid image file (JPEG, PNG, WEBP, GIF)');
         return;
       }
 
       // File size validation
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit');
+        this.$emit('error', 'File size exceeds 5MB limit');
         return;
       }
 
@@ -235,7 +236,7 @@ export default {
         title: this.form.title,
         description: this.form.description,
         startDate: this.form.startDate,
-        image: this.form.imagePreview || 'https://via.placeholder.com/150',
+        image: this.form.imagePreview || null,
       };
     },
   },

@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-3 gap-4">
     <!-- Left Panel: Session Template with Pagination -->
-    <div class="lg:col-span-1 bg-white py-2 px-10">
+    <div v-motion-slide-visible-once-left :delay="200" class="lg:col-span-1 bg-white py-2 px-10">
       <h2 class="text-xl font-bold mb-2">
         Session Template
       </h2>
@@ -86,7 +86,7 @@
     </div>
 
     <!-- Right Panel: Course Timeline -->
-    <div class="lg:col-span-2 bg-white py-2 px-10">
+    <div v-motion-slide-visible-once-right :delay="200" class="lg:col-span-2 bg-white py-2 px-10">
       <div class="flex justify-between items-center">
         <div>
           <h2 class="text-xl font-bold mb-1">

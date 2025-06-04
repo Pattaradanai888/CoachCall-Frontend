@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-8">
+  <div v-motion-slide-visible-once-top :delay="200" class="bg-white p-8 ">
     <!-- Header -->
     <div class="mb-8">
       <h2 class="text-2xl font-bold mb-2">
@@ -142,18 +142,6 @@
         No athletes added
       </div>
     </div>
-
-    <!-- Publish Button -->
-    <div class="flex justify-end items-center pt-6 border-t">
-      <button
-        class="px-6 py-2 bg-red-600 text-white rounded-lg font-medium"
-        :class="{ 'opacity-50 cursor-not-allowed': !isDataComplete, 'hover:bg-red-700': isDataComplete }"
-        :disabled="!isDataComplete"
-        @click="publishCourse"
-      >
-        Publish Course
-      </button>
-    </div>
   </div>
 </template>
 
@@ -174,21 +162,13 @@ export default {
       default: () => [],
     },
   },
-  emits: ['publishCourse', 'editStep'],
+  emits: ['editStep'],
   computed: {
     isDataComplete() {
       return this.courseData.title && this.sessionData.length > 0 && this.athleteData.length > 0;
     },
   },
   methods: {
-    publishCourse() {
-      this.$emit('publishCourse', {
-        courseInfo: this.courseData,
-        sessions: this.sessionData,
-        athletes: this.athleteData,
-      });
-      Console.log('Course published successfully!');
-    },
     editCourseInfo() {
       this.$emit('editStep', 1);
     },

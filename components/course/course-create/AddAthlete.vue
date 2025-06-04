@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-6">
+  <div v-motion-slide-visible-once-top :delay="200" class="bg-white p-6">
     <h2 class="text-2xl font-bold mb-6">
       Add Athletes to Course
     </h2>
@@ -104,7 +104,7 @@
           :key="page"
           class="px-3 py-1 rounded text-sm" :class="[
             currentPage === page
-              ? 'bg-red-600 text-white'
+              ? 'bg-[#9C1313] text-white'
               : 'text-gray-700 hover:bg-gray-100',
           ]"
           @click="goToPage(page)"
