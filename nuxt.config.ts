@@ -9,7 +9,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@samk-dev/nuxt-vcalendar',
   ],
-  plugins: ['@/plugins/chart.js'],
   devtools: { enabled: true },
   runtimeConfig: {
     // Private keys (only available on server-side)

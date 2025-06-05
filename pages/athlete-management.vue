@@ -55,6 +55,7 @@
 </template>
 
 <script lang="ts" setup>
+import type { Athlete } from '~/types/athlete';
 import AddAthleteModal from '~/components/athlete/AddAthleteModal.vue';
 import AthleteDetail from '~/components/athlete/AthleteDetail.vue';
 import AthleteList from '~/components/athlete/AthleteList.vue';
@@ -65,23 +66,6 @@ import StatsOverview from '~/components/athlete/StatOverview.vue';
 interface SkillScore {
   name: string;
   value: number;
-}
-
-interface Athlete {
-  id: number;
-  name: string;
-  position: string;
-  age: number;
-  height: number;
-  weight: number;
-  dominantHand: string;
-  dateOfBirth: string;
-  profileImageUrl: string | null;
-  group: string;
-  totalPowerRate: number;
-  developmentRate: number;
-  lastAssessmentDate: string | null;
-  skillScores: SkillScore[];
 }
 
 interface StatsData {
@@ -124,6 +108,10 @@ const latestAthlete = ref<Athlete>({
     { name: 'Basketball IQ', value: 7.8 },
     { name: 'Rebounding', value: 7.8 },
   ],
+  displayName: '',
+  experienceLevel: '',
+  jerseyNumber: null,
+  createdAt: '',
 });
 
 // (3) The list of all athletes (just a few placeholders)
@@ -150,6 +138,10 @@ const athleteList = ref<Athlete[]>([
       { name: 'Basketball IQ', value: 9.8 },
       { name: 'Rebounding', value: 8.0 },
     ],
+    displayName: '',
+    experienceLevel: '',
+    jerseyNumber: null,
+    createdAt: '',
   },
   {
     id: 2,
@@ -173,6 +165,10 @@ const athleteList = ref<Athlete[]>([
       { name: 'Basketball IQ', value: 9.4 },
       { name: 'Rebounding', value: 9.1 },
     ],
+    displayName: '',
+    experienceLevel: '',
+    jerseyNumber: null,
+    createdAt: '',
   },
   // …more placeholder athletes…
 ]);

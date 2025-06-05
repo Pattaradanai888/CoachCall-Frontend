@@ -63,24 +63,7 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps } from 'vue';
-
-interface Athlete {
-  id: number;
-  name: string;
-  position: string;
-  age: number;
-  height: number;
-  weight: number;
-  dominantHand: string;
-  dateOfBirth: string;
-  profileImageUrl: string | null;
-  group: string;
-  totalPowerRate: number;
-  developmentRate: number;
-  lastAssessmentDate: string | null;
-  skillScores: { name: string; value: number }[];
-}
+import type { Athlete } from '~/types/athlete';
 
 defineProps<{ athlete: Athlete }>();
 </script>

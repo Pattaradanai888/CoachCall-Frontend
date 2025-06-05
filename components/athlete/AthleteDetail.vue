@@ -99,29 +99,12 @@
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps } from 'vue';
+import type { Athlete } from '~/types/athlete';
 import SkillAssessment from './SkillAssessment.vue';
 
 interface SkillScore {
   name: string;
   value: number;
-}
-
-interface Athlete {
-  id: number;
-  name: string;
-  position: string;
-  age: number;
-  height: number;
-  weight: number;
-  dominantHand: string;
-  dateOfBirth: string;
-  profileImageUrl: string | null;
-  group: string;
-  totalPowerRate: number;
-  developmentRate: number;
-  lastAssessmentDate: string | null;
-  skillScores: SkillScore[];
 }
 
 defineProps<{
