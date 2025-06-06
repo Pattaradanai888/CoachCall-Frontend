@@ -63,8 +63,8 @@
 </template>
 
 <script setup>
-const props = defineProps(['item', 'index']);
-const emit = defineEmits(['editDate', 'remove']);
+const _props = defineProps(['item', 'index']);
+defineEmits(['editDate', 'remove']);
 
 function formatDate(date) {
   if (!date)

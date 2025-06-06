@@ -546,12 +546,6 @@ function saveDateSelection() {
   if (editingDateIndex.value !== null && selectedDate.value) {
     const selected = new Date(selectedDate.value);
 
-    // Check if date is within range
-    if (!isDateInRange(selected)) {
-      alert('Selected date must be within the course date range.');
-      return;
-    }
-
     droppedItems.value[editingDateIndex.value].date = selected;
     editingDateIndex.value = null;
     selectedDate.value = null;
