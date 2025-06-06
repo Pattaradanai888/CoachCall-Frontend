@@ -13,7 +13,7 @@
           <input
             v-model="form.title"
             type="text"
-            class="border-2 rounded-lg w-full shadow-lg p-2 h-8 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+            class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
             placeholder="Course title"
           >
         </div>
@@ -29,19 +29,33 @@
         </div>
         <div>
           <h1 class="font-bold mb-2 text-gray-700">
-            Start Date
+            Course Duration
           </h1>
-          <div class="relative">
-            <input
-              v-model="form.startDate"
-              type="date"
-              class="border-2 rounded-lg w-full shadow-lg p-2 h-8 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
-            >
-            <Icon
-              name="mdi:calendar-blank"
-              class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
-            />
-          </div>
+          <VDatePicker
+            v-model.range="form.dateRange"
+            mode="dateTime"
+            :masks="{ input: 'YYYY-MM-DD HH:mm' }"
+            class="w-full"
+          >
+            <template #default="{ inputValue, inputEvents }">
+              <div class="flex space-x-2">
+                <input
+                  :value="inputValue.start"
+                  placeholder="Start date & time"
+                  class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+                  readonly
+                  v-on="inputEvents.start"
+                >
+                <input
+                  :value="inputValue.end"
+                  placeholder="End date & time"
+                  class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+                  readonly
+                  v-on="inputEvents.end"
+                >
+              </div>
+            </template>
+          </VDatePicker>
         </div>
       </div>
 
@@ -173,7 +187,10 @@ export default {
       form: {
         title: '',
         description: '',
-        startDate: '',
+        dateRange: {
+          start: null,
+          end: null,
+        },
         image: null,
         imagePreview: null,
       },
@@ -184,7 +201,28 @@ export default {
       handler(newData) {
         this.form.title = newData.title || '';
         this.form.description = newData.description || '';
-        this.form.startDate = newData.startDate || '';
+
+        // Handle date range from courseData
+        if (newData.startDate && newData.endDate) {
+          this.form.dateRange = {
+            start: new Date(newData.startDate),
+            end: new Date(newData.endDate),
+          };
+        }
+        else if (newData.startDate) {
+          // If only startDate exists (for backward compatibility)
+          this.form.dateRange = {
+            start: new Date(newData.startDate),
+            end: null,
+          };
+        }
+        else {
+          this.form.dateRange = {
+            start: null,
+            end: null,
+          };
+        }
+
         this.form.imagePreview = newData.image || null;
         this.form.image = null;
       },
@@ -235,7 +273,8 @@ export default {
       return {
         title: this.form.title,
         description: this.form.description,
-        startDate: this.form.startDate,
+        startDate: this.form.dateRange.start,
+        endDate: this.form.dateRange.end,
         image: this.form.imagePreview || null,
       };
     },

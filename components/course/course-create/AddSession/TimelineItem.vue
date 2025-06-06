@@ -38,11 +38,18 @@
       </div>
       <div class="flex items-center space-x-2 no-drag">
         <button
-          class="flex items-center text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+          class="flex items-center text-sm px-2 py-1 rounded transition-colors"
+          :class="{
+            'text-gray-600 hover:text-gray-800 hover:bg-gray-100': item.date,
+            'text-yellow-700 bg-yellow-100 hover:bg-yellow-200': !item.date,
+          }"
           @click="$emit('editDate', index)"
         >
           <Icon name="mdi:calendar" size="1rem" class="mr-1" />
-          <span class="hidden sm:inline">{{ formatDate(item.date) }}</span>
+          <span class="hidden sm:inline">
+            <span v-if="item.date">{{ formatDate(item.date) }}</span>
+            <span v-else class="font-medium">Select a Date</span>
+          </span>
         </button>
         <button
           class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
@@ -60,6 +67,8 @@ const props = defineProps(['item', 'index']);
 const emit = defineEmits(['editDate', 'remove']);
 
 function formatDate(date) {
+  if (!date)
+    return ''; // Handle null or undefined date
   const d = new Date(date);
   const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
   return d.toLocaleDateString('en-US', options);
