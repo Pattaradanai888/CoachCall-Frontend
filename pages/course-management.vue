@@ -14,7 +14,7 @@
           <div>
             <NuxtLink to="course-create">
               <button
-                class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-2 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto"
+                class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg"
               >
                 <div class="flex items-center justify-center">
                   <Icon name="mdi:plus" size="1.5rem" class="mr-2" />

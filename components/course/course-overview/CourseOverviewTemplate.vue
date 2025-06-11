@@ -4,17 +4,18 @@
     <div class="flex justify-between">
       <div>
         <h1 class="text-2xl font-bold">
-          Template
+          Session Overview
         </h1>
       </div>
       <div class="flex">
         <button
           class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg"
+          @click="openCreateModal"
         >
           <div class="flex items-center justify-center">
             <Icon name="mdi:plus" size="1rem" class="mr-1" />
             <p class="text-sm">
-              Create Template
+              Create Session Template
             </p>
           </div>
         </button>
@@ -121,7 +122,7 @@
     </div>
     <!-- Pagination -->
     <div class="flex justify-between mt-4">
-      <p>Showing {{ startIndex }}-{{ endIndex }} of {{ totalItems }} Template</p>
+      <p>Showing {{ startIndex }}-{{ endIndex }} of {{ totalItems }} Session</p>
       <div class="flex items-center">
         <button
           class="px-2 py-1 rounded-md hover:bg-gray-200"
@@ -149,10 +150,25 @@
       </div>
     </div>
   </div>
+  <CreateSessionTemplate
+    :show="showAddModal"
+    @close="closeCreateModal"
+  />
 </template>
 
 <script lang="ts" setup>
 import { computed, ref, watchEffect } from 'vue';
+import CreateSessionTemplate from './CreateSessionTemplate.vue';
+
+const showAddModal = ref(false);
+
+function openCreateModal() {
+  showAddModal.value = true;
+}
+
+function closeCreateModal() {
+  showAddModal.value = false;
+}
 
 // Define interface for Template
 interface Template {
