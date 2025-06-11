@@ -107,7 +107,7 @@
           </button>
           <button
             class="flex items-center justify-center shadow-lg p-2 border-gray-300 border rounded-lg hover:bg-slate-50 transition-colors"
-            @click="addNewSession"
+            @click="openCreateModal"
           >
             <Icon name="mdi:plus" size="1rem" class="text-gray-500" />
           </button>
@@ -246,11 +246,19 @@
       </div>
     </div>
   </div>
+
+  <!-- Create Training Session Modal -->
+  <CreateTrainingSessionModal
+    :show="showAddModal"
+    @close="closeCreateModal"
+    @session-created="handleSessionCreated"
+  />
 </template>
 
 <script setup>
 import Sortable from 'sortablejs';
 import { computed, defineProps, onUnmounted, ref, watch } from 'vue';
+import CreateTrainingSessionModal from './AddSession/CreateTrainingSessionModal.vue';
 import SessionTemplate from './AddSession/SessionTemplate.vue';
 import TimelineItem from './AddSession/TimelineItem.vue';
 
@@ -264,6 +272,29 @@ const props = defineProps({
     default: () => ({}),
   },
 });
+
+// Modal state
+const showAddModal = ref(false);
+
+// Modal functions
+function openCreateModal() {
+  showAddModal.value = true;
+}
+
+function closeCreateModal() {
+  showAddModal.value = false;
+}
+
+function handleSessionCreated(sessionData) {
+  // Add the created session to the timeline
+  const newItem = {
+    ...sessionData,
+    id: `custom-${Date.now()}`,
+    date: null, // No default date, set to null to prompt user
+  };
+  droppedItems.value.push(newItem);
+  closeCreateModal();
+}
 
 // Computed properties for date range
 const courseStartDate = computed(() => {
@@ -420,20 +451,6 @@ function addItemToTimeline(template) {
   droppedItems.value.push(newItem);
 }
 
-// Add new session via plus button
-function addNewSession() {
-  // Create a default new session with no date
-  const newSession = {
-    id: `new-${Date.now()}`,
-    title: 'New Session',
-    difficulty: 'beginner',
-    tasks: 1,
-    duration: 30,
-    tags: ['Custom'],
-    date: null, // No default date, set to null to prompt user
-  };
-  droppedItems.value.push(newSession);
-}
 function removeItem(index) {
   droppedItems.value.splice(index, 1);
   if (!droppedItems.value.length && sortableInstance) {

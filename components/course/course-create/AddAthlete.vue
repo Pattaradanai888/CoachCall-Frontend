@@ -23,23 +23,62 @@
       >
         <Icon name="mdi:filter-outline" size="1rem" class="text-gray-500 pointer-events-none" />
       </button>
-      <div v-if="showFilter" class="mt-4 p-3 bg-gray-50 rounded-lg">
-        <div class="mb-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
-          <select v-model="filterDifficulty" class="w-full px-3 py-1 border border-gray-300 rounded-md text-sm">
-            <option value="">
-              All Levels
-            </option>
-            <option value="beginner">
-              Beginner
-            </option>
-            <option value="intermediate">
-              Intermediate
-            </option>
-            <option value="advanced">
-              Advanced
-            </option>
-          </select>
+    </div>
+
+    <!-- Enhanced Filter Dropdown -->
+    <div v-if="showFilter" class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Position Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Position</label>
+          <div class="space-y-2">
+            <label
+              v-for="position in availablePositions"
+              :key="position"
+              class="flex items-center text-sm"
+            >
+              <input
+                v-model="selectedPositions"
+                type="checkbox"
+                :value="position"
+                class="mr-2 w-4 h-4 text-[#9C1313] border-gray-300 rounded focus:ring-[#9C1313]"
+              >
+              <span class="text-gray-700">{{ position }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Athlete Group Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Athlete Group</label>
+          <div class="space-y-2">
+            <label
+              v-for="group in availableGroups"
+              :key="group"
+              class="flex items-center text-sm"
+            >
+              <input
+                v-model="selectedGroups"
+                type="checkbox"
+                :value="group"
+                class="mr-2 w-4 h-4 text-[#9C1313] border-gray-300 rounded focus:ring-[#9C1313]"
+              >
+              <span class="text-gray-700">{{ group }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Actions -->
+      <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
+        <button
+          class="text-sm text-gray-600 hover:text-gray-800 underline"
+          @click="clearFilters"
+        >
+          Clear All Filters
+        </button>
+        <div class="text-sm text-gray-600">
+          {{ filteredAthletesCount }} athlete{{ filteredAthletesCount !== 1 ? 's' : '' }} found
         </div>
       </div>
     </div>
@@ -72,6 +111,9 @@
           </h3>
           <p class="text-sm text-gray-600">
             {{ athlete.position }} · {{ athlete.age }} yrs
+          </p>
+          <p class="text-xs text-gray-500">
+            {{ athlete.group }}
           </p>
         </div>
         <div class="text-right">
@@ -140,50 +182,93 @@ export default {
       itemsPerPage: 8,
       selectedAthletes: this.athleteData.map(athlete => athlete.id), // Initialize with existing athlete IDs
       showFilter: false,
-      filterDifficulty: '',
+      selectedPositions: [],
+      selectedGroups: [],
       athletes: [
-        { id: 1, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 2, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 3, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 4, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 5, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 6, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 7, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 8, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 9, name: 'LeBron James', position: 'Forward', age: 27, performance: '6.2', avatar: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=100&h=100&fit=crop&crop=face' },
-        { id: 10, name: 'Stephen Curry', position: 'Guard', age: 24, performance: '5.9', avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=100&h=100&fit=crop&crop=face' },
-        { id: 11, name: 'Kevin Durant', position: 'Forward', age: 26, performance: '6.1', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face' },
-        { id: 12, name: 'Giannis Antetokounmpo', position: 'Forward', age: 23, performance: '6.3', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face' },
+        { id: 1, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 2, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'JV Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 3, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Freshman Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 4, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 5, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 6, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'JV Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 7, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Training Camp', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 8, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 9, name: 'LeBron James', position: 'Forward', age: 27, performance: '6.2', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=100&h=100&fit=crop&crop=face' },
+        { id: 10, name: 'Stephen Curry', position: 'Guard', age: 24, performance: '5.9', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=100&h=100&fit=crop&crop=face' },
+        { id: 11, name: 'Kevin Durant', position: 'Forward', age: 26, performance: '6.1', group: 'Training Camp', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face' },
+        { id: 12, name: 'Giannis Antetokounmpo', position: 'Forward', age: 23, performance: '6.3', group: 'Freshman Team', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face' },
       ],
     };
   },
   computed: {
-    filteredAthletes() {
-      const filtered = this.athletes;
-      if (this.filterDifficulty) {
-        // Add filtering logic if difficulty is used (currently not in athletes data)
-      }
-      return filtered
-        .filter(athlete =>
-          athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-          || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()),
-        )
-        .slice(
-          (this.currentPage - 1) * this.itemsPerPage,
-          this.currentPage * this.itemsPerPage,
-        );
+    availablePositions() {
+      return [...new Set(this.athletes.map(athlete => athlete.position))];
     },
-    totalAthletes() {
-      return this.athletes.filter(athlete =>
+    availableGroups() {
+      return [...new Set(this.athletes.map(athlete => athlete.group))];
+    },
+    filteredAthletes() {
+      let filtered = this.athletes;
+
+      // Apply search filter
+      filtered = filtered.filter(athlete =>
         athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase())
         || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()),
-      ).length;
+      );
+
+      // Apply position filter
+      if (this.selectedPositions.length > 0) {
+        filtered = filtered.filter(athlete =>
+          this.selectedPositions.includes(athlete.position),
+        );
+      }
+
+      // Apply group filter
+      if (this.selectedGroups.length > 0) {
+        filtered = filtered.filter(athlete =>
+          this.selectedGroups.includes(athlete.group),
+        );
+      }
+
+      // Apply pagination
+      return filtered.slice(
+        (this.currentPage - 1) * this.itemsPerPage,
+        this.currentPage * this.itemsPerPage,
+      );
+    },
+    filteredAthletesCount() {
+      let filtered = this.athletes;
+
+      // Apply search filter
+      filtered = filtered.filter(athlete =>
+        athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+        || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()),
+      );
+
+      // Apply position filter
+      if (this.selectedPositions.length > 0) {
+        filtered = filtered.filter(athlete =>
+          this.selectedPositions.includes(athlete.position),
+        );
+      }
+
+      // Apply group filter
+      if (this.selectedGroups.length > 0) {
+        filtered = filtered.filter(athlete =>
+          this.selectedGroups.includes(athlete.group),
+        );
+      }
+
+      return filtered.length;
+    },
+    totalAthletes() {
+      return this.filteredAthletesCount;
     },
     totalPages() {
       return Math.ceil(this.totalAthletes / this.itemsPerPage);
     },
     startIndex() {
-      return (this.currentPage - 1) * this.itemsPerPage + 1;
+      return this.totalAthletes === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
     },
     endIndex() {
       return Math.min(this.currentPage * this.itemsPerPage, this.totalAthletes);
@@ -201,6 +286,12 @@ export default {
   watch: {
     searchQuery() {
       this.currentPage = 1; // Reset to first page when searching
+    },
+    selectedPositions() {
+      this.currentPage = 1; // Reset to first page when filtering
+    },
+    selectedGroups() {
+      this.currentPage = 1; // Reset to first page when filtering
     },
     athleteData: {
       handler(newData) {
@@ -234,6 +325,11 @@ export default {
     },
     toggleFilter() {
       this.showFilter = !this.showFilter;
+    },
+    clearFilters() {
+      this.selectedPositions = [];
+      this.selectedGroups = [];
+      this.currentPage = 1;
     },
     getData() {
       return this.athletes.filter(athlete => this.selectedAthletes.includes(athlete.id));
