@@ -31,10 +31,11 @@
 
     <!-- Courses Grid (paginated) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 px-6 py-4">
+      <!-- NOTE: Added 'flex flex-col' to make the card a flex container -->
       <div
         v-for="course in paginatedCourses"
         :key="course.id"
-        class="shadow-lg px-4 bg-white rounded-lg"
+        class="shadow-lg px-4 bg-white rounded-lg flex flex-col"
       >
         <!-- Course Image -->
         <div class="mb-3">
@@ -131,63 +132,40 @@
           </div>
         </div>
 
+        <!-- NOTE: This div will grow to push the button to the bottom -->
+        <div class="flex-grow" />
+
         <!-- “See details” Button -->
         <div class="flex justify-center my-3">
-          <button
-            class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white"
-            @click="handleDetails(course.id)"
-          >
-            See details
-          </button>
+          <NuxtLink :to="`/course-detail/${course.id}`">
+            <button class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white">
+              See details
+            </button>
+          </NuxtLink>
         </div>
       </div>
     </div>
 
-    <!-- Pagination Controls -->
-    <div class="flex justify-between items-center px-6 py-4">
-      <!-- Showing X–Y of Z Sessions -->
-      <p class="text-sm text-gray-700">
-        Showing {{ startIndex }}-{{ endIndex }} of {{ filteredCourses.length }}
-        Courses
-      </p>
-
-      <!-- Page Buttons -->
-      <div class="flex items-center">
-        <button
-          class="px-2 py-1 rounded-md hover:bg-gray-200"
-          :disabled="currentPage === 1"
-          @click="prevPage"
-        >
-          <Icon name="mdi:arrow-left" size="1rem" />
-        </button>
-
-        <button
-          v-for="page in totalPages"
-          :key="page"
-          class="px-2 py-1 rounded-md mx-1"
-          :class="{
-            'bg-[#9C1313] text-white': currentPage === page,
-            'text-gray-600 hover:text-gray-900 hover:bg-gray-100': currentPage !== page,
-          }"
-          @click="goToPage(page)"
-        >
-          {{ page }}
-        </button>
-
-        <button
-          class="px-2 py-1 rounded-md hover:bg-gray-200"
-          :disabled="currentPage === totalPages"
-          @click="nextPage"
-        >
-          <Icon name="mdi:arrow-right" size="1rem" />
-        </button>
-      </div>
+    <!-- If there are no courses for the current filter, show a message -->
+    <div v-if="!paginatedCourses.length" class="text-center text-gray-500 py-8">
+      No {{ activeTab.toLowerCase() }} courses found.
     </div>
+
+    <PaginationBar
+      v-model:current-page="currentPage"
+      :total-items="totalItems"
+      :items-per-page="itemsPerPage"
+      class="px-6 py-4"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
+import type { Course } from '~/composables/useCourses';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+// 1. IMPORT THE REUSABLE COMPONENT
+import PaginationBar from '~/components/PaginationBar.vue';
+import { useCourses } from '~/composables/useCourses';
 
 /** Tab definitions */
 const tabs = [
@@ -196,141 +174,43 @@ const tabs = [
 ];
 const activeTab = ref<string>('Active');
 
-/** Example course data array */
-interface Course {
-  id: number;
-  image: string;
-  title: string;
-  description: string;
-  progressValue: number;
-
-  participants: number;
-  startDate: string;
-  endDate: string;
-  status: 'Active' | 'Archive';
-}
-const courses = ref<Course[]>([
-  {
-    id: 1,
-    image: 'course-img.png',
-    title: 'Advanced Dribbling',
-    description: 'Ball handling drills for all positions',
-    progressValue: 70,
-    participants: 18,
-    startDate: 'May 15, 2025',
-    endDate: 'Jun 15, 2025',
-    status: 'Active',
-  },
-  {
-    id: 2,
-    image: 'course-img-2.png',
-    title: 'Shooting Fundamentals',
-    description: 'Improve your jump shot and free throws',
-    progressValue: 45,
-    participants: 12,
-    startDate: 'Apr 01, 2025',
-    endDate: 'May 01, 2025',
-    status: 'Active',
-  },
-  {
-    id: 3,
-    image: 'course-img-3.png',
-    title: 'Defense Tactics',
-    description: 'Learn man-to-man and zone defense',
-    progressValue: 100,
-    participants: 20,
-    startDate: 'Jan 10, 2025',
-    endDate: 'Feb 10, 2025',
-    status: 'Archive',
-  },
-  {
-    id: 4,
-    image: 'course-img-4.png',
-    title: 'Offensive Strategies',
-    description: 'Pick-and-roll, fast breaks, and spacing',
-    progressValue: 30,
-    participants: 15,
-    startDate: 'Jun 01, 2025',
-    endDate: 'Jul 01, 2025',
-    status: 'Active',
-  },
-  {
-    id: 5,
-    image: 'course-img-5.png',
-    title: 'Rebounding 101',
-    description: 'Box-out drills and tip-out techniques',
-    progressValue: 60,
-    participants: 22,
-    startDate: 'Mar 05, 2025',
-    endDate: 'Apr 05, 2025',
-    status: 'Active',
-  },
-  {
-    id: 6,
-    image: 'course-img-6.png',
-    title: 'Conditioning & Fitness',
-    description: 'Endurance, agility, and strength workouts',
-    progressValue: 100,
-    participants: 25,
-    startDate: 'Feb 15, 2025',
-    endDate: 'Mar 15, 2025',
-    status: 'Archive',
-  },
-  // …add more objects as needed
-]);
+/** Data from composable */
+const { courses } = useCourses();
 
 /** Filter courses based on the active tab */
 const filteredCourses = computed(() => {
   return courses.value.filter(c => c.status === activeTab.value);
 });
 
-/** PAGINATION SETUP */
-// How many courses per page
 const itemsPerPage = 3;
-// Current page (1-based)
 const currentPage = ref<number>(1);
 
-// Compute total number of pages whenever filteredCourses changes
-const totalPages = computed(() => Math.ceil(filteredCourses.value.length / itemsPerPage));
+// A computed property for the total number of items to paginate
+const totalItems = computed(() => filteredCourses.value.length);
 
-// Whenever the active tab changes, reset to page 1
+// Whenever the active tab changes (which changes the filtered list), reset to page 1
 watch(activeTab, () => {
   currentPage.value = 1;
 });
 
-// Compute the slice of filteredCourses to display on the current page
+// The parent component is still responsible for slicing the data
 const paginatedCourses = computed(() => {
   const startIdx = (currentPage.value - 1) * itemsPerPage;
   const endIdx = startIdx + itemsPerPage;
   return filteredCourses.value.slice(startIdx, endIdx);
 });
 
-// Compute “Showing X–Y of Z” indexes
-const startIndex = computed(() => {
-  if (filteredCourses.value.length === 0)
-    return 0;
-  return (currentPage.value - 1) * itemsPerPage + 1;
-});
-const endIndex = computed(() =>
-  Math.min(currentPage.value * itemsPerPage, filteredCourses.value.length),
-);
+// NOTE: The following have been removed as they are now handled by PaginationBar.vue:
+// - totalPages computed property
+// - startIndex computed property
+// - endIndex computed property
+// - goToPage() method
+// - prevPage() method
+// - nextPage() method
 
-// Methods to navigate pages
-function goToPage(page: number) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-}
-function prevPage() {
-  if (currentPage.value > 1)
-    currentPage.value--;
-}
-function nextPage() {
-  if (currentPage.value < totalPages.value)
-    currentPage.value++;
-}
+// ==========================================================
 
-/** TAB‐INDICATOR LOGIC */
+/** TAB‐INDICATOR LOGIC (unchanged) */
 const tabRefs = ref<HTMLElement[]>([]);
 const tabContainer = ref<HTMLElement | null>(null);
 const indicatorLeft = ref<number>(0);
@@ -361,7 +241,7 @@ onMounted(() => {
   }
 });
 
-/** DROPDOWN MENU STATE */
+/** DROPDOWN MENU STATE (unchanged) */
 const openMenuFor = ref<number | null>(null);
 function toggleMenu(courseId: number) {
   openMenuFor.value = openMenuFor.value === courseId ? null : courseId;
@@ -375,9 +255,15 @@ function handleRemove(courseId: number) {
   console.log('Remove clicked for course', courseId);
   openMenuFor.value = null;
 }
-function handleDetails(courseId: number) {
-  console.log('See details for course', courseId);
-}
 </script>
 
-<style scoped></style>
+<style scoped>
+/* You may want to keep this if you use it on other pages */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+</style>
