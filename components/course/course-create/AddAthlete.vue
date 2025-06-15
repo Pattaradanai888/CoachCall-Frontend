@@ -8,7 +8,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search Template"
+          placeholder="Search Athletes by name or position"
           class="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:border-[#9C1313] transition duration-300 ease-in-out"
         >
         <Icon
@@ -32,17 +32,8 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Position</label>
           <div class="space-y-2">
-            <label
-              v-for="position in availablePositions"
-              :key="position"
-              class="flex items-center text-sm"
-            >
-              <input
-                v-model="selectedPositions"
-                type="checkbox"
-                :value="position"
-                class="mr-2 w-4 h-4 text-[#9C1313] border-gray-300 rounded focus:ring-[#9C1313]"
-              >
+            <label v-for="position in availablePositions" :key="position" class="flex items-center text-sm">
+              <input v-model="selectedPositions" type="checkbox" :value="position" class="mr-2 w-4 h-4 text-[#9C1313] border-gray-300 rounded focus:ring-[#9C1313]">
               <span class="text-gray-700">{{ position }}</span>
             </label>
           </div>
@@ -52,17 +43,8 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Athlete Group</label>
           <div class="space-y-2">
-            <label
-              v-for="group in availableGroups"
-              :key="group"
-              class="flex items-center text-sm"
-            >
-              <input
-                v-model="selectedGroups"
-                type="checkbox"
-                :value="group"
-                class="mr-2 w-4 h-4 text-[#9C1313] border-gray-300 rounded focus:ring-[#9C1313]"
-              >
+            <label v-for="group in availableGroups" :key="group" class="flex items-center text-sm">
+              <input v-model="selectedGroups" type="checkbox" :value="group" class="mr-2 w-4 h-4 text-[#9C1313] border-gray-300 rounded focus:ring-[#9C1313]">
               <span class="text-gray-700">{{ group }}</span>
             </label>
           </div>
@@ -71,14 +53,11 @@
 
       <!-- Filter Actions -->
       <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
-        <button
-          class="text-sm text-gray-600 hover:text-gray-800 underline"
-          @click="clearFilters"
-        >
+        <button class="text-sm text-gray-600 hover:text-gray-800 underline" @click="clearFilters">
           Clear All Filters
         </button>
         <div class="text-sm text-gray-600">
-          {{ filteredAthletesCount }} athlete{{ filteredAthletesCount !== 1 ? 's' : '' }} found
+          {{ totalAthletes }} athlete{{ totalAthletes !== 1 ? 's' : '' }} found
         </div>
       </div>
     </div>
@@ -86,7 +65,7 @@
     <!-- Athletes Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div
-        v-for="athlete in filteredAthletes"
+        v-for="athlete in paginatedAthletes"
         :key="athlete.id"
         class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition cursor-pointer"
         @click="toggleAthlete(athlete.id)"
@@ -99,11 +78,7 @@
           @change="toggleAthlete(athlete.id)"
         >
         <div class="w-12 h-12 rounded-full overflow-hidden mr-4 flex-shrink-0">
-          <img
-            :src="athlete.avatar"
-            :alt="athlete.name"
-            class="w-full h-full object-cover"
-          >
+          <img :src="athlete.avatar" :alt="athlete.name" class="w-full h-full object-cover">
         </div>
         <div class="flex-grow">
           <h3 class="font-semibold text-gray-900">
@@ -127,76 +102,51 @@
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div class="flex items-center justify-between">
-      <p class="text-sm text-gray-600">
-        Showing {{ startIndex }}-{{ endIndex }} of {{ totalAthletes }} athlete{{ totalAthletes !== 1 ? 's' : '' }}
-      </p>
-      <div class="flex items-center space-x-2">
-        <button
-          :disabled="currentPage === 1"
-          class="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="previousPage"
-        >
-          <Icon name="mdi:arrow-left" size="1rem" />
-        </button>
-
-        <button
-          v-for="page in visiblePages"
-          :key="page"
-          class="px-3 py-1 rounded text-sm" :class="[
-            currentPage === page
-              ? 'bg-[#9C1313] text-white'
-              : 'text-gray-700 hover:bg-gray-100',
-          ]"
-          @click="goToPage(page)"
-        >
-          {{ page }}
-        </button>
-
-        <button
-          :disabled="currentPage === totalPages"
-          class="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="nextPage"
-        >
-          <Icon name="mdi:arrow-right" size="1rem" />
-        </button>
-      </div>
+    <div v-if="!paginatedAthletes.length" class="text-center text-gray-500 py-8">
+      No athletes match the current filters.
     </div>
+
+    <!-- REFACTORED PAGINATION -->
+    <PaginationBar
+      v-model:current-page="currentPage"
+      :total-items="totalAthletes"
+      :items-per-page="itemsPerPage"
+    />
   </div>
 </template>
 
 <script>
+import PaginationBar from '~/components/PaginationBar.vue';
+
 export default {
   name: 'AddAthletesToCourse',
+  components: {
+    PaginationBar,
+  },
   props: {
-    athleteData: {
-      type: Array,
-      default: () => [],
-    },
+    athleteData: { type: Array, default: () => [] },
   },
   data() {
     return {
       searchQuery: '',
       currentPage: 1,
       itemsPerPage: 8,
-      selectedAthletes: this.athleteData.map(athlete => athlete.id), // Initialize with existing athlete IDs
+      selectedAthletes: this.athleteData.map(athlete => athlete.id),
       showFilter: false,
       selectedPositions: [],
       selectedGroups: [],
       athletes: [
-        { id: 1, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 2, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'JV Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 3, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Freshman Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 4, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 5, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 6, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'JV Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 7, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Training Camp', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 8, name: 'Michel Jordon', position: 'Center', age: 25, performance: '5.8', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
-        { id: 9, name: 'LeBron James', position: 'Forward', age: 27, performance: '6.2', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=100&h=100&fit=crop&crop=face' },
-        { id: 10, name: 'Stephen Curry', position: 'Guard', age: 24, performance: '5.9', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=100&h=100&fit=crop&crop=face' },
-        { id: 11, name: 'Kevin Durant', position: 'Forward', age: 26, performance: '6.1', group: 'Training Camp', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face' },
-        { id: 12, name: 'Giannis Antetokounmpo', position: 'Forward', age: 23, performance: '6.3', group: 'Freshman Team', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face' },
+        { id: 1, name: 'Michael Jordan', position: 'Guard', age: 25, performance: '5.8', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=face' },
+        { id: 2, name: 'Jane Smith', position: 'Center', age: 22, performance: '5.5', group: 'JV Team', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face' },
+        { id: 3, name: 'Alex Johnson', position: 'Forward', age: 23, performance: '5.9', group: 'Freshman Team', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face' },
+        { id: 4, name: 'Emily Brown', position: 'Guard', age: 24, performance: '5.7', group: 'Varsity Team', avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=100&h=100&fit=crop&crop=face' },
+        { id: 5, name: 'Chris Lee', position: 'Forward', age: 21, performance: '6.0', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=100&h=100&fit=crop&crop=face' },
+        { id: 6, name: 'Maria Garcia', position: 'Center', age: 26, performance: '5.6', group: 'JV Team', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face' },
+        { id: 7, name: 'David Kim', position: 'Guard', age: 20, performance: '5.4', group: 'Training Camp', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face' },
+        { id: 8, name: 'LeBron James', position: 'Forward', age: 27, performance: '6.2', group: 'Varsity Team', avatar: 'https://plus.unsplash.com/premium_photo-1688891511339-322b7a485ef2?w=100&h=100&fit=crop&crop=face' },
+        { id: 9, name: 'Stephen Curry', position: 'Guard', age: 24, performance: '5.9', group: 'Elite Squad', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face' },
+        { id: 10, name: 'Kevin Durant', position: 'Forward', age: 26, performance: '6.1', group: 'Training Camp', avatar: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=100&h=100&fit=crop&crop=face' },
+        { id: 11, name: 'Giannis Antetokounmpo', position: 'Forward', age: 23, performance: '6.3', group: 'Freshman Team', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face' },
       ],
     };
   },
@@ -207,96 +157,43 @@ export default {
     availableGroups() {
       return [...new Set(this.athletes.map(athlete => athlete.group))];
     },
-    filteredAthletes() {
+
+    // --- REFACTORED COMPUTED PROPERTIES ---
+
+    // 1. Get the full list of athletes after applying all filters
+    fullFilteredList() {
       let filtered = this.athletes;
-
-      // Apply search filter
-      filtered = filtered.filter(athlete =>
-        athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-        || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()),
-      );
-
-      // Apply position filter
+      if (this.searchQuery) {
+        filtered = filtered.filter(athlete => athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()));
+      }
       if (this.selectedPositions.length > 0) {
-        filtered = filtered.filter(athlete =>
-          this.selectedPositions.includes(athlete.position),
-        );
+        filtered = filtered.filter(athlete => this.selectedPositions.includes(athlete.position));
       }
-
-      // Apply group filter
       if (this.selectedGroups.length > 0) {
-        filtered = filtered.filter(athlete =>
-          this.selectedGroups.includes(athlete.group),
-        );
+        filtered = filtered.filter(athlete => this.selectedGroups.includes(athlete.group));
       }
-
-      // Apply pagination
-      return filtered.slice(
-        (this.currentPage - 1) * this.itemsPerPage,
-        this.currentPage * this.itemsPerPage,
-      );
+      return filtered;
     },
-    filteredAthletesCount() {
-      let filtered = this.athletes;
 
-      // Apply search filter
-      filtered = filtered.filter(athlete =>
-        athlete.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-        || athlete.position.toLowerCase().includes(this.searchQuery.toLowerCase()),
-      );
-
-      // Apply position filter
-      if (this.selectedPositions.length > 0) {
-        filtered = filtered.filter(athlete =>
-          this.selectedPositions.includes(athlete.position),
-        );
-      }
-
-      // Apply group filter
-      if (this.selectedGroups.length > 0) {
-        filtered = filtered.filter(athlete =>
-          this.selectedGroups.includes(athlete.group),
-        );
-      }
-
-      return filtered.length;
-    },
+    // 2. Get the total count of the filtered list (for the pagination component)
     totalAthletes() {
-      return this.filteredAthletesCount;
+      return this.fullFilteredList.length;
     },
-    totalPages() {
-      return Math.ceil(this.totalAthletes / this.itemsPerPage);
-    },
-    startIndex() {
-      return this.totalAthletes === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
-    },
-    endIndex() {
-      return Math.min(this.currentPage * this.itemsPerPage, this.totalAthletes);
-    },
-    visiblePages() {
-      const pages = [];
-      const start = Math.max(1, this.currentPage - 1);
-      const end = Math.min(this.totalPages, this.currentPage + 1);
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      return pages;
+
+    // 3. Get the sliced, paginated list for display in the template
+    paginatedAthletes() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.fullFilteredList.slice(start, end);
     },
   },
   watch: {
-    searchQuery() {
-      this.currentPage = 1; // Reset to first page when searching
-    },
-    selectedPositions() {
-      this.currentPage = 1; // Reset to first page when filtering
-    },
-    selectedGroups() {
-      this.currentPage = 1; // Reset to first page when filtering
-    },
+    // These watchers reset the page to 1 when any filter changes
+    searchQuery() { this.currentPage = 1; },
+    selectedPositions() { this.currentPage = 1; },
+    selectedGroups() { this.currentPage = 1; },
     athleteData: {
-      handler(newData) {
-        this.selectedAthletes = newData.map(athlete => athlete.id);
-      },
+      handler(newData) { this.selectedAthletes = newData.map(athlete => athlete.id); },
       deep: true,
     },
   },
@@ -310,27 +207,14 @@ export default {
         this.selectedAthletes.push(athleteId);
       }
     },
-    previousPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-      }
-    },
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-      }
-    },
-    goToPage(page) {
-      this.currentPage = page;
-    },
     toggleFilter() {
       this.showFilter = !this.showFilter;
     },
     clearFilters() {
       this.selectedPositions = [];
       this.selectedGroups = [];
-      this.currentPage = 1;
     },
+    // This method is likely exposed to a parent component and should be kept
     getData() {
       return this.athletes.filter(athlete => this.selectedAthletes.includes(athlete.id));
     },

@@ -58,31 +58,17 @@
           No templates found
         </p>
       </div>
-      <div v-if="totalPages > 1" class="mt-4 flex justify-center items-center space-x-2">
-        <button
-          class="px-2 py-1 rounded-md hover:bg-gray-200"
-          :disabled="currentPage === 1"
-          @click="prevPage"
-        >
-          <Icon name="mdi:arrow-left" size="1rem" />
-        </button>
-        <button
-          v-for="page in totalPages"
-          :key="page"
-          class="px-2 py-1 rounded-md"
-          :class="{ 'bg-[#9C1313] text-white': currentPage === page, 'hover:bg-gray-200': currentPage !== page }"
-          @click="goToPage(page)"
-        >
-          {{ page }}
-        </button>
-        <button
-          class="px-2 py-1 rounded-md hover:bg-gray-200"
-          :disabled="currentPage === totalPages"
-          @click="nextPage"
-        >
-          <Icon name="mdi:arrow-right" size="1rem" />
-        </button>
-      </div>
+      <!-- ********************************************** -->
+      <!-- ********* REFACTORED PAGINATION HERE ********* -->
+      <!-- ********************************************** -->
+      <PaginationBar
+        v-if="totalItems > itemsPerPage"
+        v-model:current-page="currentPage"
+        :total-items="totalItems"
+        :items-per-page="itemsPerPage"
+        class="mt-4"
+      />
+      <!-- ********************************************** -->
     </div>
 
     <!-- Right Panel: Course Timeline -->
@@ -256,6 +242,7 @@
 </template>
 
 <script setup>
+import { PaginationBar } from '#components';
 import Sortable from 'sortablejs';
 import { computed, defineProps, onUnmounted, ref, watch } from 'vue';
 import CreateTrainingSessionModal from './AddSession/CreateTrainingSessionModal.vue';
@@ -317,7 +304,9 @@ const courseEndDate = computed(() => {
   return null;
 });
 
-// Pagination state
+// ==========================================================
+// ================ REFACTORED PAGINATION LOGIC =============
+// ==========================================================
 const currentPage = ref(1);
 const itemsPerPage = 5;
 const searchQuery = ref('');
@@ -335,6 +324,7 @@ const templates = ref([
   { id: 8, title: 'Shooting Accuracy', difficulty: 'beginner', tasks: 4, duration: 30, tags: ['Precision', 'Technique'] },
 ]);
 
+// This computed property for the FULL filtered list remains unchanged
 const filteredTemplates = computed(() => {
   let arr = templates.value;
   if (searchQuery.value) {
@@ -349,26 +339,15 @@ const filteredTemplates = computed(() => {
   return arr;
 });
 
+// 2. THIS IS THE TOTAL COUNT WE PASS TO THE COMPONENT
 const totalItems = computed(() => filteredTemplates.value.length);
-const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage));
+
+// This computed property for the PAGINATED slice remains unchanged
 const paginatedTemplates = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredTemplates.value.slice(start, start + itemsPerPage);
 });
 
-function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-}
-function prevPage() {
-  if (currentPage.value > 1)
-    currentPage.value--;
-}
-function nextPage() {
-  if (currentPage.value < totalPages.value)
-    currentPage.value++;
-}
 function toggleFilter() {
   showFilter.value = !showFilter.value;
 }
