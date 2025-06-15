@@ -72,7 +72,7 @@ const coursesData: Course[] = [
     title: 'Advanced Dribbling',
     description: 'Ball handling drills for all positions.',
     status: 'Active',
-    athletes: [allAthletes[0], allAthletes[2], allAthletes[3], allAthletes[5]],
+    athletes: [allAthletes[0], allAthletes[2], allAthletes[3], allAthletes[5], allAthletes[6], allAthletes[7], allAthletes[8], allAthletes[9], allAthletes[10]],
     sessions: [
       { id: 1001, name: 'Session 1: Foundational Control', description: 'Focus on stationary drills.', scheduledDate: '2025-05-20', status: 'Complete', tasks: [
         { id: 1, order: 1, name: 'Two-Ball Stationary Dribble', description: 'Dribble two balls simultaneously.', duration: 15, skillMetrics: [{ skill: 'Dribbling', weight: 100 }] },
