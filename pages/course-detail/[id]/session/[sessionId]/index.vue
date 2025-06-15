@@ -146,26 +146,49 @@
             </div>
           </button>
         </div>
+        <div>
+          <!-- Show this button only if at least one athlete is selected -->
+          <NuxtLink
+            v-if="totalPresent > 0"
+            :to="startSessionUrl"
+            class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition shadow-lg text-lg flex items-center"
+          >
+            <Icon name="mdi:play-circle-outline" class="mr-2" size="1.5rem" />
+            Start Session ({{ totalPresent }})
+          </NuxtLink>
+          <!-- Show a disabled placeholder if no athletes are selected -->
+          <div
+            v-else
+            class="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg font-bold text-lg flex items-center cursor-not-allowed"
+            title="Select at least one athlete to start the session"
+          >
+            <Icon name="mdi:play-circle-outline" class="mr-2" size="1.5rem" />
+            Start Session
+          </div>
+          <p v-if="totalPresent === 0" class="text-xs text-gray-500 mt-2">
+            Select athletes below to begin.
+          </p>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, watchEffect } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCourses } from '~/composables/useCourses';
 
 const route = useRoute();
 const { findSessionById } = useCourses();
 
+// ===============================================
+//           DATA FETCHING
+// ===============================================
 // Get IDs reactively from the route
-const courseId = computed(() => Number(route.params.courseId));
+const courseId = computed(() => Number(route.params.id)); // <-- Use 'id' to match the folder name [id]
 const sessionId = computed(() => Number(route.params.sessionId));
 
-// ===============================================
-//           THE KEY CORRECTION HERE
-// ===============================================
 // Wrap the data lookup in a computed property.
 // This creates a reactive dependency on courseId and sessionId.
 const data = computed(() => {
@@ -180,11 +203,78 @@ const data = computed(() => {
 const course = computed(() => data.value.course);
 const session = computed(() => data.value.session);
 
+// ==========================================================
+//                 ATTENDANCE LOGIC
+// ==========================================================
+// This state holds the user's selections on this page.
+const presentAthleteIds = ref<number[]>([]);
+
+// A counter for the UI.
+const totalPresent = computed(() => presentAthleteIds.value.length);
+
+// Checks if all athletes are marked as present for the "Mark All / Clear All" button.
+const allArePresent = computed(() => {
+  if (!course.value?.athletes || course.value.athletes.length === 0) {
+    return false;
+  }
+  return presentAthleteIds.value.length === course.value.athletes.length;
+});
+
+// Toggles an individual athlete's attendance status.
+function toggleAttendance(athleteId: number) {
+  const index = presentAthleteIds.value.indexOf(athleteId);
+  if (index > -1) {
+    // If ID is already in the array, remove it (mark as absent).
+    presentAthleteIds.value.splice(index, 1);
+  }
+  else {
+    // If ID is not in the array, add it (mark as present).
+    presentAthleteIds.value.push(athleteId);
+  }
+}
+
+// Helper for dynamic class binding in the template.
+function isAthletePresent(athleteId: number): boolean {
+  return presentAthleteIds.value.includes(athleteId);
+}
+
+// Marks all athletes as present.
+function markAllPresent() {
+  if (course.value?.athletes) {
+    presentAthleteIds.value = course.value.athletes.map(a => a.id);
+  }
+}
+
+// Clears all attendance selections.
+function clearAll() {
+  presentAthleteIds.value = [];
+}
+
+// ==========================================================
+//    DYNAMIC URL FOR THE "START SESSION" BUTTON
+// ==========================================================
+// This is the core logic that connects this page to the start page.
+const startSessionUrl = computed(() => {
+  // 1. Define the base path to the live session page.
+  const basePath = `/course-detail/${courseId.value}/session/${sessionId.value}/start`;
+
+  // 2. If no athletes are selected, the button is disabled, but we can return a default path.
+  if (presentAthleteIds.value.length === 0) {
+    return basePath;
+  }
+
+  // 3. Take the array of checked-in IDs (e.g., [101, 105]) and join them into a string ("101,105").
+  const athleteQuery = presentAthleteIds.value.join(',');
+
+  // 4. Append this string as a URL query parameter.
+  // The final URL will look like: /.../start?athletes=101,105
+  return `${basePath}?athletes=${athleteQuery}`;
+});
+
 // ===============================================
-//       HOW TO PROPERLY THROW A 404 ERROR
+//       404 ERROR HANDLING & METADATA
 // ===============================================
 // Use watchEffect to react to changes in the computed data.
-// We must check that the route is actually ready before we decide it's a 404.
 watchEffect(() => {
   // route.matched.length > 0 ensures the router has finished its initial navigation
   if (route.matched.length > 0 && !session.value) {
@@ -196,64 +286,8 @@ watchEffect(() => {
   }
 });
 
-// ==========================================================
-//                 ATTENDANCE LOGIC
-// ==========================================================
-// State: An array to hold the IDs of athletes marked as present.
-const presentAthleteIds = ref<number[]>([]);
-
-// Computed: A counter for the UI.
-const totalPresent = computed(() => presentAthleteIds.value.length);
-
-// NEW COMPUTED: Checks if all athletes are marked as present.
-const allArePresent = computed(() => {
-  if (!course.value?.athletes || course.value.athletes.length === 0) {
-    return false;
-  }
-  return presentAthleteIds.value.length === course.value.athletes.length;
-});
-
-// Method: Toggles an individual athlete's attendance status.
-function toggleAttendance(athleteId: number) {
-  const index = presentAthleteIds.value.indexOf(athleteId);
-  if (index > -1) {
-    presentAthleteIds.value.splice(index, 1);
-  }
-  else {
-    presentAthleteIds.value.push(athleteId);
-  }
-}
-
-// Method: Helper for dynamic class binding in the template.
-function isAthletePresent(athleteId: number): boolean {
-  return presentAthleteIds.value.includes(athleteId);
-}
-
-// NEW METHOD: Marks all athletes as present.
-function markAllPresent() {
-  if (course.value?.athletes) {
-    presentAthleteIds.value = course.value.athletes.map(a => a.id);
-  }
-}
-
-// NEW METHOD: Clears all attendance selections.
-function clearAll() {
-  presentAthleteIds.value = [];
-}
-
-// 404 Error handling
-watchEffect(() => {
-  if (route.matched.length > 0 && !session.value) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Session or Course Not Found',
-      fatal: true,
-    });
-  }
-});
-
+// Set the page title reactively.
 useHead({
-  // Use a function to make the title reactive as well
   title: () => (session.value ? `Session: ${session.value.name}` : 'Session Details'),
 });
 </script>
