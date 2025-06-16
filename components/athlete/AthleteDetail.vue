@@ -1,143 +1,111 @@
 <template>
   <div class="bg-white rounded-2xl shadow p-6">
     <div class="flex flex-col lg:flex-row">
-      <!-- Left: Basic Info -->
       <div class="flex-1">
-        <h2 class="text-2xl font-semibold mb-4">
-          {{ athlete.name }}
-        </h2>
-        <div
-          class="w-24 h-24 md:w-28 md:h-28 overflow-hidden border-2 border-gray-200 mb-4 justify-self-center"
-        >
-          <NuxtImg
-            v-if="athlete.profileImageUrl"
-            :src="athlete.profileImageUrl"
-            alt="Profile"
-            class="object-cover w-full h-full"
-          />
-          <div
-            v-else
-            class="bg-gray-200 w-full h-full flex items-center justify-center text-gray-500"
-          >
-            <Icon
-              name="mdi:account"
-              size="2rem"
-            />
+        <div class="flex justify-between items-start mb-4">
+          <h2 class="text-2xl font-semibold">
+            {{ athlete.displayName }}
+          </h2>
+          <div class="flex space-x-2">
+            <button
+              class="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 border border-transparent hover:border-blue-200"
+              aria-label="Edit athlete"
+              @click="openEditModal"
+            >
+              <Icon name="mdi:pencil" size="1.25rem" />
+              <span class="text-sm font-medium hidden sm:inline">Edit</span>
+            </button>
+            <div class="relative group">
+              <button
+                class="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 border border-transparent hover:border-red-200"
+                aria-label="Delete athlete"
+                @click="onDeleteClick"
+              >
+                <Icon name="mdi:delete-outline" size="1.25rem" />
+                <span class="text-sm font-medium hidden sm:inline">Delete</span>
+              </button>
+              <div class="absolute right-0 top-full mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap sm:hidden">
+                Delete athlete
+              </div>
+            </div>
           </div>
         </div>
-        <div
-          class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-gray-600 text-sm mb-6"
-        >
+
+        <div class="flex justify-center mb-4">
+          <!-- ANNOTATION: Changed class to reflect normalization -->
+          <div class="w-24 h-24 md:w-28 md:h-28 overflow-hidden border-2 border-gray-200 rounded-full">
+            <NuxtImg v-if="athlete.profileImageUrl" :src="athlete.profileImageUrl" alt="Profile" class="object-cover object-center w-full h-full" placeholder="/default-profile.jpg" />
+            <div v-else class="bg-gray-200 w-full h-full flex items-center justify-center text-gray-500">
+              <Icon name="mdi:account" size="2rem" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ANNOTATION: All data bindings are now based on the normalized AthleteDetail type -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-gray-600 text-sm mb-6">
           <div class="flex items-center">
-            <Icon
-              name="mdi:calendar-account"
-              size="1.25rem"
-              class="mr-2"
-            />
-            <span>Age: {{ athlete.age }} years</span>
+            <Icon name="mdi:calendar-account" size="1.25rem" class="mr-2" /><span>Age: {{ athlete.age }} years</span>
           </div>
           <div class="flex items-center">
-            <Icon
-              name="mdi:account-switch"
-              size="1.25rem"
-              class="mr-2"
-            />
-            <span>Position: {{ athlete.position }}</span>
+            <Icon name="mdi:account-switch" size="1.25rem" class="mr-2" /><span>Position: {{ positionsText }}</span>
           </div>
           <div class="flex items-center">
-            <Icon
-              name="mdi:account-group"
-              size="1.25rem"
-              class="mr-2"
-            />
-            <span>Group: {{ athlete.group }}</span>
+            <Icon name="mdi:account-group" size="1.25rem" class="mr-2" /><span>Group: {{ groupsText }}</span>
           </div>
           <div class="flex items-center">
-            <Icon
-              name="mdi:hand-right"
-              size="1.25rem"
-              class="mr-2"
-            />
-            <span>Dominant Hand: {{ athlete.dominantHand }}</span>
+            <Icon name="mdi:hand-right" size="1.25rem" class="mr-2" /><span>Dominant Hand: {{ athlete.dominantHand }}</span>
           </div>
           <div class="flex items-center">
-            <Icon
-              name="mdi:ruler"
-              size="1.25rem"
-              class="mr-2"
-            />
-            <span>Height: {{ athlete.height }} cm</span>
+            <Icon name="mdi:ruler" size="1.25rem" class="mr-2" /><span>Height: {{ athlete.height ? `${athlete.height} cm` : 'N/A' }}</span>
           </div>
           <div class="flex items-center">
-            <Icon
-              name="mdi:scale-bathroom"
-              size="1.25rem"
-              class="mr-2"
-            />
-            <span>Weight: {{ athlete.weight }} kg</span>
+            <Icon name="mdi:scale-bathroom" size="1.25rem" class="mr-2" /><span>Weight: {{ athlete.weight ? `${athlete.weight} kg` : 'N/A' }}</span>
           </div>
-          <div class="flex items-center">
-            <Icon
-              name="mdi:calendar-clock"
-              size="1.25rem"
-              class="mr-2"
-            />
-            <span>Date of Birth: {{ athlete.dateOfBirth }}</span>
+          <div class="flex items-center col-span-1 sm:col-span-2">
+            <Icon name="mdi:calendar-clock" size="1.25rem" class="mr-2" /><span>Date of Birth: {{ formattedDateOfBirth }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Right: Skill Assessment -->
       <div class="flex-1 mt-6 lg:mt-0 lg:ml-8">
-        <SkillAssessment
-          :skill-scores="skillScores"
-          @save-scores="saveSkillScores"
-        />
+        <!-- ANNOTATION: The skill assessment is now a read-only component -->
+        <SkillAssessment v-if="skillScores" :skill-scores="skillScores" />
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps } from 'vue';
+import type { AthleteDetail, SkillScore } from '~/types/athlete';
+import { formatDateWithFallback } from '~/utils/dateUtils';
 import SkillAssessment from './SkillAssessment.vue';
 
-interface SkillScore {
-  name: string;
-  value: number;
-}
-
-interface Athlete {
-  id: number;
-  name: string;
-  position: string;
-  age: number;
-  height: number;
-  weight: number;
-  dominantHand: string;
-  dateOfBirth: string;
-  profileImageUrl: string | null;
-  group: string;
-  totalPowerRate: number;
-  developmentRate: number;
-  lastAssessmentDate: string | null;
-  skillScores: SkillScore[];
-}
-
-defineProps<{
-  athlete: Athlete;
+// ANNOTATION: Props and emits are now strongly typed using imported interfaces.
+const props = defineProps<{
+  athlete: AthleteDetail;
   skillScores: SkillScore[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'updateAssessment', newScores: SkillScore[]): void;
+  (e: 'deleteAthlete'): void;
+  (e: 'editAthlete'): void;
 }>();
 
-function saveSkillScores(newScores: SkillScore[]) {
-  emit('updateAssessment', newScores);
+// ANNOTATION: Computed properties handle data formatting, keeping the template clean.
+const formattedDateOfBirth = computed(() => formatDateWithFallback(props.athlete.dateOfBirth, 'Not specified'));
+const positionsText = computed(() => props.athlete.positions.length > 0 ? props.athlete.positions.map(p => p.name).join(', ') : 'Not specified');
+const groupsText = computed(() => props.athlete.groups.length > 0 ? props.athlete.groups.map(g => g.name).join(', ') : 'No group assigned');
+
+function onDeleteClick() {
+  const confirmed = confirm(
+    `⚠️ Delete Athlete\n\nAre you sure you want to permanently delete ${props.athlete.name}?\n\nThis action cannot be undone and will remove all associated data.`,
+  );
+  if (confirmed) {
+    emit('deleteAthlete');
+  }
+}
+
+function openEditModal() {
+  emit('editAthlete');
 }
 </script>
-
-<style>
-/* Rely on Tailwind only */
-</style>

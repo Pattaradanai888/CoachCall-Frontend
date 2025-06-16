@@ -273,31 +273,26 @@ const onSubmit = handleSubmit(async (values) => {
       email: values.email,
       password: values.password,
     });
-    await navigateTo('/dashboard', { replace: true });
+
+    await navigateTo('/login?registered=true', {
+      replace: true,
+      external: false,
+    });
   }
   catch (error) {
     console.error('Registration failed:', error);
     if (
-      error
-      && typeof error === 'object'
-      && 'response' in error
-      && error.response
-      && typeof error.response === 'object'
-      && 'data' in error.response
-      && error.response.data
-      && typeof error.response.data === 'object'
-      && 'detail' in error.response.data
+      error && typeof error === 'object' && 'response' in error && error.response
+      && typeof error.response === 'object' && 'data' in error.response && error.response.data
+      && typeof error.response.data === 'object' && 'detail' in error.response.data
     ) {
       const detail = error.response.data.detail;
       if (typeof detail === 'string' && detail.toLowerCase().includes('email already registered')) {
-        setErrors({ email: detail });
+        setErrors({ email: 'This email is already registered.' });
       }
       else {
-        setErrors({ fullname: String(detail) });
+        setErrors({ fullname: String(detail) || 'An unknown server error occurred.' });
       }
-    }
-    else if (error instanceof Error && error.message) {
-      setErrors({ fullname: error.message });
     }
     else {
       setErrors({ fullname: 'An unexpected error occurred during registration.' });

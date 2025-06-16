@@ -26,12 +26,12 @@
           <ClientOnly>
             <div v-if="isAuthenticated" class="relative">
               <button
-                class="flex items-center space-x-2 focus:outline-none"
+                class="flex items-center space-x-2 focus:outline-none profile-button"
                 @click.stop="toggleProfileMenu"
               >
                 <div class="w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
                   <NuxtImg
-                    :src="user?.profile_image_url || '/default-profile.jpg'"
+                    :src="user?.profile?.profile_image_url || '/default-profile.jpg'"
                     alt="User avatar"
                     class="w-full h-full object-cover"
                     placeholder="/default-profile.jpg"
@@ -45,7 +45,7 @@
                     isHeaderTransparent ? 'text-white' : 'text-gray-900',
                   ]"
                 >
-                  {{ user?.fullname || 'User' }}
+                  {{ displayName }}
                 </span>
               </button>
 
@@ -138,7 +138,7 @@
                 <div class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
                   <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
                     <NuxtImg
-                      :src="user?.profile_image_url || '/default-profile.jpg'"
+                      :src="user?.profile?.profile_image_url || '/default-profile.jpg'"
                       alt="User avatar"
                       class="w-full h-full object-cover"
                       placeholder="/default-profile.jpg"
@@ -149,7 +149,7 @@
                   </div>
                   <div>
                     <p class="font-medium text-gray-900">
-                      {{ user?.fullname || 'User' }}
+                      {{ displayName }}
                     </p>
                     <p class="text-sm text-gray-500">
                       {{ user?.email || '' }}
@@ -218,9 +218,15 @@ const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-// Get user data from store
+// Get user data from store with proper reactivity
 const user = computed(() => auth.user);
 const isAuthenticated = computed(() => auth.isAuthenticated);
+
+// Computed property for display name with fallback logic
+const displayName = computed(() => {
+  // First try the profile display_name, then fallback to fullname, then 'User'
+  return user.value?.profile?.display_name || user.value?.fullname || 'User';
+});
 
 // Profile menu state
 const isProfileMenuOpen = ref(false);

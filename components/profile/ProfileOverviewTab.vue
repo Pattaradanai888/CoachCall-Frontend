@@ -4,7 +4,7 @@
     <div v-motion-slide-visible-once-left class="lg:col-span-1 w-full">
       <div class="text-center">
         <NuxtImg
-          :src="profile.profile_image_url || '/default-profile.jpg'"
+          :src="profile.profile?.profile_image_url || '/default-profile.jpg'"
           fetchpriority="high"
           alt="Profile Picture"
           width="128"
@@ -13,7 +13,7 @@
           placeholder
         />
         <h2 class="text-2xl font-bold text-gray-900 break-words">
-          {{ profile.fullname }}
+          {{ profile.profile?.display_name }}
         </h2>
         <p class="text-gray-600 break-all text-sm sm:text-base">
           {{ profile.email }}
@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '~/stores/auth';
+import type { User } from '~/types/auth';
 
 interface Achievement {
   id: string;

@@ -32,7 +32,7 @@
           size="1rem"
           class="mr-1"
         />
-        {{ athlete.position }}
+        {{ athlete.positions }}
       </p>
       <p class="text-gray-600 text-sm flex items-center justify-center">
         <Icon
@@ -43,46 +43,21 @@
         Age: {{ athlete.age }}
       </p>
       <p class="text-gray-600 text-sm flex items-center justify-center">
-        <Icon
-          name="mdi:ruler"
-          size="1rem"
-          class="mr-1"
-        />
-        Height: {{ athlete.height }} cm
+        <Icon name="mdi:ruler" size="1rem" class="mr-1" />
+        Height: {{ athlete.height || 'Undefined' }}{{ athlete.height ? ' cm' : '' }}
       </p>
       <p class="text-gray-600 text-sm flex items-center justify-center">
-        <Icon
-          name="mdi:scale-bathroom"
-          size="1rem"
-          class="mr-1"
-        />
-        Weight: {{ athlete.weight }} kg
+        <Icon name="mdi:scale-bathroom" size="1rem" class="mr-1" />
+        Weight: {{ athlete.weight || 'Undefined' }}{{ athlete.weight ? ' kg' : '' }}
       </p>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { defineProps } from 'vue';
+import type { AthleteDetail } from '~/types/athlete';
 
-interface Athlete {
-  id: number;
-  name: string;
-  position: string;
-  age: number;
-  height: number;
-  weight: number;
-  dominantHand: string;
-  dateOfBirth: string;
-  profileImageUrl: string | null;
-  group: string;
-  totalPowerRate: number;
-  developmentRate: number;
-  lastAssessmentDate: string | null;
-  skillScores: { name: string; value: number }[];
-}
-
-defineProps<{ athlete: Athlete }>();
+defineProps<{ athlete: AthleteDetail }>();
 </script>
 
 <style>
