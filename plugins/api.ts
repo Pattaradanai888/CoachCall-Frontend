@@ -1,33 +1,28 @@
+import type { FetchOptions, FetchRequest } from 'ofetch';
+import { defineNuxtPlugin, useRuntimeConfig } from '#app';
 // plugins/api.ts
-import { defineNuxtPlugin } from '#app';
+import { ofetch } from 'ofetch';
 import { useAuthStore } from '~/stores/auth';
 
 export default defineNuxtPlugin((nuxtApp) => {
   const authStore = useAuthStore();
+  const config = useRuntimeConfig();
 
-  const api = $fetch.create({
-    baseURL: useRuntimeConfig().public.apiBase as string,
+  const baseFetcher = ofetch.create({
+    baseURL: config.public.apiBase,
     credentials: 'include',
-    async onRequest({ options }) {
-      // Initialize headers if not present
+
+    onRequest({ options }) {
       if (!options.headers) {
         options.headers = new Headers();
       }
-
-      // Convert to Headers object if it's a plain object
-      if (!(options.headers instanceof Headers)) {
-        const headersObj = options.headers as Record<string, string>;
-        options.headers = new Headers();
-        for (const [key, value] of Object.entries(headersObj)) {
-          (options.headers as Headers).set(key, value);
-        }
-      }
-
       const headers = options.headers as Headers;
 
-      // Only set Content-Type if not already set and not FormData
-      if (!headers.get('Content-Type') && !(options.body instanceof FormData)) {
-        // Check if body is URLSearchParams (for form data like login)
+      if (authStore.accessToken) {
+        headers.set('Authorization', `Bearer ${authStore.accessToken}`);
+      }
+
+      if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
         if (options.body instanceof URLSearchParams) {
           headers.set('Content-Type', 'application/x-www-form-urlencoded');
         }
@@ -35,13 +30,23 @@ export default defineNuxtPlugin((nuxtApp) => {
           headers.set('Content-Type', 'application/json');
         }
       }
-
-      // Add authorization header if token exists
-      if (authStore.accessToken) {
-        headers.set('Authorization', `Bearer ${authStore.accessToken}`);
-      }
     },
   });
 
-  nuxtApp.provide('api', api);
+  const apiFetch = async <T>(request: FetchRequest, options?: FetchOptions): Promise<T> => {
+    const error = await baseFetcher<T>(request, options as any).catch(e => e);
+    if (error?.response?.status === 401 && !String(request).includes('/auth/refresh')) {
+      await authStore.refreshToken();
+
+      return await baseFetcher<T>(request, options as any);
+    }
+
+    if (error instanceof Error) {
+      throw error;
+    }
+
+    return error;
+  };
+
+  nuxtApp.provide('api', apiFetch);
 });
