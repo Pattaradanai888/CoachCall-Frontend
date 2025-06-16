@@ -1,9 +1,9 @@
+<!-- pages/athlete-management.vue -->
 <template>
   <div>
     <SubNavbar />
-
     <div class="max-w-[1140px] mx-auto my-10 px-4 lg:px-0">
-      <!-- Header + “Create Athlete Profile” button -->
+      <!-- Header -->
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
         <div>
           <h1 class="text-3xl font-bold">
@@ -13,195 +13,145 @@
             Manage your athletes and track their progress
           </p>
         </div>
-        <button
-          class="mt-4 lg:mt-0 bg-white text-red-800 font-semibold border-2 border-red-800 px-4 py-2 rounded-xl hover:bg-red-800 hover:text-white flex items-center transition-colors"
-          @click="showAddModal = true"
-        >
-          <Icon name="mdi:plus" size="1.5rem" class="mr-2" />
-          <span>Create Athlete Profile</span>
+        <button class="bg-red-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-red-800 transition" @click="openCreateModal">
+          <Icon name="mdi:plus" /> Create Athlete Profile
         </button>
       </div>
 
-      <!-- Top row: StatsOverview + LatestAthleteCard -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div class="lg:col-span-2">
-          <StatsOverview :stats="statsData" />
-        </div>
-        <div class="lg:col-span-1">
-          <LatestAthleteCard :athlete="latestAthlete" />
-        </div>
+      <!-- Loading / Error States -->
+      <div v-if="isLoading" class="text-center py-20 text-gray-500">
+        <Icon name="svg-spinners:clock" class="w-8 h-8 mx-auto" />
+        <p class="mt-2">
+          Loading data...
+        </p>
+      </div>
+      <div v-else-if="error && !isDetailsLoading" class="text-center py-20 text-red-500 bg-red-50 rounded-lg">
+        <Icon name="mdi:alert-circle-outline" class="w-8 h-8 mx-auto" />
+        <p class="mt-2">
+          {{ error }}
+        </p>
+        <button class="mt-4 text-blue-600 hover:underline" @click="fetchAllData">
+          Retry
+        </button>
       </div>
 
-      <!-- Bottom row: AthleteList + AthleteDetail -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1">
-          <AthleteList :athletes="athleteList" :selected-id="selectedAthleteId" @select-athlete="handleSelectAthlete" />
-        </div>
-        <div class="lg:col-span-2">
-          <AthleteDetail
-            v-if="selectedAthleteObj" :athlete="selectedAthleteObj"
-            :skill-scores="selectedAthleteObj.skillScores" @update-assessment="handleUpdateAssessment"
-          />
-          <div v-else class="text-gray-500 italic">
-            Select an athlete to view details.
+      <!-- Main Content -->
+      <template v-else>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div class="lg:col-span-2">
+            <StatOverview v-if="stats" :stats="stats" />
+            <div v-else class="h-full bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500">
+              Statistics are unavailable.
+            </div>
+          </div>
+          <div class="lg:col-span-1">
+            <LatestAthleteCard v-if="latestAthlete" :athlete="latestAthlete" />
+            <div v-else class="h-full bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500">
+              No recent athletes.
+            </div>
           </div>
         </div>
-      </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-1">
+            <AthleteList
+              :athletes="athletes"
+              :selected-uuid="selectedAthlete?.uuid ?? null"
+              :has-prev="page > 1"
+              :has-next="hasNextPage"
+              :loading="isListLoading"
+              @select-athlete="selectAthlete"
+              @prev-page="prevPage"
+              @next-page="nextPage"
+            />
+          </div>
+          <div class="lg:col-span-2">
+            <div v-if="isDetailsLoading" class="min-h-[400px] flex items-center justify-center bg-white rounded-2xl shadow">
+              <Icon name="svg-spinners:clock" class="w-8 h-8" />
+              <span class="ml-2">Loading details...</span>
+            </div>
+            <AthleteDetail
+              v-else-if="selectedAthlete"
+              :athlete="selectedAthlete"
+              :skill-scores="selectedAthlete.skillScores || []"
+              @delete-athlete="handleDeleteAthlete"
+              @edit-athlete="openEditModal(selectedAthlete)"
+            />
+            <div v-else class="min-h-[400px] flex items-center justify-center bg-white rounded-2xl shadow text-gray-500">
+              Select an athlete to view their details.
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
-    <!-- Add Athlete Modal (conditionally shown) -->
-    <AddAthleteModal v-model:show="showAddModal" @added="handleNewAthlete" />
+    <!-- Modals -->
+    <ClientOnly>
+      <AthleteFormModal
+        v-model:show="isModalOpen"
+        :athlete="athleteToEdit"
+        @submitted="onFormSubmitted"
+      />
+    </ClientOnly>
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { Athlete } from '~/types/athlete';
-import AddAthleteModal from '~/components/athlete/AddAthleteModal.vue';
-import AthleteDetail from '~/components/athlete/AthleteDetail.vue';
-import AthleteList from '~/components/athlete/AthleteList.vue';
+import type { AthleteDetail } from '~/types/athlete';
 import LatestAthleteCard from '~/components/athlete/LatestAthleteCard.vue';
-// We use the Composition API. These imports assume you have set up `nuxt-icon` globally:
-import StatsOverview from '~/components/athlete/StatOverview.vue';
+import StatOverview from '~/components/athlete/StatOverview.vue';
+import { useAthleteData } from '~/composables/useAthleteData';
 
-interface SkillScore {
-  name: string;
-  value: number;
+// All data fetching logic is now in the composable
+const {
+  athletes,
+  stats,
+  latestAthlete,
+  selectedAthlete,
+  page,
+  hasNextPage,
+  isLoading,
+  isListLoading,
+  isDetailsLoading,
+  error,
+  selectAthlete, // This now accepts UUID
+  prevPage,
+  nextPage,
+  fetchAllData,
+  deleteSelectedAthlete,
+} = useAthleteData();
+
+// Modal State Management
+const isModalOpen = ref(false);
+const athleteToEdit = ref<AthleteDetail | null>(null);
+
+function openCreateModal() {
+  athleteToEdit.value = null;
+  isModalOpen.value = true;
 }
 
-interface StatsData {
-  today: number;
-  week: number;
-  month: number;
-  trend: number[]; // e.g. data points for the mini line chart
+function openEditModal(athlete: AthleteDetail) {
+  athleteToEdit.value = athlete;
+  isModalOpen.value = true;
 }
 
-// —————— DUMMY / PLACEHOLDER DATA ——————
+// When the form is successfully submitted, just refetch everything for consistency
+async function onFormSubmitted() {
+  isModalOpen.value = false;
+  const previouslySelectedUuid = selectedAthlete.value?.uuid;
 
-// (1) The “New Athletes Added” stats + chart
-const statsData = ref<StatsData>({
-  today: 10,
-  week: 25,
-  month: 30,
-  trend: [5, 8, 7, 10, 12, 15, 18, 20], // just sample numbers
-});
+  await fetchAllData();
 
-// (2) The “Latest Athlete” card
-const latestAthlete = ref<Athlete>({
-  id: 101,
-  name: 'Jason Momoa',
-  position: 'Center',
-  age: 21,
-  height: 185,
-  weight: 85,
-  dominantHand: 'Right',
-  dateOfBirth: '2003-04-15',
-  profileImageUrl: 'https://randomuser.me/api/portraits/men/75.jpg',
-  group: 'Team A',
-  totalPowerRate: 7.8,
-  developmentRate: 8.2,
-  lastAssessmentDate: '2025-05-28',
-  skillScores: [
-    { name: 'Shooting', value: 7.8 },
-    { name: 'Dribbling', value: 7.8 },
-    { name: 'Defense', value: 7.8 },
-    { name: 'Athleticism', value: 7.8 },
-    { name: 'Basketball IQ', value: 7.8 },
-    { name: 'Rebounding', value: 7.8 },
-  ],
-  displayName: '',
-  experienceLevel: '',
-  jerseyNumber: null,
-  createdAt: '',
-});
-
-// (3) The list of all athletes (just a few placeholders)
-const athleteList = ref<Athlete[]>([
-  {
-    id: 1,
-    name: 'Michael Jordan',
-    position: 'Center',
-    age: 25,
-    height: 178,
-    weight: 68,
-    dominantHand: 'Right',
-    dateOfBirth: '1989-12-14',
-    profileImageUrl: 'https://randomuser.me/api/portraits/men/45.jpg',
-    group: 'Team A',
-    totalPowerRate: 9.5,
-    developmentRate: 9.0,
-    lastAssessmentDate: '2025-05-25',
-    skillScores: [
-      { name: 'Shooting', value: 9.5 },
-      { name: 'Dribbling', value: 9.5 },
-      { name: 'Defense', value: 9.0 },
-      { name: 'Athleticism', value: 9.5 },
-      { name: 'Basketball IQ', value: 9.8 },
-      { name: 'Rebounding', value: 8.0 },
-    ],
-    displayName: '',
-    experienceLevel: '',
-    jerseyNumber: null,
-    createdAt: '',
-  },
-  {
-    id: 2,
-    name: 'LeBron James',
-    position: 'Forward',
-    age: 24,
-    height: 205,
-    weight: 100,
-    dominantHand: 'Left',
-    dateOfBirth: '2001-02-06',
-    profileImageUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-    group: 'Team B',
-    totalPowerRate: 9.3,
-    developmentRate: 8.8,
-    lastAssessmentDate: '2025-05-20',
-    skillScores: [
-      { name: 'Shooting', value: 8.8 },
-      { name: 'Dribbling', value: 9.0 },
-      { name: 'Defense', value: 9.2 },
-      { name: 'Athleticism', value: 9.7 },
-      { name: 'Basketball IQ', value: 9.4 },
-      { name: 'Rebounding', value: 9.1 },
-    ],
-    displayName: '',
-    experienceLevel: '',
-    jerseyNumber: null,
-    createdAt: '',
-  },
-  // …more placeholder athletes…
-]);
-
-// (4) Which athlete is currently “selected”?
-const selectedAthleteId = ref<number | null>(null);
-
-const selectedAthleteObj = computed(() => {
-  return (
-    athleteList.value.find(a => a.id === selectedAthleteId.value) || null
-  );
-});
-
-function handleSelectAthlete(id: number) {
-  selectedAthleteId.value = id;
+  // Try to re-select the athlete that was being edited
+  if (previouslySelectedUuid) {
+    await selectAthlete(previouslySelectedUuid);
+  }
 }
 
-// (5) When the user clicks “Create Athlete Profile”
-const showAddModal = ref(false);
-function handleNewAthlete(newAthlete: Athlete) {
-  // In a real app: call your API -> save, then push the returned athlete object
-  athleteList.value.push(newAthlete);
-  // Optionally: set that new athlete as selected
-  selectedAthleteId.value = newAthlete.id;
+async function handleDeleteAthlete() {
+  // Confirmation is now inside the AthleteDetail component
+  await deleteSelectedAthlete();
 }
 
-// (6) When the user clicks “Update Assessment” inside AthleteDetail
-function handleUpdateAssessment(updatedSkillScores: SkillScore[]) {
-  if (!selectedAthleteObj.value)
-    return;
-  selectedAthleteObj.value.skillScores = updatedSkillScores;
-  // In real life: POST to your FastAPI endpoint to save the new scores
-}
+await fetchAllData();
 </script>
-
-<style></style>

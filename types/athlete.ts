@@ -1,98 +1,177 @@
+// types/athlete.ts
 import { z } from 'zod';
 
-// Zod schema for athlete form validation
-export const athleteSchema = z.object({
-  name: z.string().min(1, 'Full name is required').min(2, 'Name must be at least 2 characters'),
-  preferredName: z.string().optional(),
-  dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  age: z.number().min(0).max(100),
-  phoneNumber: z.string().optional(),
-  emergencyContactName: z.string().optional(),
-  emergencyContactPhone: z.string().optional(),
-  weight: z.number().min(0).optional().nullable(),
-  height: z.number().min(0).optional().nullable(),
-  position: z.string().optional(),
-  dominantHand: z.string().optional(),
-  experienceLevel: z.string().optional(),
-  group: z.string().optional(),
-  jerseyNumber: z.number().min(0).max(99).optional().nullable(),
-  notes: z.string().optional(),
-  profileImageFile: z.instanceof(File).optional().nullable(),
-  profileImageUrl: z.string().optional().nullable(),
-});
+// --- Reusable Zod Schemas ---
+const optionalNumber = z.preprocess(
+  val => (val === '' || val === null ? undefined : Number(val)),
+  z.number().min(0).optional(),
+);
+const optionalString = z.string().optional().nullable();
 
-// TypeScript type inferred from Zod schema
-export type NewAthleteForm = z.infer<typeof athleteSchema>;
+// --- Interfaces from Backend Schemas ---
 
-// Athlete interface for the complete athlete object
-export interface Athlete {
+export interface Group {
   id: number;
   name: string;
-  preferredName?: string;
-  displayName: string;
-  position: string;
-  age: number;
-  height?: number | null;
-  weight?: number | null;
-  dominantHand: string;
-  experienceLevel: string;
-  dateOfBirth: string;
-  phoneNumber?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  profileImageUrl?: string | null;
-  group: string;
-  jerseyNumber?: number | null;
-  notes?: string;
-  totalPowerRate: number;
-  developmentRate: number;
-  lastAssessmentDate: string | null;
-  skillScores: SkillScore[];
-  createdAt: string;
+}
+
+export interface Position {
+  id: number;
+  name: string;
+}
+
+export interface ExperienceLevel {
+  id: number;
+  name: string;
 }
 
 export interface SkillScore {
-  name: string;
-  value: number;
+  skillId: number;
+  currentScore: number;
+  skillName: string;
 }
 
-// Position options
-export const POSITIONS = [
-  { value: '', label: 'Not specified' },
-  { value: 'Point Guard', label: 'Point Guard (PG)' },
-  { value: 'Shooting Guard', label: 'Shooting Guard (SG)' },
-  { value: 'Small Forward', label: 'Small Forward (SF)' },
-  { value: 'Power Forward', label: 'Power Forward (PF)' },
-  { value: 'Center', label: 'Center (C)' },
-  { value: 'Versatile', label: 'Versatile/Multiple Positions' },
-] as const;
+// --- Frontend Data Models ---
 
-// Dominant hand options
+// Represents an athlete in the list view
+export interface AthleteListEntry {
+  uuid: string;
+  name: string;
+  age: number | null;
+  preferredName?: string;
+  position: string; // Combined string of positions
+  profileImageUrl: string | null;
+}
+
+// Represents the detailed athlete object used in the UI
+export interface AthleteDetail {
+  uuid: string;
+  userId: number;
+  name: string;
+  preferredName?: string;
+  displayName: string; // Helper for UI: "Name (Preferred)"
+  age: number | null;
+  height?: number;
+  weight?: number;
+  dominantHand?: string;
+  dateOfBirth: string | null; // YYYY-MM-DD
+  phoneNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  notes?: string;
+  jerseyNumber?: number;
+  profileImageUrl: string | null;
+
+  // Relationships
+  experienceLevel: ExperienceLevel | null;
+  groups: Group[];
+  positions: Position[];
+  skillScores: SkillScore[];
+}
+
+// --- API Response Types ---
+export interface AthleteListResponse {
+  uuid: string;
+  name: string;
+  age: number | null;
+  preferred_name?: string;
+  position: string;
+  profile_image_url: string | null;
+}
+
+export interface AthleteResponse {
+  uuid: string;
+  user_id: number;
+  name: string;
+  preferred_name?: string;
+  age: number | null;
+  height?: number;
+  weight?: number;
+  dominant_hand?: string;
+  date_of_birth: string; // ISO Date string
+  phone_number?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  notes?: string;
+  jersey_number?: number;
+  profile_image_url: string | null;
+  experience_level: ExperienceLevel | null;
+  groups: Group[];
+  positions: Position[];
+  skill_levels: Array<{
+    skill_id: number;
+    current_score: string; // Backend sends Decimal as string
+    skill_name: string | null;
+  }>;
+}
+
+// --- Dashboard & Stats Types ---
+
+export interface TrendDataPoint {
+  date: string;
+  day_name: string;
+  formatted_date: string;
+  count: number;
+}
+
+export interface AthleteInsights {
+  week_change_percent: number | null;
+  peak_day: string | null;
+  avg_daily: number;
+  is_growing: boolean | null;
+}
+
+export interface AthleteCreationStatus {
+  today: number;
+  week: number;
+  month: number;
+  total: number;
+  trend: number[];
+  trend_detailed: TrendDataPoint[];
+  insights: AthleteInsights;
+}
+
+// --- Form Validation Schema (Zod) ---
+export const athleteSchema = z.object({
+  name: z.string().min(1, 'Full name is required').max(100),
+  preferredName: optionalString,
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  age: optionalNumber,
+  profileImageFile: z
+    .custom<File>(val => val instanceof File, 'Invalid file type')
+    .optional()
+    .nullable(),
+
+  // Optional fields
+  height: optionalNumber.optional(),
+  weight: optionalNumber.optional(),
+  dominantHand: optionalString,
+  phoneNumber: optionalString,
+  emergencyContactName: optionalString,
+  emergencyContactPhone: optionalString,
+  notes: z.string().max(1000).optional().nullable(),
+  jerseyNumber: optionalNumber.optional(),
+
+  // IDs from selects
+  experienceLevelId: optionalString,
+  groupIds: z.array(z.string()).optional(),
+  positionIds: z.array(z.string()).optional(),
+});
+
+export type AthleteFormValues = z.infer<typeof athleteSchema>;
+
+// --- Constants ---
 export const DOMINANT_HANDS = [
-  { value: '', label: 'Not specified' },
+  { value: '', label: 'Select...' },
   { value: 'Right', label: 'Right' },
   { value: 'Left', label: 'Left' },
   { value: 'Ambidextrous', label: 'Ambidextrous' },
-] as const;
+];
 
-// Experience level options
 export const EXPERIENCE_LEVELS = [
-  { value: '', label: 'Select level' },
-  { value: 'Beginner', label: 'Beginner (New to basketball)' },
-  { value: 'Novice', label: 'Novice (Some experience)' },
-  { value: 'Intermediate', label: 'Intermediate (Regular player)' },
-  { value: 'Advanced', label: 'Advanced (Competitive player)' },
-  { value: 'Elite', label: 'Elite (High-level competitive)' },
-] as const;
-
-// Group/Team options
-export const GROUPS = [
-  { value: '', label: 'Not assigned yet' },
-  { value: 'Varsity Team', label: 'Varsity Team' },
-  { value: 'Junior Varsity', label: 'Junior Varsity' },
-  { value: 'Under-18', label: 'Under-18' },
-  { value: 'Under-16', label: 'Under-16' },
-  { value: 'Under-14', label: 'Under-14' },
-  { value: 'Beginners Group', label: 'Beginners Group' },
-  { value: 'Development Squad', label: 'Development Squad' },
-] as const;
+  { value: '', label: 'Select...' },
+  { value: '1', label: 'Beginner' },
+  { value: '2', label: 'Intermediate' },
+  { value: '3', label: 'Advanced' },
+  { value: '4', label: 'Expert' },
+];
