@@ -37,6 +37,13 @@
       </p>
 
       <form class="space-y-3" @submit.prevent="onSubmit">
+        <div
+          v-if="registrationSuccess"
+          class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
+          <span class="block sm:inline">Registration successful! You can now log in.</span>
+        </div>
         <!-- Server-side error message -->
         <div
           v-if="serverError"
@@ -118,10 +125,10 @@
 </template>
 
 <script setup lang="ts">
-import { navigateTo } from '#app';
+import { navigateTo, useRoute } from '#app';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useField, useForm } from 'vee-validate';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { z } from 'zod';
 import { useAuthStore } from '~/stores/auth';
 
@@ -142,8 +149,17 @@ const serverError = ref<string | null>(null);
 
 const auth = useAuthStore();
 const route = useRoute();
+const registrationSuccess = ref(false);
+onMounted(() => {
+  if (route.query.registered === 'true') {
+    registrationSuccess.value = true;
+  }
+});
 
 const onSubmit = handleSubmit(async (values) => {
+  serverError.value = null;
+  registrationSuccess.value = false;
+
   try {
     await auth.login({ email: values.email, password: values.password });
     const redirectPath = (route.query.redirect as string) || '/dashboard';
@@ -152,8 +168,7 @@ const onSubmit = handleSubmit(async (values) => {
   catch (error: unknown) {
     console.error('Login failed:', error);
     const err = error as { response?: { data?: { detail?: string } } };
-    serverError.value
-      = err.response?.data?.detail || 'Email or password incorrect please try again';
+    serverError.value = err.response?.data?.detail || 'Email or password incorrect, please try again.';
   }
 });
 </script>

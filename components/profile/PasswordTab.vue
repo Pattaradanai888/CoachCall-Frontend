@@ -134,10 +134,14 @@
                 :name="passwordValidation.special ? 'mdi:check' : 'mdi:close'"
                 class="w-4 h-4 mr-2 flex-shrink-0"
               />
-              <p>One special character (!@#$%^&*(),.?":{}|&lt;&gt;)</p>
+              <p>One special character (!@#$%^&amp;*(),.?":{}|&lt;&gt;)</p>
             </li>
           </ul>
         </div>
+
+        <p v-if="submissionError" class="text-red-500 text-sm mt-1 bg-red-50 p-3 rounded-md">
+          {{ submissionError }}
+        </p>
 
         <button
           type="submit"
@@ -152,7 +156,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive } from 'vue';
+import { useSubmit } from '~/composables/useSubmit';
 
 const emit = defineEmits<{
   (e: 'updated'): void;
@@ -173,8 +178,6 @@ const showPasswords = reactive({
   confirm: false,
 });
 
-const loading = ref(false);
-
 const passwordValidation = computed(() => {
   const password = passwordForm.new;
   return {
@@ -191,46 +194,39 @@ const isPasswordFormValid = computed(() => {
     Object.values(passwordValidation.value).every(Boolean)
     && passwordForm.new === passwordForm.confirm
     && passwordForm.current.length > 0
-    && passwordForm.new.length > 0 // Ensure new password is not empty
+    && passwordForm.new.length > 0
   );
 });
 
+const { loading, submissionError, submit: changePassword } = useSubmit(
+  data => $api('/profile/change-password', {
+    method: 'POST',
+    body: data,
+  }),
+  {
+    onSuccess: () => {
+      passwordForm.current = '';
+      passwordForm.new = '';
+      passwordForm.confirm = '';
+      Object.keys(showPasswords).forEach(key => (showPasswords[key as keyof typeof showPasswords] = false));
+      emit('updated');
+    },
+    onError: (err) => {
+      emit('error', err || 'Failed to update password.');
+    },
+  },
+);
+
 async function submitUpdatePassword() {
   if (!isPasswordFormValid.value) {
-    let errorMsg = 'Please ensure all password requirements are met.';
-    if (passwordForm.new !== passwordForm.confirm)
-      errorMsg = 'New passwords do not match.';
-    if (!passwordForm.current)
-      errorMsg = 'Current password is required.';
-    emit('error', errorMsg);
+    emit('error', 'Please ensure all password requirements are met.');
     return;
   }
 
-  loading.value = true;
-  try {
-    await $api('/profile/change-password', {
-      method: 'POST',
-      body: {
-        current_password: passwordForm.current,
-        new_password: passwordForm.new,
-        confirm_password: passwordForm.confirm,
-      },
-    });
-
-    passwordForm.current = '';
-    passwordForm.new = '';
-    passwordForm.confirm = '';
-    Object.keys(showPasswords).forEach(
-      key => (showPasswords[key as keyof typeof showPasswords] = false),
-    );
-    emit('updated');
-  }
-  catch {
-    const message = 'Failed to update password. Check current password.';
-    emit('error', message);
-  }
-  finally {
-    loading.value = false;
-  }
+  await changePassword({
+    current_password: passwordForm.current,
+    new_password: passwordForm.new,
+    confirm_password: passwordForm.confirm,
+  });
 }
 </script>

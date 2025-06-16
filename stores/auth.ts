@@ -1,5 +1,5 @@
-import type { TokenResponse } from '~/types/auth';
-// stores/auth.ts - Fixed version with better state management
+import type { TokenResponse, User } from '~/types/auth';
+// stores/auth.ts - Fixed version
 import { defineStore } from 'pinia';
 import { computed, getCurrentInstance, ref } from 'vue';
 import { z } from 'zod';
@@ -7,11 +7,19 @@ import { z } from 'zod';
 const UserSchema = z.object({
   id: z.number(),
   email: z.string().email(),
-  fullname: z.string(),
-  profile_image_url: z.string().url().nullable().optional(),
+  profile: z.object({
+    display_name: z.string(),
+    profile_image_url: z.string().url().nullable().optional(),
+  }).nullable(),
+}).transform((user) => {
+  return {
+    ...user,
+    fullname: user.profile?.display_name ?? 'N/A',
+    profile_image_url: user.profile?.profile_image_url,
+  };
 });
 
-export type User = z.infer<typeof UserSchema>;
+export type UserFromSchema = z.infer<typeof UserSchema>;
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null);
@@ -30,14 +38,15 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function _performRefreshAndFetchProfile(): Promise<void> {
     try {
-      const { $api } = useNuxtApp();
-      const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
+      const refreshResponse = await $fetch<TokenResponse>('/api/auth/refresh', {
         method: 'POST',
+        credentials: 'include',
       });
       accessToken.value = refreshResponse.access_token;
       await fetchProfile(true);
     }
     catch (err) {
+      console.error('Refresh and profile fetch failed:', err);
       await logoutSilently();
       throw err;
     }
@@ -74,6 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
         initializationSource.value = source;
       }
       catch (error) {
+        console.error('Auth initialization failed:', error);
         // Reset state on error
         await logoutSilently();
         throw error;
@@ -85,6 +95,44 @@ export const useAuthStore = defineStore('auth', () => {
     })();
 
     return refreshPromise;
+  }
+
+  // Method to manually refresh token (can be called from API plugin)
+  async function refreshToken(): Promise<string> {
+    if (isRefreshing.value && refreshPromise) {
+      await refreshPromise;
+      return accessToken.value || '';
+    }
+
+    isRefreshing.value = true;
+    refreshPromise = (async () => {
+      try {
+        const refreshResponse = await $fetch<TokenResponse>('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        accessToken.value = refreshResponse.access_token;
+
+        // Try to fetch profile but don't fail if it doesn't work
+        try {
+          await fetchProfile(true);
+        }
+        catch (profileError) {
+          console.warn('Profile fetch failed after refresh:', profileError);
+        }
+      }
+      catch (error) {
+        console.error('Token refresh failed:', error);
+        await logoutSilently();
+        throw error;
+      }
+    })();
+
+    await refreshPromise;
+    isRefreshing.value = false;
+    refreshPromise = null;
+
+    return accessToken.value || '';
   }
 
   // Method to hydrate from SSR payload without triggering API calls
@@ -102,6 +150,16 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       if (user.value && typeof userData === 'object' && userData !== null) {
         const updatedUserData = { ...user.value, ...userData };
+
+        // FIXED: Ensure profile has required fields when updating
+        if (updatedUserData.profile) {
+          // Ensure display_name is always provided
+          updatedUserData.profile = {
+            display_name: updatedUserData.profile.display_name || user.value.profile?.display_name || user.value.fullname || 'N/A',
+            profile_image_url: updatedUserData.profile.profile_image_url,
+          };
+        }
+
         user.value = UserSchema.parse(updatedUserData);
       }
       else {
@@ -119,20 +177,17 @@ export const useAuthStore = defineStore('auth', () => {
     const { $api } = useNuxtApp();
     const form = new URLSearchParams();
     form.append('grant_type', 'password');
-    form.append('scope', '');
     form.append('username', payload.email);
     form.append('password', payload.password);
 
     const tokenResponse = await $api<TokenResponse>('/auth/token', {
       method: 'POST',
       body: form,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
     accessToken.value = tokenResponse.access_token;
     const profile = await fetchProfile();
     isInitialized.value = true;
-    initializationSource.value = 'client';
     return profile;
   }
 
@@ -166,6 +221,8 @@ export const useAuthStore = defineStore('auth', () => {
         return parsedUser;
       }
       catch (error: unknown) {
+        // Let the API plugin handle 401 errors with automatic refresh
+        // Only logout if it's not a 401 or if refresh has already been attempted
         if (
           error
           && typeof error === 'object'
@@ -174,7 +231,7 @@ export const useAuthStore = defineStore('auth', () => {
           && typeof error.response === 'object'
           && 'status' in error.response
           && error.response.status === 401
-          && !isAfterRefresh
+          && isAfterRefresh // Only logout if this was after a refresh attempt
         ) {
           await logoutSilently();
         }
@@ -189,19 +246,59 @@ export const useAuthStore = defineStore('auth', () => {
     return profilePromise;
   }
 
+  // UPDATED: Update profile method
+  async function updateDisplayName(newDisplayName: string): Promise<User> {
+    const { $api } = useNuxtApp();
+
+    if (!accessToken.value) {
+      throw new Error('Authentication required: No access token available.');
+    }
+
+    try {
+      // Call the API to update the display name
+      const response = await $api<{
+        fullname: string;
+        id: number;
+        email: string;
+        profile_image_url?: string | null;
+      }>('/profile/me', {
+        method: 'PUT',
+        body: { fullname: newDisplayName },
+      });
+
+      // FIXED: Create properly typed user data
+      const updatedUserData: User = {
+        ...user.value!,
+        id: response.id,
+        email: response.email,
+        fullname: response.fullname,
+        profile: {
+          display_name: response.fullname, // Always ensure display_name is set
+          profile_image_url: response.profile_image_url ?? user.value?.profile?.profile_image_url ?? null,
+        },
+      };
+
+      user.value = UserSchema.parse(updatedUserData);
+      return user.value;
+    }
+    catch (error: unknown) {
+      console.error('Display name update failed:', error);
+      throw error;
+    }
+  }
+
   async function register(payload: {
     fullname: string;
     email: string;
     password: string;
-  }): Promise<User> {
+  }): Promise<void> {
     const { $api } = useNuxtApp();
     await $api('/auth/register', { method: 'POST', body: payload });
-    return login({ email: payload.email, password: payload.password });
   }
 
   async function logout() {
-    const { $api } = useNuxtApp();
     try {
+      const { $api } = useNuxtApp();
       await $api('/auth/logout', { method: 'POST' });
     }
     catch (error) {
@@ -234,9 +331,12 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     fetchProfile,
+    updateDisplayName,
     logout,
     initializeAuth,
     hydrateFromSSR,
     setUserData,
+    refreshToken,
+    logoutSilently,
   };
 });

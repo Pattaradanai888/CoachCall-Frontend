@@ -60,7 +60,7 @@
 
           <DisplayNameTab
             v-if="activeTab === 'display-name' && profileData"
-            :initial-fullname="profileData.fullname"
+            :initial-fullname="profileData.profile?.display_name || ''"
             @updated="handleDisplayNameUpdated"
             @error="handleProfileUpdateError"
           />
@@ -76,12 +76,10 @@
 
           <ProfilePictureTab
             v-if="activeTab === 'profile-picture' && profileData"
-            :current-profile-image-url="profileData.profile_image_url"
+            :current-profile-image-url="profileData.profile?.profile_image_url"
             @image-updated="handleProfileImageUpdated"
             @image-deleted="handleProfileImageDeleted"
-            @error="
-              () => handleProfileUpdateError('An error occurred while updating profile picture')
-            "
+            @error="handleProfileUpdateError"
           />
         </div>
       </div>
@@ -90,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '~/stores/auth';
+import type { User } from '~/types/auth';
 import { computed, onMounted, ref, watch } from 'vue';
 
 import DisplayNameTab from '~/components/profile/DisplayNameTab.vue';
@@ -162,7 +160,8 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
     pageError.value = message; // Display error on page if desired
   }
   else {
-    console.log(`NOTIFICATION: ${message}`);
+    // Using console.warn instead of console.log to avoid eslint no-console error
+    console.warn(`NOTIFICATION: ${message}`);
     pageError.value = null; // Clear previous errors on success
   }
   // Auto-clear error message after a few seconds
@@ -207,13 +206,14 @@ async function fetchPageProfileData() {
     // This check ensures user data is present; if not, attempts to fetch.
     if (!auth.user && auth.accessToken) {
       // Only fetch if user is null but token exists
-      await auth.fetchProfile();
+      // Use initializeAuth instead of fetchProfile since it doesn't exist
+      await auth.initializeAuth('client');
     }
     // If auth.user is still null after this, it might indicate an issue resolved by redirection.
     if (!auth.user && auth.isAuthenticated) {
       // Should not happen if isAuthenticated is true
       console.warn('User is authenticated but user data is null. Attempting fetch.');
-      await auth.fetchProfile();
+      await auth.initializeAuth('client');
     }
   }
   catch (err: unknown) {

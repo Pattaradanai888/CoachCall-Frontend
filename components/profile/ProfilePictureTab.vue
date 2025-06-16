@@ -95,17 +95,20 @@
 </template>
 
 <script setup lang="ts">
+import type { User } from '~/types/auth';
 import { ref } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import ProfilePicturePreviewModal from './ProfilePicturePreviewModal.vue';
 
-const props = defineProps<{
+defineProps<{
   currentProfileImageUrl: string | null | undefined;
 }>();
 
+// Fixed event names to use camelCase as required by Vue/ESLint
 const emit = defineEmits<{
-  (e: 'image-updated', newImageUrl: string): void;
-  (e: 'image-deleted' | 'error'): void;
+  (e: 'imageUpdated', newImageUrl: string): void;
+  (e: 'imageDeleted'): void;
+  (e: 'error', message: string): void;
 }>();
 
 const auth = useAuthStore();
@@ -115,8 +118,6 @@ const showPreviewModal = ref(false);
 const selectedFile = ref<File | null>(null);
 const previewImage = ref<string | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const loadingUpload = ref(false);
-const loadingDelete = ref(false);
 
 function triggerFileInput() {
   fileInputRef.value?.click();
@@ -168,33 +169,66 @@ function closePreviewModal() {
   }
 }
 
+const { loading: loadingUpload, submit: uploadPicture } = useSubmit(
+  (formData: FormData) => $api<{ image_url: string }>('/profile/upload-image', {
+    method: 'POST',
+    body: formData,
+  }),
+  {
+    onSuccess: (data) => {
+      // FIXED: Update auth store with proper User type structure
+      const currentUser = auth.user;
+      if (currentUser) {
+        const updatedUserData: User = {
+          ...currentUser,
+          profile: {
+            display_name: currentUser.profile?.display_name || currentUser.fullname || 'N/A',
+            profile_image_url: data.image_url,
+          },
+        };
+        auth.setUserData(updatedUserData);
+      }
+      emit('imageUpdated', data.image_url);
+      closePreviewModal();
+    },
+    onError: (err) => {
+      const errorMessage = typeof err === 'string' ? err : 'Failed to upload image';
+      emit('error', errorMessage);
+    },
+  },
+);
+
+const { loading: loadingDelete, submit: deletePicture } = useSubmit(
+  () => $api('/profile/image', { method: 'DELETE' }),
+  {
+    onSuccess: () => {
+      // FIXED: Update auth store with proper User type structure
+      const currentUser = auth.user;
+      if (currentUser) {
+        const updatedUserData: User = {
+          ...currentUser,
+          profile: {
+            display_name: currentUser.profile?.display_name || currentUser.fullname || 'N/A',
+            profile_image_url: null,
+          },
+        };
+        auth.setUserData(updatedUserData);
+      }
+      emit('imageDeleted');
+    },
+    onError: (err) => {
+      const errorMessage = typeof err === 'string' ? err : 'Failed to delete image';
+      emit('error', errorMessage);
+    },
+  },
+);
+
 async function handleUploadProfilePicture() {
   if (!selectedFile.value)
     return;
-
-  loadingUpload.value = true;
   const formData = new FormData();
   formData.append('file', selectedFile.value);
-
-  try {
-    // Use $api instead of $fetch to include auth token
-    const data = await $api<{ message: string; image_url: string }>('/profile/upload-image', {
-      method: 'POST',
-      body: formData,
-    });
-
-    auth.setUserData({ profile_image_url: data.image_url });
-    emit('image-updated', data.image_url);
-    closePreviewModal();
-  }
-  catch {
-    // Simplified error handling
-    const message = 'Failed to upload profile picture.';
-    emit('error', message);
-  }
-  finally {
-    loadingUpload.value = false;
-  }
+  await uploadPicture(formData);
 }
 
 function confirmDeleteProfilePicture() {
@@ -208,27 +242,6 @@ function confirmDeleteProfilePicture() {
 }
 
 async function handleDeleteProfilePicture() {
-  if (!props.currentProfileImageUrl)
-    return;
-
-  loadingDelete.value = true;
-  try {
-    await $api('/profile/image', {
-      method: 'DELETE',
-    });
-
-    if (auth.user) {
-      auth.setUserData({ profile_image_url: null });
-    }
-
-    emit('image-deleted');
-  }
-  catch {
-    const message = 'Failed to delete profile picture.';
-    emit('error', message);
-  }
-  finally {
-    loadingDelete.value = false;
-  }
+  await deletePicture();
 }
 </script>

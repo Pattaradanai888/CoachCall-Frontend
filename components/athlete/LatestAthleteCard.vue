@@ -32,7 +32,7 @@
           size="1rem"
           class="mr-1"
         />
-        {{ athlete.position }}
+        {{ athlete.positions }}
       </p>
       <p class="text-gray-600 text-sm flex items-center justify-center">
         <Icon

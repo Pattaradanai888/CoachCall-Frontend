@@ -1,4 +1,5 @@
 import type { RouteLocationNormalized } from 'vue-router';
+import type { User } from '~/types/auth';
 // middleware/auth.global.ts
 import {
   defineNuxtRouteMiddleware,
@@ -9,16 +10,6 @@ import {
 } from '#imports';
 
 let serverAuthPromise: Promise<void> | null = null;
-
-// Types
-interface User {
-  id: number;
-  email: string;
-  fullname: string;
-  name?: string;
-  profile_image_url?: string | null;
-  [key: string]: unknown;
-}
 
 interface AuthPayload {
   accessToken: string | null;
@@ -57,6 +48,15 @@ export default defineNuxtRouteMiddleware(
         try {
           await serverAuthPromise;
         }
+        catch (error) {
+          console.error('Server auth failed:', error);
+          // Set processed to true even on failure to prevent infinite loops
+          nuxtApp.payload.auth = {
+            accessToken: null,
+            user: null,
+            processed: true,
+          } satisfies AuthPayload;
+        }
         finally {
           serverAuthPromise = null;
         }
@@ -72,6 +72,17 @@ export default defineNuxtRouteMiddleware(
         }
         try {
           await serverAuthPromise;
+        }
+        catch (error) {
+          console.error('Server profile fetch failed:', error);
+          // Clear auth state on profile fetch failure
+          auth.accessToken = null;
+          auth.user = null;
+          nuxtApp.payload.auth = {
+            accessToken: null,
+            user: null,
+            processed: true,
+          } satisfies AuthPayload;
         }
         finally {
           serverAuthPromise = null;
@@ -122,13 +133,17 @@ async function performServerAuth(
       processed: true,
     } satisfies AuthPayload;
   }
-  catch {
+  catch (error) {
+    console.error('Server auth failed:', error);
     // If refresh fails, clear auth state
+    auth.accessToken = null;
+    auth.user = null;
     nuxtApp.payload.auth = {
       accessToken: null,
       user: null,
       processed: true,
     } satisfies AuthPayload;
+    throw error;
   }
 }
 
@@ -148,7 +163,8 @@ async function fetchProfileAndSetPayload(
       processed: true,
     } satisfies AuthPayload;
   }
-  catch {
+  catch (error) {
+    console.error('Profile fetch failed:', error);
     // If profile fetch fails, clear auth state
     auth.accessToken = null;
     auth.user = null;
@@ -157,6 +173,7 @@ async function fetchProfileAndSetPayload(
       user: null,
       processed: true,
     } satisfies AuthPayload;
+    throw error;
   }
 }
 
@@ -206,9 +223,11 @@ async function handleClientRouteGuarding(
   if (!auth.isAuthenticated) {
     const redirectQuery
       = to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
+
     if (auth.isInitialized) {
       return navigateTo(`/login${redirectQuery}`, { replace: true });
     }
+
     if (!auth.isRefreshing) {
       try {
         await auth.initializeAuth('client');
@@ -216,7 +235,17 @@ async function handleClientRouteGuarding(
           return navigateTo(`/login${redirectQuery}`, { replace: true });
         }
       }
-      catch {
+      catch (error) {
+        console.error('Client auth initialization failed:', error);
+        return navigateTo(`/login${redirectQuery}`, { replace: true });
+      }
+    }
+    else {
+      // If already refreshing, wait for it to complete
+      while (auth.isRefreshing) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      if (!auth.isAuthenticated) {
         return navigateTo(`/login${redirectQuery}`, { replace: true });
       }
     }

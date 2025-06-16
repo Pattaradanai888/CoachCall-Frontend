@@ -132,20 +132,10 @@ async function submitUpdateDisplayName() {
 
   loading.value = true;
   try {
-    const response = await $api<{
-      fullname: string;
-      id: number;
-      email: string;
-      profile_image_url?: string | null;
-    }>('/profile/me', {
-      method: 'PUT',
-      body: { fullname: newFullname.value.trim() },
-    });
+    const updatedUser = await auth.updateDisplayName(newFullname.value.trim());
 
-    auth.setUserData(response); // Update Pinia store
-
-    emit('updated', response.fullname);
-    newFullname.value = ''; // Reset form field after successful update
+    emit('updated', updatedUser.profile?.display_name || updatedUser.fullname);
+    newFullname.value = '';
     fullnameError.value = null;
   }
   catch {
