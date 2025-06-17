@@ -10,6 +10,11 @@
 
     <!-- Session Details -->
     <div v-else class="bg-white rounded-lg p-6 lg:p-8 shadow-xl w-full">
+      <NuxtLink :to="`/course-detail/${courseId}`" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors">
+        <Icon name="mdi:arrow-left" size="1.25rem" />
+        <span>Back to Courses detail</span>
+      </NuxtLink>
+
       <div class="border-b pb-4 mb-6">
         <h1 class="text-3xl font-extrabold text-gray-900">
           {{ session.name }}
@@ -146,12 +151,15 @@
             </div>
           </button>
         </div>
-        <div>
+        <p v-if="totalPresent === 0" class="text-xs text-gray-500 mt-2">
+          Select athletes below to begin.
+        </p>
+        <div class="mt-5">
           <!-- Show this button only if at least one athlete is selected -->
           <NuxtLink
             v-if="totalPresent > 0"
             :to="startSessionUrl"
-            class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition shadow-lg text-lg flex items-center"
+            class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition shadow-lg text-lg flex items-center "
           >
             <Icon name="mdi:play-circle-outline" class="mr-2" size="1.5rem" />
             Start Session ({{ totalPresent }})
@@ -165,9 +173,6 @@
             <Icon name="mdi:play-circle-outline" class="mr-2" size="1.5rem" />
             Start Session
           </div>
-          <p v-if="totalPresent === 0" class="text-xs text-gray-500 mt-2">
-            Select athletes below to begin.
-          </p>
         </div>
       </div>
     </div>
@@ -185,12 +190,9 @@ const { findSessionById } = useCourses();
 // ===============================================
 //           DATA FETCHING
 // ===============================================
-// Get IDs reactively from the route
-const courseId = computed(() => Number(route.params.id)); // <-- Use 'id' to match the folder name [id]
+const courseId = computed(() => Number(route.params.id));
 const sessionId = computed(() => Number(route.params.sessionId));
 
-// Wrap the data lookup in a computed property.
-// This creates a reactive dependency on courseId and sessionId.
 const data = computed(() => {
   // Ensure we have valid numbers before proceeding
   if (isNaN(courseId.value) || isNaN(sessionId.value)) {
@@ -206,7 +208,6 @@ const session = computed(() => data.value.session);
 // ==========================================================
 //                 ATTENDANCE LOGIC
 // ==========================================================
-// This state holds the user's selections on this page.
 const presentAthleteIds = ref<number[]>([]);
 
 // A counter for the UI.
@@ -253,7 +254,6 @@ function clearAll() {
 // ==========================================================
 //    DYNAMIC URL FOR THE "START SESSION" BUTTON
 // ==========================================================
-// This is the core logic that connects this page to the start page.
 const startSessionUrl = computed(() => {
   // 1. Define the base path to the live session page.
   const basePath = `/course-detail/${courseId.value}/session/${sessionId.value}/start`;
@@ -274,7 +274,6 @@ const startSessionUrl = computed(() => {
 // ===============================================
 //       404 ERROR HANDLING & METADATA
 // ===============================================
-// Use watchEffect to react to changes in the computed data.
 watchEffect(() => {
   // route.matched.length > 0 ensures the router has finished its initial navigation
   if (route.matched.length > 0 && !session.value) {

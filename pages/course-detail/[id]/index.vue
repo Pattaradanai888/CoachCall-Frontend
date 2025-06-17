@@ -1,6 +1,10 @@
 <template>
-  <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] max-h-[none] mt-[7rem]">
+  <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] max-h-[none] mt-[6rem]">
     <div v-if="course" class="w-full mx-7 lg:mx-0">
+      <NuxtLink to="/course-management" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors">
+        <Icon name="mdi:arrow-left" size="1.25rem" />
+        <span>Back to Courses</span>
+      </NuxtLink>
       <div class="mb-5">
         <h1 class="text-3xl font-bold">
           Course Management
