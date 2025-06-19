@@ -110,14 +110,45 @@
           <ProgressBar :value="course.progressValue" :max="100" />
         </div>
 
-        <!-- Participants Count -->
-        <div class="mt-2 flex items-center text-sm text-gray-700">
-          <Icon name="mdi:account" size="1.25rem" class="mr-1" />
-          <p>{{ course.participants }} Athletes</p>
+        <!-- ======== NEW: Athlete Info Row ======== -->
+        <div class="mt-2 flex items-center justify-between">
+          <!-- Left side: Avatar Stack + Tooltip -->
+          <div class="flex items-center group relative">
+            <div v-if="course.athletes.length > 0" class="flex items-center">
+              <img
+                v-for="(athlete, index) in course.athletes.slice(0, 3)"
+                :key="athlete.id"
+                :src="athlete.avatar"
+                :alt="athlete.name"
+                class="w-8 h-8 rounded-full border-2 border-white object-cover"
+                :class="{ '-ml-3': index > 0 }"
+              >
+              <div
+                v-if="course.athletes.length > 3"
+                class="w-8 h-8 rounded-full border-2 border-white -ml-3 bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600"
+              >
+                +{{ course.athletes.length - 3 }}
+              </div>
+            </div>
+            <!-- Tooltip for athlete names -->
+            <div v-if="course.athletes.length > 0" class="absolute bottom-full left-0 mb-2 w-max max-w-xs px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+              {{ course.athletes.map(a => a.name).join(', ') }}
+            </div>
+          </div>
+
+          <!-- Right side: Numerical Count -->
+          <div class="flex items-center text-sm text-gray-700">
+            <Icon name="mdi:account-group" class="mr-1 text-gray-500" size="1.25rem" />
+            <p>{{ course.athletes.length }} Athletes</p>
+          </div>
+        </div>
+
+        <div v-if="course.athletes.length === 0" class="mt-2 text-sm text-gray-500">
+          <p>No athletes enrolled.</p>
         </div>
 
         <!-- Start / End Dates -->
-        <div class="flex justify-between mt-2 text-sm text-gray-700">
+        <div class="flex justify-between mt-4 text-sm text-gray-700">
           <div class="flex">
             <p class="font-bold mr-1">
               Start:
@@ -161,11 +192,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { Course } from '~/composables/useCourses';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-// 1. IMPORT THE REUSABLE COMPONENT
 import PaginationBar from '~/components/PaginationBar.vue';
 import { useCourses } from '~/composables/useCourses';
+
+// The script section remains exactly the same as the previous version.
+// No logic changes are needed to support this UI update.
 
 /** Tab definitions */
 const tabs = [
@@ -185,30 +217,17 @@ const filteredCourses = computed(() => {
 const itemsPerPage = 3;
 const currentPage = ref<number>(1);
 
-// A computed property for the total number of items to paginate
 const totalItems = computed(() => filteredCourses.value.length);
 
-// Whenever the active tab changes (which changes the filtered list), reset to page 1
 watch(activeTab, () => {
   currentPage.value = 1;
 });
 
-// The parent component is still responsible for slicing the data
 const paginatedCourses = computed(() => {
   const startIdx = (currentPage.value - 1) * itemsPerPage;
   const endIdx = startIdx + itemsPerPage;
   return filteredCourses.value.slice(startIdx, endIdx);
 });
-
-// NOTE: The following have been removed as they are now handled by PaginationBar.vue:
-// - totalPages computed property
-// - startIndex computed property
-// - endIndex computed property
-// - goToPage() method
-// - prevPage() method
-// - nextPage() method
-
-// ==========================================================
 
 /** TAB‐INDICATOR LOGIC (unchanged) */
 const tabRefs = ref<HTMLElement[]>([]);

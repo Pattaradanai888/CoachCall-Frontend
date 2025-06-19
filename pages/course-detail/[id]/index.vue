@@ -29,7 +29,7 @@
                 <p class="font-bold mr-2">
                   Status
                 </p>
-                <span class="text-white px-2 py-1 rounded-lg text-sm" :class="course.status === 'Active' ? 'bg-green-600' : 'bg-gray-500'">
+                <span class="text-white px-2 py-1 rounded-lg text-sm" :class="course.status === 'Active' ? 'bg-green-600' : 'bg-blue-500'">
                   {{ course.status }}
                 </span>
               </div>
@@ -59,7 +59,9 @@
               <NuxtLink
                 v-for="session in filteredSessions"
                 :key="session.id"
-                :to="`/course-detail/${course.id}/session/${session.id}`"
+                :to="session.status === 'Complete'
+                  ? `/course-detail/${course.id}/session/${session.id}/report`
+                  : `/course-detail/${course.id}/session/${session.id}`"
                 class="block"
               >
                 <div class="bg-white shadow-md grid grid-cols-4 p-4 rounded-lg border-2 border-transparent hover:border-[#9C1313] hover:scale-[1.02] transition-all">

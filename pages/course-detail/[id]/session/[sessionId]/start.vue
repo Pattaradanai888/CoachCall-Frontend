@@ -274,7 +274,7 @@ interface EvaluationData {
 // ===================================
 const route = useRoute();
 const router = useRouter();
-const { findSessionById, updateSessionStatus } = useCourses();
+const { findSessionById, updateSessionStatus, saveSessionEvaluations } = useCourses();
 const { setReportData } = useSessionReport();
 
 // ===================================
@@ -427,6 +427,7 @@ function handleSaveAndNext() {
         clearInterval(sessionTimerId);
       pausePerformanceTimer();
 
+      // Set data for immediate redirect (existing logic)
       setReportData({
         course: course.value,
         session: session.value,
@@ -435,7 +436,14 @@ function handleSaveAndNext() {
         totalSessionTime: sessionElapsedTime.value,
       });
 
+      // *** NEW: Save data for persistent access ***
       if (course.value && session.value) {
+        saveSessionEvaluations(
+          course.value.id,
+          session.value.id,
+          evaluations.value,
+          sessionElapsedTime.value,
+        );
         updateSessionStatus(course.value.id, session.value.id, 'Complete');
       }
 

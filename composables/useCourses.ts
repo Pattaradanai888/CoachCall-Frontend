@@ -33,6 +33,8 @@ export interface Session {
   scheduledDate: string;
   status: 'To Do' | 'Complete';
   tasks: Task[];
+  evaluationData?: Record<string, EvaluationData> | null; // <-- ADD THIS
+  totalSessionTime?: number; // <-- ADD THIS
 }
 
 export interface Course {
@@ -111,11 +113,29 @@ const coursesData: Course[] = [
   },
 ];
 
+// Create a reactive ref to hold the state of our "database"
+const coursesState = ref<Course[]>(coursesData);
+
 export function useCourses() {
-  const courses = ref<Course[]>(coursesData);
+  // NEW: Create a computed property that wraps our state.
+  // This will dynamically calculate progress for each course whenever session statuses change.
+  const courses = computed(() => {
+    return coursesState.value.map((course) => {
+      if (course.sessions.length === 0) {
+        return { ...course, progressValue: 0 };
+      }
+
+      const completedSessions = course.sessions.filter(s => s.status === 'Complete').length;
+      const totalSessions = course.sessions.length;
+      const progressValue = Math.round((completedSessions / totalSessions) * 100);
+
+      return { ...course, progressValue };
+    });
+  });
 
   const findCourseById = (id: number) => {
-    return courses.value.find(course => course.id === id);
+    // We find the course from the raw state so we can modify it
+    return coursesState.value.find(course => course.id === id);
   };
 
   const findSessionById = (courseId: number, sessionId: number) => {
@@ -128,18 +148,38 @@ export function useCourses() {
   };
 
   /**
-   * NEW: Updates the status of a specific session.
-   * @param courseId The ID of the course containing the session.
-   * @param sessionId The ID of the session to update.
-   * @param newStatus The new status to set ('To Do' or 'Complete').
+   * UPDATED: This function now includes auto-archiving logic.
    */
   const updateSessionStatus = (courseId: number, sessionId: number, newStatus: 'To Do' | 'Complete') => {
     const course = findCourseById(courseId);
     if (course) {
       const session = course.sessions.find(s => s.id === sessionId);
       if (session) {
+        // 1. Update the session status (existing logic)
         session.status = newStatus;
+
+        // 2. NEW: Check if the course should be archived
+        if (newStatus === 'Complete') {
+          const allSessionsComplete = course.sessions.every(s => s.status === 'Complete');
+
+          if (allSessionsComplete) {
+            course.status = 'Archive';
+          }
+        }
       }
+    }
+  };
+
+  const saveSessionEvaluations = (
+    courseId: number,
+    sessionId: number,
+    evaluations: Record<string, EvaluationData>,
+    totalTime: number,
+  ) => {
+    const { session } = findSessionById(courseId, sessionId);
+    if (session) {
+      session.evaluationData = evaluations;
+      session.totalSessionTime = totalTime;
     }
   };
 
@@ -147,7 +187,8 @@ export function useCourses() {
     courses,
     findCourseById,
     findSessionById,
-    updateSessionStatus, // <-- Export the new function
+    updateSessionStatus,
+    saveSessionEvaluations,
   };
 }
 

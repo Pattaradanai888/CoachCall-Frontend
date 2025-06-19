@@ -1,31 +1,34 @@
 <template>
   <div class="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8 mt-[4.5rem]">
-    <div v-if="!reportData" class="flex flex-col items-center justify-center h-[70vh]">
+    <!-- Use finalReportData for the v-if condition -->
+    <div v-if="!finalReportData" class="flex flex-col items-center justify-center h-[70vh]">
       <h1 class="text-2xl font-bold text-gray-700">
         No Report Data Found
       </h1>
       <p class="text-gray-500 mt-2">
-        Please complete a session to view its report.
+        The report may not have been generated or the session is not complete.
       </p>
-      <NuxtLink to="/course-management" class="mt-6 px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
-        Back to Course Management
+      <!-- The back link is now smarter -->
+      <NuxtLink :to="courseId ? `/course-detail/${courseId}` : '/course-management'" class="mt-6 px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
+        Back to Course
       </NuxtLink>
     </div>
 
+    <!-- The entire v-else block now uses `finalReportData` -->
     <div v-else class="max-w-7xl mx-auto">
       <!-- Header -->
       <header class="flex justify-between items-start mb-8">
         <div>
           <h1 class="text-3xl font-bold text-gray-900 flex items-center">
             <Icon name="mdi:chart-box-outline" class="mr-3 text-gray-700" />
-            Session Report: {{ reportData.session?.name }}
+            Session Report: {{ finalReportData.session?.name }}
           </h1>
           <p class="text-gray-500 mt-1 ml-10">
             Completed on {{ new Date().toLocaleString() }}
           </p>
         </div>
         <div class="flex items-center space-x-3">
-          <NuxtLink :to="`/course-detail/${reportData.course?.id}`" class="px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
+          <NuxtLink :to="`/course-detail/${finalReportData.course?.id}`" class="px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
             Back to Course
           </NuxtLink>
           <button class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition">
@@ -34,7 +37,7 @@
         </div>
       </header>
 
-      <!-- Stat Cards -->
+      <!-- Stat Cards (rely on `stats` computed, which is updated) -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-md text-center">
           <p class="text-sm text-gray-500 mb-1">
@@ -81,6 +84,7 @@
             Select an athlete to view details
           </p>
           <div class="space-y-2">
+            <!-- This part is unchanged as it depends on `athleteSummaries` -->
             <button
               v-for="athlete in athleteSummaries"
               :key="athlete.id"
@@ -94,7 +98,8 @@
                   {{ athlete.name }}
                 </p>
                 <p class="text-xs text-gray-500">
-                  {{ athlete.tasksCompleted }} / {{ reportData.session?.tasks.length }} tasks completed
+                  <!-- Use finalReportData here -->
+                  {{ athlete.tasksCompleted }} / {{ finalReportData.session?.tasks.length }} tasks completed
                 </p>
               </div>
               <div class="text-right">
@@ -118,7 +123,7 @@
             <p>Select an athlete to see their skill breakdown.</p>
           </div>
           <div v-else>
-            <!-- Radar Chart Placeholder -->
+            <!-- Radar Chart Placeholder (unchanged) -->
             <div class="mb-8 p-4 bg-gray-50 rounded-lg">
               <p class="text-center font-semibold text-gray-600">
                 Radar Chart Visualization
@@ -131,7 +136,7 @@
               </div>
             </div>
 
-            <!-- Skill Bars -->
+            <!-- Skill Bars (unchanged) -->
             <div class="space-y-4">
               <div v-for="skill in skillAssessment" :key="skill.name" class="grid grid-cols-6 gap-4 items-center">
                 <p class="col-span-1 font-semibold text-gray-700 text-sm">
@@ -157,16 +162,18 @@
           <h2 class="text-xl font-bold text-gray-800">
             Detailed Evaluations
           </h2>
+          <!-- Use finalReportData here for the filter -->
           <select v-model="detailedFilter" class="border rounded-md px-3 py-1.5 text-sm">
             <option value="All">
               All Athletes
             </option>
-            <option v-for="athlete in reportData.participatingAthletes" :key="athlete.id" :value="athlete.id">
+            <option v-for="athlete in finalReportData.participatingAthletes" :key="athlete.id" :value="athlete.id">
               {{ athlete.name }}
             </option>
           </select>
         </div>
         <div class="overflow-x-auto">
+          <!-- Table is unchanged as it depends on `filteredDetailedEvaluations` -->
           <table class="w-full text-left text-sm">
             <thead class="border-b text-gray-500">
               <tr>
@@ -224,10 +231,51 @@
 </template>
 
 <script lang="ts" setup>
+import type { SessionReportData } from '~/composables/useSessionReport';
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { useCourses } from '~/composables/useCourses';
 import { useSessionReport } from '~/composables/useSessionReport';
 
-const { reportData } = useSessionReport();
+// 1. SETUP: Get necessary composables and route info
+const { reportData } = useSessionReport(); // For live redirect
+const { findSessionById } = useCourses(); // For fetching persisted data
+const route = useRoute();
+const courseId = computed(() => Number(route.params.id));
+const sessionId = computed(() => Number(route.params.sessionId));
+
+// 2. NEW LOGIC: This computed property intelligently finds the report data
+const finalReportData = computed<SessionReportData | null>(() => {
+  // Case 1: Live data exists from an immediate redirect. Use it.
+  if (reportData.value) {
+    return reportData.value;
+  }
+
+  // Case 2: No live data. Fetch persisted data using route params.
+  if (courseId.value && sessionId.value) {
+    const { course, session } = findSessionById(courseId.value, sessionId.value);
+
+    // Check if we found the session and it has the required saved data
+    if (course && session && session.evaluationData && session.totalSessionTime !== undefined) {
+      // Reconstruct the participating athletes list from the evaluation data keys
+      const participantIds = new Set(Object.keys(session.evaluationData).map(key => Number(key.split('-')[0])));
+      const participatingAthletes = course.athletes.filter(athlete => participantIds.has(athlete.id));
+
+      // Build the report data object on the fly
+      return {
+        course,
+        session,
+        participatingAthletes,
+        evaluations: session.evaluationData,
+        totalSessionTime: session.totalSessionTime,
+      };
+    }
+  }
+
+  // If we can't find any data, return null
+  return null;
+});
+
 const selectedAthleteId = ref<number | null>(null);
 const detailedFilter = ref<string | number>('All');
 
@@ -242,17 +290,18 @@ function formatTime(totalSeconds: number) {
 
 // --- COMPUTED PROPERTIES ---
 
-// Top-level stat cards
+// ALL computed properties below must now depend on `finalReportData`
 const stats = computed(() => {
-  if (!reportData.value)
+  if (!finalReportData.value)
     return { totalTime: 0, completedEvals: 0, totalEvals: 0, avgTimePerTask: 0, completion: 0 };
 
-  const completedEvals = Object.keys(reportData.value.evaluations).length;
-  const totalEvals = reportData.value.participatingAthletes.length * (reportData.value.session?.tasks.length || 0);
-  const totalEvalTime = Object.values(reportData.value.evaluations).reduce((sum, evalItem) => sum + evalItem.time, 0);
+  const report = finalReportData.value;
+  const completedEvals = Object.keys(report.evaluations).length;
+  const totalEvals = report.participatingAthletes.length * (report.session?.tasks.length || 0);
+  const totalEvalTime = Object.values(report.evaluations).reduce((sum, evalItem) => sum + evalItem.time, 0);
 
   return {
-    totalTime: reportData.value.totalSessionTime,
+    totalTime: report.totalSessionTime,
     completedEvals,
     totalEvals,
     avgTimePerTask: completedEvals > 0 ? Math.round(totalEvalTime / completedEvals) : 0,
@@ -260,14 +309,13 @@ const stats = computed(() => {
   };
 });
 
-// Data for the athlete summary list on the left (with corrected logic)
 const athleteSummaries = computed(() => {
-  if (!reportData.value)
+  if (!finalReportData.value)
     return [];
 
-  return reportData.value.participatingAthletes.map((athlete) => {
-    // Get all evaluation entries for this specific athlete
-    const athleteEvalEntries = Object.entries(reportData.value!.evaluations)
+  const report = finalReportData.value;
+  return report.participatingAthletes.map((athlete) => {
+    const athleteEvalEntries = Object.entries(report.evaluations)
       .filter(([key]) => key.startsWith(`${athlete.id}-`));
 
     let totalWeightedScoreSum = 0;
@@ -275,11 +323,10 @@ const athleteSummaries = computed(() => {
 
     athleteEvalEntries.forEach(([key, evalData]) => {
       const taskId = Number(key.split('-')[1]);
-      const task = reportData.value!.session!.tasks.find(t => t.id === taskId);
+      const task = report.session!.tasks.find(t => t.id === taskId);
       if (!task)
         return;
 
-      // Calculate the weighted score for this single task evaluation
       const singleTaskWeightedScore = task.skillMetrics.reduce((taskSum, metric) => {
         const scoreForSkill = evalData.scores[metric.skill] || 0;
         return taskSum + (scoreForSkill * (metric.weight / 100));
@@ -302,17 +349,17 @@ const athleteSummaries = computed(() => {
 });
 
 const selectedAthlete = computed(() => {
-  if (!selectedAthleteId.value || !reportData.value)
+  if (!selectedAthleteId.value || !finalReportData.value)
     return null;
-  return reportData.value.participatingAthletes.find(a => a.id === selectedAthleteId.value);
+  return finalReportData.value.participatingAthletes.find(a => a.id === selectedAthleteId.value);
 });
 
-// Data for the skill assessment bars on the right
 const skillAssessment = computed(() => {
-  if (!selectedAthleteId.value || !reportData.value)
+  if (!selectedAthleteId.value || !finalReportData.value)
     return [];
 
-  const athleteEvals = Object.entries(reportData.value.evaluations)
+  const report = finalReportData.value;
+  const athleteEvals = Object.entries(report.evaluations)
     .filter(([key]) => key.startsWith(`${selectedAthleteId.value}-`))
     .map(([, evalData]) => evalData);
 
@@ -334,19 +381,19 @@ const skillAssessment = computed(() => {
   }));
 });
 
-// Data for the detailed evaluation table at the bottom
 const filteredDetailedEvaluations = computed(() => {
-  if (!reportData.value)
+  if (!finalReportData.value)
     return [];
 
-  return Object.entries(reportData.value.evaluations)
+  const report = finalReportData.value;
+  return Object.entries(report.evaluations)
     .map(([key, evaluation]) => {
       const [athleteId, taskId] = key.split('-').map(Number);
       return {
         athleteId,
         taskId,
-        athlete: reportData.value!.participatingAthletes.find(a => a.id === athleteId)!,
-        task: reportData.value!.session!.tasks.find(t => t.id === taskId)!,
+        athlete: report.participatingAthletes.find(a => a.id === athleteId)!,
+        task: report.session!.tasks.find(t => t.id === taskId)!,
         evaluation,
       };
     })
