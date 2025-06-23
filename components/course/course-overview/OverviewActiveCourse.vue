@@ -7,20 +7,17 @@
       </h1>
       <div
         ref="tabContainer"
-        class="relative flex bg-gray-100 rounded-lg p-1 overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full"
+        class="relative flex bg-gray-100 rounded-lg p-1"
       >
-        <!-- Moving background “indicator” under the active tab -->
         <div
-          class="absolute top-1 bottom-1 bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out"
+          class="absolute top-1 bottom-1 bg-white rounded-md shadow-sm transition-all"
           :style="{ left: `${indicatorLeft}px`, width: `${indicatorWidth}px` }"
         />
-
-        <!-- Tab Buttons -->
         <button
           v-for="tab in tabs"
           :key="tab.label"
           ref="tabRefs"
-          class="relative z-10 px-4 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
+          class="relative z-10 px-4 py-2 text-sm font-medium"
           :class="activeTab === tab.label ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'"
           @click="setActiveTab(tab.label)"
         >
@@ -31,157 +28,141 @@
 
     <!-- Courses Grid (paginated) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 px-6 py-4">
-      <!-- NOTE: Added 'flex flex-col' to make the card a flex container -->
       <div
         v-for="course in paginatedCourses"
         :key="course.id"
         class="shadow-lg px-4 bg-white rounded-lg flex flex-col"
       >
-        <!-- Course Image -->
         <div class="mb-3">
           <NuxtImg
-            :src="course.image"
-            :alt="course.title"
+            :src="course.cover_image_url || '/placeholder.jpg'"
+            :alt="course.name"
             class="w-full h-48 object-cover rounded-lg"
-            fetchpriority="high"
-            quality="80"
-            format="webp"
           />
         </div>
-
-        <!-- Title / Description + “⋯” Menu -->
-        <div class="flex justify-between">
-          <div>
-            <h1 class="font-bold">
-              {{ course.title }}
-            </h1>
-            <p class="text-sm text-gray-600">
-              {{ course.description }}
-            </p>
-          </div>
-          <div class="relative inline-block text-left">
-            <!-- Trigger Button -->
-            <button
-              type="button"
-              class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-200 focus:outline-none"
-              @click="toggleMenu(course.id)"
-            >
-              <Icon name="mdi:dots-horizontal" size="1rem" />
-            </button>
-
-            <!-- Dropdown Menu -->
-            <div
-              v-if="openMenuFor === course.id"
-              class="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10"
-            >
-              <ul class="py-1 text-sm text-gray-700">
-                <li>
-                  <a
-                    href="#"
-                    class="block px-4 py-2 hover:bg-gray-100"
-                    @click.prevent="handleEdit(course.id)"
-                  >
-                    Edit
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    class="block px-4 py-2 hover:bg-gray-100 text-red-600"
-                    @click.prevent="handleRemove(course.id)"
-                  >
-                    Remove
-                  </a>
-                </li>
-              </ul>
+        <div>
+          <div class="flex justify-between">
+            <div>
+              <h1 class="font-bold">
+                {{ course.name }}
+              </h1>
+              <p class="text-sm text-gray-600">
+                {{ course.description }}
+              </p>
             </div>
-
-            <!-- Click‐outside overlay -->
-            <div
-              v-if="openMenuFor === course.id"
-              class="fixed inset-0 bg-transparent z-0"
-              @click="openMenuFor = null"
-            />
-          </div>
-        </div>
-
-        <!-- Progress Bar -->
-        <div class="my-2">
-          <ProgressBar :value="course.progressValue" :max="100" />
-        </div>
-
-        <!-- ======== NEW: Athlete Info Row ======== -->
-        <div class="mt-2 flex items-center justify-between">
-          <!-- Left side: Avatar Stack + Tooltip -->
-          <div class="flex items-center group relative">
-            <div v-if="course.athletes.length > 0" class="flex items-center">
-              <img
-                v-for="(athlete, index) in course.athletes.slice(0, 3)"
-                :key="athlete.id"
-                :src="athlete.avatar"
-                :alt="athlete.name"
-                class="w-8 h-8 rounded-full border-2 border-white object-cover"
-                :class="{ '-ml-3': index > 0 }"
+            <div class="relative inline-block text-left">
+              <!-- Trigger Button -->
+              <button
+                type="button"
+                class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-200 focus:outline-none"
+                @click="toggleMenu(course.id)"
               >
+                <Icon name="mdi:dots-horizontal" size="1rem" />
+              </button>
+
+              <!-- Dropdown Menu -->
               <div
-                v-if="course.athletes.length > 3"
-                class="w-8 h-8 rounded-full border-2 border-white -ml-3 bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600"
+                v-if="openMenuFor === course.id"
+                class="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10"
               >
-                +{{ course.athletes.length - 3 }}
+                <ul class="py-1 text-sm text-gray-700">
+                  <li>
+                    <a
+                      href="#"
+                      class="block px-4 py-2 hover:bg-gray-100"
+                      @click.prevent="handleEdit(course.id)"
+                    >
+                      Edit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="block px-4 py-2 hover:bg-gray-100 text-red-600"
+                      @click.prevent="handleRemove(course.id)"
+                    >
+                      Remove
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Click‐outside overlay -->
+              <div
+                v-if="openMenuFor === course.id"
+                class="fixed inset-0 bg-transparent z-0"
+                @click="openMenuFor = null"
+              />
+            </div>
+          </div>
+          <div class="my-2">
+            <ProgressBar :value="course.progressValue" :max="100" />
+          </div>
+
+          <div class="mt-2 flex items-center justify-between">
+            <!-- Left side: Avatar Stack + Tooltip -->
+            <div class="flex items-center group relative">
+              <div v-if="course.attendees.length > 0" class="flex items-center">
+                <img
+                  v-for="(athlete, index) in course.attendees.slice(0, 3)"
+                  :key="athlete.uuid"
+                  :src="athlete.profile_image_url || '/default-profile.jpg'"
+                  :alt="athlete.name"
+                  class="w-8 h-8 rounded-full border-2 border-white object-cover"
+                  :class="{ '-ml-3': index > 0 }"
+                >
+                <div
+                  v-if="course.attendees.length > 3"
+                  class="w-8 h-8 rounded-full border-2 border-white -ml-3 bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600"
+                >
+                  +{{ course.attendees.length - 3 }}
+                </div>
+              </div>
+              <!-- Tooltip for athlete names -->
+              <div v-if="course.attendees.length > 0" class="absolute bottom-full left-0 mb-2 w-max max-w-xs px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                {{ course.attendees.map(a => a.name).join(', ') }}
               </div>
             </div>
-            <!-- Tooltip for athlete names -->
-            <div v-if="course.athletes.length > 0" class="absolute bottom-full left-0 mb-2 w-max max-w-xs px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-              {{ course.athletes.map(a => a.name).join(', ') }}
+
+            <div class="mt-2 flex items-center justify-between">
+              <div class="flex items-center text-sm text-gray-700">
+                <Icon name="mdi:account-group" class="mr-1 text-gray-500" size="1.25rem" />
+                <p>{{ course.attendees.length }} Athletes</p>
+              </div>
             </div>
           </div>
 
-          <!-- Right side: Numerical Count -->
-          <div class="flex items-center text-sm text-gray-700">
-            <Icon name="mdi:account-group" class="mr-1 text-gray-500" size="1.25rem" />
-            <p>{{ course.athletes.length }} Athletes</p>
+          <div v-if="course.start_date && course.end_date" class="flex justify-between mt-4 text-sm text-gray-700">
+            <div class="flex">
+              <p class="font-bold mr-1">
+                Start:
+              </p>
+              <p>{{ new Date(course.start_date).toLocaleDateString() }}</p>
+            </div>
+            <div class="flex">
+              <p class="font-bold mr-1">
+                End:
+              </p>
+              <p>{{ new Date(course.end_date).toLocaleDateString() }}</p>
+            </div>
           </div>
-        </div>
 
-        <div v-if="course.athletes.length === 0" class="mt-2 text-sm text-gray-500">
-          <p>No athletes enrolled.</p>
-        </div>
+          <div class="flex-grow" />
 
-        <!-- Start / End Dates -->
-        <div class="flex justify-between mt-4 text-sm text-gray-700">
-          <div class="flex">
-            <p class="font-bold mr-1">
-              Start:
-            </p>
-            <p>{{ course.startDate }}</p>
+          <div class="flex justify-center my-3">
+            <NuxtLink :to="`/course-detail/${course.id}`">
+              <button class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white">
+                See details
+              </button>
+            </NuxtLink>
           </div>
-          <div class="flex">
-            <p class="font-bold mr-1">
-              End:
-            </p>
-            <p>{{ course.endDate }}</p>
-          </div>
-        </div>
-
-        <!-- NOTE: This div will grow to push the button to the bottom -->
-        <div class="flex-grow" />
-
-        <!-- “See details” Button -->
-        <div class="flex justify-center my-3">
-          <NuxtLink :to="`/course-detail/${course.id}`">
-            <button class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white">
-              See details
-            </button>
-          </NuxtLink>
         </div>
       </div>
-    </div>
 
-    <!-- If there are no courses for the current filter, show a message -->
-    <div v-if="!paginatedCourses.length" class="text-center text-gray-500 py-8">
-      No {{ activeTab.toLowerCase() }} courses found.
+      <div v-if="!paginatedCourses.length" class="text-center text-gray-500 py-8">
+        No {{ activeTab.toLowerCase() }} courses found.
+      </div>
     </div>
-
     <PaginationBar
       v-model:current-page="currentPage"
       :total-items="totalItems"
@@ -192,26 +173,23 @@
 </template>
 
 <script lang="ts" setup>
+import type { CourseDetail } from '~/types/course';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import PaginationBar from '~/components/PaginationBar.vue';
-import { useCourses } from '~/composables/useCourses';
 
-// The script section remains exactly the same as the previous version.
-// No logic changes are needed to support this UI update.
+const props = defineProps<{
+  courses: (CourseDetail & { progressValue: number })[] | null;
+}>();
 
-/** Tab definitions */
 const tabs = [
-  { label: 'Active', status: 'Active' },
-  { label: 'Archive', status: 'Archive' },
+  { label: 'Active', isArchived: false },
+  { label: 'Archive', isArchived: true },
 ];
 const activeTab = ref<string>('Active');
 
-/** Data from composable */
-const { courses } = useCourses();
-
-/** Filter courses based on the active tab */
 const filteredCourses = computed(() => {
-  return courses.value.filter(c => c.status === activeTab.value);
+  const isArchived = activeTab.value === 'Archive';
+  return (props.courses || []).filter(c => c.is_archived === isArchived);
 });
 
 const itemsPerPage = 3;
@@ -229,7 +207,7 @@ const paginatedCourses = computed(() => {
   return filteredCourses.value.slice(startIdx, endIdx);
 });
 
-/** TAB‐INDICATOR LOGIC (unchanged) */
+// --- Tab Indicator and other UI logic (no changes needed) ---
 const tabRefs = ref<HTMLElement[]>([]);
 const tabContainer = ref<HTMLElement | null>(null);
 const indicatorLeft = ref<number>(0);
@@ -260,29 +238,25 @@ onMounted(() => {
   }
 });
 
-/** DROPDOWN MENU STATE (unchanged) */
 const openMenuFor = ref<number | null>(null);
 function toggleMenu(courseId: number) {
   openMenuFor.value = openMenuFor.value === courseId ? null : courseId;
 }
 
 function handleEdit(courseId: number) {
-  console.log('Edit clicked for course', courseId);
   openMenuFor.value = null;
 }
 function handleRemove(courseId: number) {
-  console.log('Remove clicked for course', courseId);
   openMenuFor.value = null;
 }
 </script>
 
 <style scoped>
-/* You may want to keep this if you use it on other pages */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>

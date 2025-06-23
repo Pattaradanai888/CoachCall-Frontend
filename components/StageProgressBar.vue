@@ -71,7 +71,6 @@
 </template>
 
 <script>
-import { useMotion } from '@vueuse/motion';
 import { nextTick, ref, watch } from 'vue';
 
 export default {

@@ -105,6 +105,13 @@ export interface AthleteResponse {
   }>;
 }
 
+export interface AthleteSelectionInfo {
+  uuid: string;
+  name: string;
+  profile_image_url: string | null;
+  positions: { id: number; name: string }[];
+}
+
 // --- Dashboard & Stats Types ---
 
 export interface TrendDataPoint {

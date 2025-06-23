@@ -195,7 +195,7 @@ const sessionId = computed(() => Number(route.params.sessionId));
 
 const data = computed(() => {
   // Ensure we have valid numbers before proceeding
-  if (isNaN(courseId.value) || isNaN(sessionId.value)) {
+  if (Number.isNaN(courseId.value) || Number.isNaN(sessionId.value)) {
     return { course: undefined, session: undefined };
   }
   return findSessionById(courseId.value, sessionId.value);

@@ -1,6 +1,6 @@
 <template>
   <!-- Template Section -->
-  <div class="bg-white p-5">
+  <div class="bg-white p-5 md:min-h-[250px]">
     <div class="flex justify-between">
       <div>
         <h1 class="text-2xl font-bold">
@@ -39,20 +39,22 @@
       </div>
     </div>
     <!-- Template Items -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 px-6 py-4">
-      <div v-for="(template, index) in paginatedTemplates" :key="index" class="shadow-lg px-4">
-        <!-- ... (your item card content remains the same) ... -->
-        <div class="flex justify-between">
-          <div>
-            <h1 class="font-bold">
-              {{ template.title }}
-            </h1>
-            <p>{{ template.description }}</p>
-          </div>
-          <div>
-            <div class="relative inline-block text-left">
+    <div v-if="paginatedTemplates.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 px-6 py-4">
+      <div v-for="(template, index) in paginatedTemplates" :key="template.id" class="shadow-lg px-4 flex flex-col">
+        <!-- Card Content -->
+        <div class="flex-grow">
+          <div class="flex justify-between items-start pt-4">
+            <div class="flex-1 pr-2 min-w-0">
+              <h1 class="font-bold truncate" :title="template.name">
+                {{ template.name }}
+              </h1>
+              <p v-if="template.description" class="text-sm text-gray-600 truncate" :title="template.description">
+                {{ template.description }}
+              </p>
+            </div>
+            <div class="relative inline-block text-left flex-shrink-0">
               <button type="button" class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-200 focus:outline-none" @click="toggle(index)">
-                <Icon name="mdi:dots-horizontal" size="1rem" class="" />
+                <Icon name="mdi:dots-horizontal" size="1rem" />
               </button>
               <div v-if="isOpen[index]" class="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10">
                 <ul class="py-1 text-sm text-gray-700">
@@ -63,25 +65,19 @@
               <div v-if="isOpen[index]" class="fixed inset-0 bg-transparent z-0" @click="isOpen[index] = false" />
             </div>
           </div>
-        </div>
-        <div class="flex mt-2">
-          <div class="flex bg-[#F1F5F9] px-2 rounded-lg mr-1">
-            <p class="font-bold text-sm">
-              Difficulty:
-            </p>
-            <p class="text-sm ml-1">
-              {{ template.difficulty }}
-            </p>
-          </div>
-          <div class="flex bg-[#F1F5F9] px-2 rounded-lg">
-            <p class="font-bold text-sm">
-              Time:
-            </p>
-            <p class="text-sm ml-1">
-              {{ template.time }}
-            </p>
+          <div class="flex mt-2">
+            <div class="flex bg-[#F1F5F9] px-2 py-1 rounded-lg">
+              <Icon name="mdi:clock-outline" class="mr-1 text-gray-600" />
+              <p class="font-bold text-sm">
+                Time:
+              </p>
+              <p class="text-sm ml-1">
+                {{ template.total_duration_minutes }} mins
+              </p>
+            </div>
           </div>
         </div>
+
         <div class="flex justify-center my-3">
           <button class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto">
             <p>Quick Session</p>
@@ -89,15 +85,17 @@
         </div>
       </div>
     </div>
+    <div v-else class="text-center p-8 text-gray-500">
+      No session templates found.
+    </div>
 
-    <!-- ******* REFACTORED PAGINATION ******* -->
-    <!-- Use the new component. v-model:currentPage handles the two-way data binding. -->
+    <!-- Pagination -->
     <PaginationBar
       v-model:current-page="currentPage"
       :total-items="totalItems"
       :items-per-page="itemsPerPage"
+      class="mt-4"
     />
-    <!-- *************************************** -->
   </div>
   <CreateSessionTemplate
     :show="showAddModal"
@@ -106,9 +104,14 @@
 </template>
 
 <script lang="ts" setup>
+import type { SessionTemplate } from '~/types/course';
 import { PaginationBar } from '#components';
 import { computed, ref, watchEffect } from 'vue';
 import CreateSessionTemplate from './CreateSessionTemplate.vue';
+
+const props = defineProps<{
+  templates: SessionTemplate[] | null;
+}>();
 
 const showAddModal = ref(false);
 
@@ -120,59 +123,39 @@ function closeCreateModal() {
   showAddModal.value = false;
 }
 
-// Define interface for Template
-interface Template {
-  title: string;
-  description: string;
-  difficulty: string;
-  time: string;
-}
-
-// Sample data for templates
-const templates = ref<Template[]>([
-  { title: 'Advanced Dribbling1', description: 'Ball handling drills for all positions', difficulty: 'intermediate', time: '30 mins' },
-  { title: 'Advanced Dribbling2', description: 'Ball handling drills for all positions', difficulty: 'intermediate', time: '30 mins' },
-  { title: 'Advanced Dribbling3', description: 'Ball handling drills for all positions', difficulty: 'intermediate', time: '30 mins' },
-  { title: 'Advanced Dribbling4', description: 'Ball handling drills for all positions', difficulty: 'intermediate', time: '30 mins' },
-  { title: 'Advanced Dribbling5', description: 'Ball handling drills for all positions', difficulty: 'intermediate', time: '30 mins' },
-]);
-
-// 2. Keep the state needed for pagination in the parent
+// --- Pagination Logic ---
 const currentPage = ref(1);
 const itemsPerPage = 3;
-const totalItems = computed(() => templates.value.length);
+const totalItems = computed(() => props.templates?.length || 0);
 
-// 3. Keep the computed property that slices the data for the current page
 const paginatedTemplates = computed(() => {
+  if (!props.templates)
+    return [];
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
-  return templates.value.slice(start, end);
+  return props.templates.slice(start, end);
 });
 
-// NOTE: All other pagination logic (totalPages, startIndex, endIndex, goToPage, prevPage, nextPage)
-// has been moved to PaginationBar.vue and can be removed from this file.
-
-// Dropdown menu state
+// --- Dropdown Menu Logic ---
 const isOpen = ref<boolean[]>([]);
 
 watchEffect(() => {
-  isOpen.value = Array.from({ length: templates.value.length }).fill(false);
+  if (props.templates) {
+    isOpen.value = Array.from({ length: props.templates.length }, () => false);
+  }
 });
 
 function toggle(index: number) {
   isOpen.value[index] = !isOpen.value[index];
 }
-
-function handleEdit(template: Template) {
-  console.log('Edit clicked:', template);
-  const index = templates.value.findIndex(t => t === template);
+function handleEdit(template: SessionTemplate) {
+  const index = paginatedTemplates.value.findIndex(t => t.id === template.id);
   if (index !== -1)
     isOpen.value[index] = false;
 }
 
-function handleRemove(template: Template) {
-  console.log('Remove clicked:', template);
-  const index = templates.value.findIndex(t => t === template);
+function handleRemove(template: SessionTemplate) {
+  const index = paginatedTemplates.value.findIndex(t => t.id === template.id);
   if (index !== -1)
     isOpen.value[index] = false;
 }
