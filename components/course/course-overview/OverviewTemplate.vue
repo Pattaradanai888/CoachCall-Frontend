@@ -97,20 +97,28 @@
       class="mt-4"
     />
   </div>
-  <CreateSessionTemplate
+  <SessionBuilderModal
     :show="showAddModal"
+    mode="template"
+    :available-skills="availableSkills || []"
     @close="closeCreateModal"
+    @create-template="handleCreateTemplate"
   />
 </template>
 
 <script lang="ts" setup>
-import type { SessionTemplate } from '~/types/course';
+import type { SessionCreatePayload, SessionTemplate, Skill } from '~/types/course';
 import { PaginationBar } from '#components';
 import { computed, ref, watchEffect } from 'vue';
-import CreateSessionTemplate from './CreateSessionTemplate.vue';
+import SessionBuilderModal from '~/components/course/SessionBuilderModal.vue'; // Correct path
 
 const props = defineProps<{
   templates: SessionTemplate[] | null;
+  availableSkills: Skill[] | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'save-template', payload: SessionCreatePayload): void;
 }>();
 
 const showAddModal = ref(false);
@@ -121,6 +129,10 @@ function openCreateModal() {
 
 function closeCreateModal() {
   showAddModal.value = false;
+}
+
+function handleCreateTemplate(payload: SessionCreatePayload) {
+  emit('save-template', payload);
 }
 
 // --- Pagination Logic ---

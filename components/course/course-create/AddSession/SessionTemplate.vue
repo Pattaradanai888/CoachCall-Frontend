@@ -10,28 +10,16 @@
       </div>
       <div class="flex-1">
         <h3 class="font-semibold text-sm">
-          {{ template.title }}
+          {{ template.name }}
         </h3>
-        <p class="text-xs text-gray-500">
-          Difficulty: {{ template.difficulty }}
-        </p>
         <div class="flex items-center space-x-4 mt-1">
           <span class="text-xs text-gray-400 flex items-center">
             <Icon name="mdi:format-list-bulleted" size="0.8rem" class="mr-1" />
-            {{ template.tasks }} task{{ template.tasks > 1 ? 's' : '' }}
+            {{ template.task_count }} task{{ template.task_count !== 1 ? 's' : '' }}
           </span>
           <span class="text-xs text-gray-400 flex items-center">
             <Icon name="mdi:clock-outline" size="0.8rem" class="mr-1" />
-            {{ template.duration }} min{{ template.duration > 1 ? 's' : '' }}
-          </span>
-        </div>
-        <div class="flex space-x-2 mt-2">
-          <span
-            v-for="tag in template.tags"
-            :key="tag"
-            class="px-2 py-1 bg-gray-100 text-xs rounded-full text-gray-600"
-          >
-            {{ tag }}
+            {{ template.total_duration_minutes }} min
           </span>
         </div>
       </div>
@@ -39,10 +27,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const props = defineProps(['template']);
 
-function startDrag(event) {
+function startDrag(event: { dataTransfer: { setData: (arg0: string, arg1: string) => void; effectAllowed: string } }) {
   event.dataTransfer.setData('template', JSON.stringify(props.template));
   event.dataTransfer.effectAllowed = 'copy';
 }

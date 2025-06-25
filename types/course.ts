@@ -14,7 +14,7 @@ export interface SkillCreate {
 
 export interface TaskSkillWeightPayload {
   skill_id: number;
-  weight: number; // float between 0 and 1
+  weight: number;
 }
 
 export interface TaskCreatePayload {
@@ -27,7 +27,7 @@ export interface TaskCreatePayload {
 export interface SessionCreatePayload {
   name: string;
   description?: string | null;
-  scheduled_date: string; // ISO 8601 format
+  scheduled_date: string;
   is_template?: boolean;
   tasks: TaskCreatePayload[];
 }
@@ -75,6 +75,7 @@ export interface CourseDetail {
 }
 
 export interface Session {
+  date: any;
   id: number;
   name: string;
   description: string | null;
@@ -89,6 +90,7 @@ export interface SessionTemplate {
   name: string;
   description: string | null;
   total_duration_minutes: number;
+  task_count: number;
 }
 
 export interface Task {

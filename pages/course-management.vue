@@ -33,7 +33,9 @@
           v-motion-slide-visible-once-left
           :delay="200"
           :templates="sessionTemplates"
+          :available-skills="availableSkills"
           class="mb-12"
+          @save-template="saveNewTemplate"
         />
 
         <div v-if="coursesPending" class="text-center p-8">
@@ -51,16 +53,33 @@
 </template>
 
 <script lang="ts" setup>
+import type { SessionCreatePayload } from '~/types/course';
 import OverviewActiveCourse from '~/components/course/course-overview/OverviewActiveCourse.vue';
 import OverviewTemplate from '~/components/course/course-overview/OverviewTemplate.vue';
 import { useCourses } from '~/composables/useCourses';
 
-const { fetchAllCourseDetails, fetchSessionTemplates } = useCourses();
+const { fetchAllCourseDetails, fetchSessionTemplates, fetchSkills, createSession } = useCourses();
 
 // Use the new function to get all course details
 const { data: allCourses, pending: coursesPending } = await fetchAllCourseDetails();
+const { data: sessionTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
+const { data: availableSkills } = await fetchSkills();
 
-// Calculate progress on the frontend, just like the original mock did
+const { submit: performSaveTemplate } = useSubmit(createSession, {
+  onSuccess: () => {
+    alert('Template saved successfully!');
+    refreshTemplates(); // Refresh the list to show the new template
+  },
+  onError: (err: any) => {
+    const errorMessage = err?.data?.detail || 'An unknown error occurred.';
+    alert(`Failed to save template: ${errorMessage}`);
+  },
+});
+
+async function saveNewTemplate(payload: SessionCreatePayload) {
+  await performSaveTemplate(payload);
+}
+
 const coursesWithProgress = computed(() => {
   if (!allCourses.value)
     return [];
@@ -76,6 +95,4 @@ const coursesWithProgress = computed(() => {
     };
   });
 });
-
-const { data: sessionTemplates, pending: templatesPending } = await fetchSessionTemplates();
 </script>
