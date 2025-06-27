@@ -31,7 +31,7 @@
           </p>
           <p class="text-gray-500 font-mono">
             <Icon name="mdi:calendar-blank" class="inline-block -mt-1 mr-1" />
-            Scheduled: {{ session.scheduledDate }}
+            Scheduled: {{ session.scheduled_date }}
           </p>
         </div>
       </div>
@@ -47,14 +47,14 @@
           </p>
           <div
             v-for="(task, index) in session.tasks"
-            :key="task.id"
+            :key="task.sequence"
             class="pb-6 border-b border-gray-200 last:border-b-0"
           >
             <h4 class="text-xl font-semibold text-[#9C1313]">
-              Task {{ index + 1 }}: {{ task.name }}
+              Task {{ index + 1 }}: {{ task.task.name }}
             </h4>
             <p class="text-gray-600 mt-1 mb-4">
-              {{ task.description }}
+              {{ task.task.description }}
             </p>
             <div class="flex items-center justify-between bg-gray-50 p-3 rounded-md">
               <div>
@@ -62,8 +62,8 @@
                   Metrics & Weights
                 </h5>
                 <div class="flex flex-wrap gap-x-4 gap-y-1">
-                  <span v-for="metric in task.skillMetrics" :key="metric.skill" class="text-sm text-gray-600 ">
-                    {{ metric.skill }}: <strong class="font-mono">{{ metric.weight }}%</strong>
+                  <span v-for="metric in task.task.skill_weights" :key="metric.skill_id" class="text-sm text-gray-600 ">
+                    {{ metric.skill_name }}: <strong class="font-mono">{{ parseFloat(metric.weight) * 100 }}%</strong>
                   </span>
                 </div>
               </div>
@@ -72,7 +72,7 @@
                   Duration
                 </h5>
                 <p class="text-2xl font-bold text-gray-800 font-mono">
-                  {{ task.duration }}<span class="text-base font-sans ml-1">min</span>
+                  {{ task.task.duration_minutes }}<span class="text-base font-sans ml-1">min</span>
                 </p>
               </div>
             </div>
@@ -87,7 +87,7 @@
             Athlete Attendance
           </h2>
           <!-- NEW: Actions and Counter Group -->
-          <div v-if="course.athletes.length > 0" class="flex items-center space-x-4">
+          <div v-if="course.attendees.length > 0" class="flex items-center space-x-4">
             <!-- "Mark All / Clear All" Button -->
             <button
               v-if="!allArePresent"
@@ -108,13 +108,13 @@
 
             <!-- Attendance Counter -->
             <span class="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-              {{ totalPresent }} / {{ course.athletes.length }} Present
+              {{ totalPresent }} / {{ course.attendees.length }} Present
             </span>
           </div>
         </div>
 
         <!-- Case where no athletes are enrolled -->
-        <div v-if="!course.athletes || course.athletes.length === 0" class="text-center bg-gray-50 p-6 rounded-lg">
+        <div v-if="!course.attendees || course.attendees.length === 0" class="text-center bg-gray-50 p-6 rounded-lg">
           <p class="text-gray-500">
             No athletes are enrolled in this course.
           </p>
@@ -122,31 +122,27 @@
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <button
-            v-for="athlete in course.athletes"
-            :key="athlete.id"
-            class="flex items-center w-full p-3 border rounded-lg shadow-sm text-left transition-all duration-200"
-            :class="[
-              isAthletePresent(athlete.id)
-                ? 'bg-green-100 border-green-500'
-                : 'bg-white border-gray-200 hover:bg-gray-50',
-            ]"
-            @click="toggleAttendance(athlete.id)"
+            v-for="athlete in course.attendees"
+            :key="athlete.uuid"
+            class="flex items-center w-full p-3 border rounded-lg shadow-sm text-left transition-all"
+            :class="[isAthletePresent(athlete.uuid) ? 'bg-green-100 border-green-500' : 'bg-white hover:bg-gray-50']"
+            @click="toggleAttendance(athlete.uuid)"
           >
-            <img
-              :src="athlete.avatar"
+            <NuxtImg
+              :src="athlete.profile_image_url || '/public/default-profile.jpg'"
               :alt="athlete.name"
               class="w-10 h-10 rounded-full object-cover mr-4 flex-shrink-0"
-            >
+            />
             <div class="flex-grow">
               <p class="font-semibold text-gray-800 leading-tight">
                 {{ athlete.name }}
               </p>
-              <p v-if="athlete.position" class="text-sm text-gray-500">
-                {{ athlete.position }}
+              <p v-if="athlete.positions" class="text-sm text-gray-500">
+                {{ athlete.positions.map(p => p.name).join(', ') || 'No positions' }}
               </p>
             </div>
             <!-- Checkmark icon for present athletes -->
-            <div v-if="isAthletePresent(athlete.id)" class="ml-2 text-green-600">
+            <div v-if="isAthletePresent(athlete.uuid)" class="ml-2 text-green-600">
               <Icon name="mdi:check-circle" size="1.5rem" />
             </div>
           </button>
@@ -180,12 +176,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watchEffect } from 'vue';
+import type { Session } from '~/types/course';
+import { computed, onUnmounted, ref, watchEffect } from 'vue'; // Import onUnmounted
 import { useRoute } from 'vue-router';
 import { useCourses } from '~/composables/useCourses';
 
 const route = useRoute();
-const { findSessionById } = useCourses();
+const { fetchCourseById } = useCourses();
 
 // ===============================================
 //           DATA FETCHING
@@ -193,60 +190,49 @@ const { findSessionById } = useCourses();
 const courseId = computed(() => Number(route.params.id));
 const sessionId = computed(() => Number(route.params.sessionId));
 
-const data = computed(() => {
-  // Ensure we have valid numbers before proceeding
-  if (Number.isNaN(courseId.value) || Number.isNaN(sessionId.value)) {
-    return { course: undefined, session: undefined };
-  }
-  return findSessionById(courseId.value, sessionId.value);
-});
+const { data: course, pending, error } = await fetchCourseById(courseId.value);
 
-// Create separate computed properties for easier use in the template
-const course = computed(() => data.value.course);
-const session = computed(() => data.value.session);
+const session = computed<Session | undefined>(() => {
+  // Add a guard to prevent running when sessionId is not a valid number
+  if (!course.value || !course.value.sessions || Number.isNaN(sessionId.value)) {
+    return undefined;
+  }
+  return course.value.sessions.find(s => s.id === sessionId.value);
+});
 
 // ==========================================================
 //                 ATTENDANCE LOGIC
 // ==========================================================
-const presentAthleteIds = ref<number[]>([]);
+const presentAthleteIds = ref<string[]>([]);
 
-// A counter for the UI.
 const totalPresent = computed(() => presentAthleteIds.value.length);
 
-// Checks if all athletes are marked as present for the "Mark All / Clear All" button.
 const allArePresent = computed(() => {
-  if (!course.value?.athletes || course.value.athletes.length === 0) {
+  if (!course.value?.attendees || course.value.attendees.length === 0)
     return false;
-  }
-  return presentAthleteIds.value.length === course.value.athletes.length;
+  return presentAthleteIds.value.length === course.value.attendees.length;
 });
 
-// Toggles an individual athlete's attendance status.
-function toggleAttendance(athleteId: number) {
-  const index = presentAthleteIds.value.indexOf(athleteId);
+function toggleAttendance(athleteUuid: string) {
+  const index = presentAthleteIds.value.indexOf(athleteUuid);
   if (index > -1) {
-    // If ID is already in the array, remove it (mark as absent).
     presentAthleteIds.value.splice(index, 1);
   }
   else {
-    // If ID is not in the array, add it (mark as present).
-    presentAthleteIds.value.push(athleteId);
+    presentAthleteIds.value.push(athleteUuid);
   }
 }
 
-// Helper for dynamic class binding in the template.
-function isAthletePresent(athleteId: number): boolean {
-  return presentAthleteIds.value.includes(athleteId);
+function isAthletePresent(athleteUuid: string): boolean {
+  return presentAthleteIds.value.includes(athleteUuid);
 }
 
-// Marks all athletes as present.
 function markAllPresent() {
-  if (course.value?.athletes) {
-    presentAthleteIds.value = course.value.athletes.map(a => a.id);
+  if (course.value?.attendees) {
+    presentAthleteIds.value = course.value.attendees.map(a => a.uuid);
   }
 }
 
-// Clears all attendance selections.
 function clearAll() {
   presentAthleteIds.value = [];
 }
@@ -255,34 +241,40 @@ function clearAll() {
 //    DYNAMIC URL FOR THE "START SESSION" BUTTON
 // ==========================================================
 const startSessionUrl = computed(() => {
-  // 1. Define the base path to the live session page.
   const basePath = `/course-detail/${courseId.value}/session/${sessionId.value}/start`;
-
-  // 2. If no athletes are selected, the button is disabled, but we can return a default path.
-  if (presentAthleteIds.value.length === 0) {
+  if (presentAthleteIds.value.length === 0)
     return basePath;
-  }
-
-  // 3. Take the array of checked-in IDs (e.g., [101, 105]) and join them into a string ("101,105").
   const athleteQuery = presentAthleteIds.value.join(',');
-
-  // 4. Append this string as a URL query parameter.
-  // The final URL will look like: /.../start?athletes=101,105
   return `${basePath}?athletes=${athleteQuery}`;
 });
 
 // ===============================================
-//       404 ERROR HANDLING & METADATA
+//       404 ERROR HANDLING & METADATA (THE FIX)
 // ===============================================
-watchEffect(() => {
-  // route.matched.length > 0 ensures the router has finished its initial navigation
-  if (route.matched.length > 0 && !session.value) {
+
+// Assign the watcher to a variable so we can stop it later.
+const stopWatcher = watchEffect(() => {
+  // This guard is important. We only want to check for errors
+  // after the initial loading is complete.
+  if (pending.value) {
+    return;
+  }
+
+  // Only throw an error if we have a valid session ID in the URL but couldn't find the data.
+  // This prevents the error during navigation when sessionId becomes NaN.
+  if (!Number.isNaN(sessionId.value) && (!course.value || !session.value)) {
     throw createError({
       statusCode: 404,
       statusMessage: 'Session or Course Not Found',
       fatal: true,
     });
   }
+});
+
+// Use the onUnmounted hook to clean up the watcher.
+// This is crucial to prevent it from running during navigation away from the page.
+onUnmounted(() => {
+  stopWatcher();
 });
 
 // Set the page title reactively.

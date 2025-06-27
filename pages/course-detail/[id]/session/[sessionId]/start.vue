@@ -9,7 +9,7 @@
       <header class="bg-white p-6 rounded-xl shadow-md mb-6">
         <div class="flex justify-between items-start mb-6">
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-800">
-            {{ course.title }}
+            {{ course.name }}
           </h1>
           <div class="flex items-center space-x-4 flex-shrink-0">
             <!-- Session-wide timer -->
@@ -82,7 +82,7 @@
             </p>
             <div v-if="currentTask" class="flex items-start space-x-4">
               <div class="flex-shrink-0 w-8 h-8 bg-red-600 text-white flex items-center justify-center rounded-full font-bold text-sm">
-                {{ currentTask.order }}
+                {{ findTaskSequence(currentTask.id) }}
               </div>
               <div>
                 <h3 class="font-bold text-gray-900">
@@ -92,8 +92,8 @@
                   {{ currentTask.description }}
                 </p>
                 <div class="flex flex-wrap gap-2 mt-3">
-                  <span v-for="metric in currentTask.skillMetrics" :key="metric.skill" class="text-xs font-medium bg-gray-200 text-gray-700 px-2 py-1 rounded-md">
-                    {{ metric.skill }}: {{ metric.weight }}%
+                  <span v-for="metric in currentTask.skill_weights" :key="metric.skill_name" class="text-xs font-medium bg-gray-200 text-gray-700 px-2 py-1 rounded-md">
+                    {{ metric.skill_name }}: {{ parseFloat(metric.weight) * 100 }}%
                   </span>
                 </div>
               </div>
@@ -117,20 +117,20 @@
             <div v-else class="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
               <button
                 v-for="(athlete, index) in participatingAthletes"
-                :key="athlete.id"
+                :key="athlete.uuid"
                 class="w-full flex items-center p-3 rounded-lg text-left transition-colors"
                 :class="[
                   currentAthleteIndex === index
                     ? 'bg-blue-100 text-blue-800 font-semibold shadow-sm'
                     : 'hover:bg-gray-50',
-                  { 'bg-green-100 border-green-300': isEvalOfficiallyCompleted(athlete.id) },
+                  { 'bg-green-100 border-green-300': isEvalOfficiallyCompleted(athlete.uuid) },
                 ]"
                 @click="selectAthlete(index)"
               >
-                <img :src="athlete.avatar" :alt="athlete.name" class="w-9 h-9 rounded-full mr-3">
+                <NuxtImg :src="athlete.profile_image_url || '/public/default-profile.jpg'" :alt="athlete.name" class="w-9 h-9 rounded-full mr-3" />
                 <span class="flex-grow">{{ athlete.name }}</span>
                 <Icon
-                  v-if="isEvalOfficiallyCompleted(athlete.id)"
+                  v-if="isEvalOfficiallyCompleted(athlete.uuid)"
                   name="mdi:check-circle"
                   class="text-green-500 flex-shrink-0"
                   size="1.25rem"
@@ -144,25 +144,25 @@
         <section v-if="participatingAthletes.length > 0 && currentTask && currentAthlete" class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
           <div class="flex justify-between items-center mb-6">
             <div class="flex items-center">
-              <img :src="currentAthlete.avatar" :alt="currentAthlete.name" class="w-14 h-14 rounded-full mr-4">
+              <img :src="currentAthlete.profile_image_url || '/public/default-profile.jpg'" :alt="currentAthlete.name" class="w-14 h-14 rounded-full mr-4">
               <div>
                 <h2 class="text-xl font-bold text-gray-900">
                   <Icon name="mdi:star-outline" class="text-yellow-500 -mt-1 mr-1" />
                   Performance Scoring
                 </h2>
                 <p class="text-sm text-gray-600">
-                  {{ currentAthlete.name }} - Task {{ currentTask.order }}/{{ totalTasks }}: {{ currentTask.name }}
+                  {{ currentAthlete.name }} - Task {{ findTaskSequence(currentTask.id) }}/{{ totalTasks }}: {{ currentTask.name }}
                 </p>
               </div>
             </div>
             <!-- Performance stopwatch (counts up) -->
             <div class="flex items-center space-x-3 text-gray-600 bg-gray-100 p-2 rounded-lg">
               <Icon name="mdi:timer-outline" size="1.5rem" />
-              <span class="font-mono text-xl font-bold">{{ formattedPerformanceTime }}</span>
-              <button class="hover:text-gray-900" @click="togglePerformanceTimer">
-                <Icon :name="isPerformanceTimerRunning ? 'mdi:pause' : 'mdi:play'" size="1.5rem" />
+              <span class="font-mono text-xl font-bold">{{ formattedTaskTime }}</span>
+              <button class="hover:text-gray-900" @click="toggleTaskTimer">
+                <Icon :name="isTaskTimerRunning ? 'mdi:pause' : 'mdi:play'" size="1.5rem" />
               </button>
-              <button class="hover:text-gray-900" @click="resetPerformanceTimer(true)">
+              <button class="hover:text-gray-900" @click="resetTaskTimer(true)">
                 <Icon name="mdi:reload" size="1.5rem" />
               </button>
             </div>
@@ -191,22 +191,22 @@
 
           <!-- Skill Sliders -->
           <div class="space-y-6 mb-6">
-            <div v-for="metric in currentTask.skillMetrics" :key="metric.skill">
+            <div v-for="metric in currentTask.skill_weights" :key="metric.skill_id">
               <div class="flex justify-between items-center mb-1">
                 <label class="font-semibold text-gray-700">
-                  {{ metric.skill }}
-                  <span class="ml-2 text-xs font-mono bg-gray-200 px-1.5 py-0.5 rounded">{{ metric.weight }}%</span>
+                  {{ metric.skill_name }}
+                  <span class="ml-2 text-xs font-mono bg-gray-200 px-1.5 py-0.5 rounded">{{ parseFloat(metric.weight) * 100 }}%</span>
                 </label>
-                <span class="font-bold text-gray-800">{{ currentScores[metric.skill] || 0 }}%</span>
+                <span class="font-bold text-gray-800">{{ currentScores[metric.skill_id] || 0 }}%</span>
               </div>
               <input
-                v-model.number="currentScores[metric.skill]"
+                v-model.number="currentScores[metric.skill_id]"
                 type="range"
                 min="0"
                 max="100"
                 step="5"
                 class="w-full h-2 rounded-lg appearance-none cursor-pointer range-thumb"
-                :style="{ background: `linear-gradient(to right, #9C1313 ${currentScores[metric.skill] || 0}%, #E5E7EB ${currentScores[metric.skill] || 0}%)` }"
+                :style="{ background: `linear-gradient(to right, #9C1313 ${currentScores[metric.skill_id] || 0}%, #E5E7EB ${currentScores[metric.skill_id] || 0}%)` }"
                 @input="selectedQuickScore = null"
               >
             </div>
@@ -256,67 +256,59 @@
 </template>
 
 <script lang="ts" setup>
-import type { Athlete, Task } from '~/composables/useCourses';
-import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue';
+import type { Attendee, Session, SessionCompletionPayload, Task, TaskCompletionPayload } from '~/types/course';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ConfirmModal from '~/components/ConfirmModal.vue';
 import { useCourses } from '~/composables/useCourses';
 import { useSessionReport } from '~/composables/useSessionReport';
+import { useSubmit } from '~/composables/useSubmit';
 
 interface EvaluationData {
-  scores: Record<string, number>;
+  scores: Record<number, number>; // skillId -> score (0-100)
   notes: string;
   time: number;
 }
 
 // ===================================
-// Setup
+// Setup & Data Fetching
 // ===================================
 const route = useRoute();
 const router = useRouter();
-const { findSessionById, updateSessionStatus, saveSessionEvaluations } = useCourses();
-const { setReportData } = useSessionReport();
+const { fetchCourseById, updateSessionStatus, saveSessionCompletions } = useCourses();
 
-// ===================================
-// Data Fetching
-// ===================================
 const courseId = computed(() => Number(route.params.id));
 const sessionId = computed(() => Number(route.params.sessionId));
-const data = computed(() => findSessionById(courseId.value, sessionId.value));
-const course = computed(() => data.value.course);
-const session = computed(() => data.value.session);
 
-const participatingAthletes = computed<Athlete[]>(() => {
-  if (!course.value?.athletes)
+const { data: course, pending: coursePending } = await fetchCourseById(courseId.value);
+
+const session = computed<Session | undefined>(() => {
+  return course.value?.sessions.find(s => s.id === sessionId.value);
+});
+
+const participatingAthletes = computed<Attendee[]>(() => {
+  if (!course.value?.attendees)
     return [];
   const athleteQuery = route.query.athletes;
   if (!athleteQuery || typeof athleteQuery !== 'string')
-    return [];
-  const participatingIds = athleteQuery.split(',').map(Number);
-  return course.value.athletes.filter(athlete => participatingIds.includes(athlete.id));
+    return course.value.attendees;
+  const participatingUuids = athleteQuery.split(',');
+  return course.value.attendees.filter(athlete => participatingUuids.includes(athlete.uuid));
 });
 
 // ===================================
 // Core Reactive State
 // ===================================
-const evaluations = ref<Record<string, EvaluationData>>({}); // Temporary data store
-const completedEvalKeys = ref<string[]>([]); // Source of truth for completion
+const evaluations = ref<Record<string, EvaluationData>>({});
+const completedEvalKeys = ref<string[]>([]);
 const currentTaskIndex = ref(0);
 const currentAthleteIndex = ref(0);
 const selectedQuickScore = ref<string | null>(null);
 const notes = ref('');
-const currentScores = ref<Record<string, number>>({});
+const currentScores = ref<Record<number, number>>({});
 const sessionComplete = ref(false);
 const showCancelModal = ref(false);
 
-// ===================================
-// Timer State
-// ===================================
-const sessionElapsedTime = ref(0);
-const performanceElapsedTime = ref(0);
-const isPerformanceTimerRunning = ref(false);
-let sessionTimerId: NodeJS.Timeout | null = null;
-let performanceTimerId: NodeJS.Timeout | null = null;
 const quickScores = [
   { id: 1, label: 'Poor', value: 20 },
   { id: 2, label: 'Needs work', value: 40 },
@@ -325,65 +317,75 @@ const quickScores = [
   { id: 5, label: 'Excellent', value: 100 },
 ];
 
-// =================================================================
-// RE-ORDERED & CONSOLIDATED COMPUTED PROPERTIES
-// =================================================================
-const totalTasks = computed(() => session.value?.tasks.length || 0);
+// ===================================
+// Timer State
+// ===================================
+const sessionElapsedTime = ref(0);
+const taskElapsedTime = ref(0);
+const isTaskTimerRunning = ref(false);
+let sessionTimerId: NodeJS.Timeout | null = null;
+let taskTimerId: NodeJS.Timeout | null = null;
+
+// ===================================
+// Computed Properties - *** THIS SECTION IS CORRECTED ***
+// ===================================
+
+const tasks = computed<Task[]>(() => session.value?.tasks.map(st => st.task) || []);
+const totalTasks = computed(() => tasks.value.length);
 const totalPossibleEvals = computed(() => participatingAthletes.value.length * totalTasks.value);
-const completedEvalsCount = computed(() => completedEvalKeys.value.length);
+const completedEvalsCount = computed(() => new Set(completedEvalKeys.value).size);
 
-const currentTask = computed<Task | undefined>(() => session.value?.tasks[currentTaskIndex.value]);
-const currentAthlete = computed<Athlete | undefined>(() => participatingAthletes.value[currentAthleteIndex.value]);
+// **FIX 2**: `currentTask` is now correctly derived from the fixed `tasks` array.
+const currentTask = computed<Task | undefined>(() => tasks.value[currentTaskIndex.value]);
+const currentAthlete = computed<Attendee | undefined>(() => participatingAthletes.value[currentAthleteIndex.value]);
 
-const overallProgress = computed(() => {
-  if (totalPossibleEvals.value === 0)
-    return 0;
-  return Math.round((completedEvalsCount.value / totalPossibleEvals.value) * 100);
-});
-
+const overallProgress = computed(() => totalPossibleEvals.value === 0 ? 0 : Math.round((completedEvalsCount.value / totalPossibleEvals.value) * 100));
 const currentTaskProgress = computed(() => {
-  if (!currentTask.value || participatingAthletes.value.length === 0)
+  if (!currentTask.value)
     return 0;
-  const taskId = currentTask.value.id;
-  const evalsForThisTask = completedEvalKeys.value.filter(key => key.endsWith(`-${taskId}`));
-  return Math.round((evalsForThisTask.length / participatingAthletes.value.length) * 100);
+  const evalsForThisTask = completedEvalKeys.value.filter(key => key.endsWith(`-${currentTask.value?.id}`)).length;
+  return participatingAthletes.value.length > 0 ? Math.round((evalsForThisTask / participatingAthletes.value.length) * 100) : 0;
 });
-
 const isFirstEvaluation = computed(() => currentAthleteIndex.value === 0 && currentTaskIndex.value === 0);
-const isLastEvaluation = computed(() =>
-  currentAthleteIndex.value === participatingAthletes.value.length - 1
-  && currentTaskIndex.value === totalTasks.value - 1,
+const isLastEvaluation = computed(() => currentAthleteIndex.value === participatingAthletes.value.length - 1 && currentTaskIndex.value === totalTasks.value - 1);
+
+const { submit: performSaveScores, loading: isSaving } = useSubmit(
+  (payload: { sessionId: number; data: SessionCompletionPayload }) => saveSessionCompletions(payload.sessionId, payload.data),
+  {
+    onSuccess: async () => {
+      await updateSessionStatus(sessionId.value, 'Complete');
+      alert('Session completed and scores saved!');
+      router.push(`/course-detail/${courseId.value}/session/${sessionId.value}/report`);
+    },
+    onError: (err) => {
+      alert(`Failed to save session scores: ${err.message || 'Unknown error'}`);
+      sessionComplete.value = false;
+    },
+  },
 );
 
-const areAllEvaluationsComplete = computed(() => {
-  if (totalPossibleEvals.value === 0)
-    return true;
-  return completedEvalsCount.value === totalPossibleEvals.value;
-});
-
 const isFinishButtonDisabled = computed(() => {
-  if (sessionComplete.value)
-    return true;
-  if (isLastEvaluation.value) {
-    const isReadyToFinish = completedEvalsCount.value >= totalPossibleEvals.value - 1;
-    return !isReadyToFinish;
-  }
-  return false;
+  return isSaving.value;
 });
 
 const finishButtonTitle = computed(() => {
-  if (isLastEvaluation.value && isFinishButtonDisabled.value) {
-    return 'You must complete all other evaluations before finishing.';
+  if (isLastEvaluation.value && completedEvalsCount.value < totalPossibleEvals.value) {
+    return `You can finish, but ${totalPossibleEvals.value - completedEvalsCount.value} evaluations are still incomplete.`;
   }
-  return '';
+  return 'Finish and save all evaluations';
 });
 
 const formattedSessionTime = computed(() => formatTime(sessionElapsedTime.value));
-const formattedPerformanceTime = computed(() => formatTime(performanceElapsedTime.value));
+const formattedTaskTime = computed(() => formatTime(taskElapsedTime.value));
 
 // ===================================
-// Core Logic Methods
+// Core Logic & Methods
 // ===================================
+function findTaskSequence(taskId: number): number {
+  const sessionTask = session.value?.tasks.find(st => st.task.id === taskId);
+  return sessionTask?.sequence || 0;
+}
+
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -395,64 +397,30 @@ function handleCancel() {
 }
 function executeCancellation() {
   router.push(`/course-detail/${courseId.value}/session/${sessionId.value}`);
-  showCancelModal.value = false;
 }
 
 function saveCurrentEvaluation() {
   if (!currentAthlete.value || !currentTask.value)
     return;
-  const evalKey = `${currentAthlete.value.id}-${currentTask.value.id}`;
+  const evalKey = `${currentAthlete.value.uuid}-${currentTask.value.id}`;
   evaluations.value[evalKey] = {
     scores: { ...currentScores.value },
     notes: notes.value,
-    time: performanceElapsedTime.value,
+    time: taskElapsedTime.value,
   };
+  if (!completedEvalKeys.value.includes(evalKey)) {
+    completedEvalKeys.value.push(evalKey);
+  }
 }
 
 function handleSaveAndNext() {
-  if (!currentAthlete.value || !currentTask.value)
-    return;
-
-  const currentEvalKey = `${currentAthlete.value.id}-${currentTask.value.id}`;
   saveCurrentEvaluation();
 
-  if (!completedEvalKeys.value.includes(currentEvalKey)) {
-    completedEvalKeys.value.push(currentEvalKey);
-  }
-
   if (isLastEvaluation.value) {
-    if (areAllEvaluationsComplete.value) {
-      sessionComplete.value = true;
-      if (sessionTimerId)
-        clearInterval(sessionTimerId);
-      pausePerformanceTimer();
-
-      // Set data for immediate redirect (existing logic)
-      setReportData({
-        course: course.value,
-        session: session.value,
-        participatingAthletes: participatingAthletes.value,
-        evaluations: evaluations.value,
-        totalSessionTime: sessionElapsedTime.value,
-      });
-
-      // *** NEW: Save data for persistent access ***
-      if (course.value && session.value) {
-        saveSessionEvaluations(
-          course.value.id,
-          session.value.id,
-          evaluations.value,
-          sessionElapsedTime.value,
-        );
-        updateSessionStatus(course.value.id, session.value.id, 'Complete');
-      }
-
-      router.push(`/course-detail/${courseId.value}/session/${sessionId.value}/report`);
-    }
-    return; // Stop here if it's the last eval.
+    finishSession();
+    return;
   }
 
-  // Navigate to the next evaluation
   if (currentAthleteIndex.value < participatingAthletes.value.length - 1) {
     currentAthleteIndex.value++;
   }
@@ -460,6 +428,56 @@ function handleSaveAndNext() {
     currentTaskIndex.value++;
     currentAthleteIndex.value = 0;
   }
+}
+
+async function finishSession() {
+  if (sessionComplete.value || isSaving.value)
+    return;
+
+  // Ensure the very last evaluation is saved before proceeding
+  saveCurrentEvaluation();
+
+  sessionComplete.value = true;
+  pauseTaskTimer();
+  if (sessionTimerId)
+    clearInterval(sessionTimerId);
+
+  const completions: TaskCompletionPayload[] = [];
+  for (const [key, evalData] of Object.entries(evaluations.value)) {
+    const lastDashIndex = key.lastIndexOf('-');
+    if (lastDashIndex === -1)
+      continue;
+    const athleteUuid = key.substring(0, lastDashIndex);
+    const taskIdStr = key.substring(lastDashIndex + 1);
+    const taskId = Number(taskIdStr);
+
+    // now athleteUuid is the full UUID, taskId is correct
+    const task = tasks.value.find(t => t.id === taskId);
+    if (!task)
+      continue;
+
+    const totalWeightedScore = task.skill_weights.reduce((taskSum, metric) => {
+      const scoreForSkill = evalData.scores[metric.skill_id] || 0;
+      const weight = Number.parseFloat(metric.weight);
+      return taskSum + (scoreForSkill * weight);
+    }, 0);
+
+    completions.push({
+      athlete_uuid: athleteUuid,
+      task_id: taskId,
+      score: totalWeightedScore,
+      scores: evalData.scores,
+      notes: evalData.notes,
+      time: evalData.time,
+    });
+  }
+
+  const payload: SessionCompletionPayload = {
+    completions,
+    totalSessionTime: sessionElapsedTime.value, // <-- ADD THIS
+  };
+
+  await performSaveScores({ sessionId: sessionId.value, data: payload });
 }
 
 function handlePrevious() {
@@ -503,88 +521,80 @@ function applyQuickScore(label: string) {
   selectedQuickScore.value = label;
   const score = quickScores.find(s => s.label === label);
   if (score && currentTask.value) {
-    const newScores: Record<string, number> = {};
-    for (const metric of currentTask.value.skillMetrics) {
-      newScores[metric.skill] = score.value;
+    const newScores: Record<number, number> = {};
+    for (const metric of currentTask.value.skill_weights) {
+      newScores[metric.skill_id] = score.value;
     }
     currentScores.value = newScores;
   }
 }
 
-function isEvalOfficiallyCompleted(athleteId: number): boolean {
+function isEvalOfficiallyCompleted(athleteUuid: string): boolean {
   if (!currentTask.value)
     return false;
-  const evalKey = `${athleteId}-${currentTask.value.id}`;
+  const evalKey = `${athleteUuid}-${currentTask.value.id}`;
   return completedEvalKeys.value.includes(evalKey);
 }
 
-// Timer Controls
-function pausePerformanceTimer() {
-  if (performanceTimerId) {
-    clearInterval(performanceTimerId);
-    performanceTimerId = null;
-  }
-  isPerformanceTimerRunning.value = false;
+function pauseTaskTimer() {
+  if (taskTimerId)
+    clearInterval(taskTimerId);
+  isTaskTimerRunning.value = false;
 }
-function startPerformanceTimer() {
-  if (isPerformanceTimerRunning.value || sessionComplete.value)
+function startTaskTimer() {
+  if (isTaskTimerRunning.value || sessionComplete.value)
     return;
-  isPerformanceTimerRunning.value = true;
-  performanceTimerId = setInterval(() => {
-    performanceElapsedTime.value++;
+  isTaskTimerRunning.value = true;
+  taskTimerId = setInterval(() => {
+    taskElapsedTime.value++;
   }, 1000);
 }
-function togglePerformanceTimer() {
-  if (isPerformanceTimerRunning.value) {
-    pausePerformanceTimer();
-  }
-  else {
-    startPerformanceTimer();
-  }
+function toggleTaskTimer() {
+  if (isTaskTimerRunning.value)
+    pauseTaskTimer();
+  else startTaskTimer();
 }
-function resetPerformanceTimer(manualStart = false) {
-  pausePerformanceTimer();
-  performanceElapsedTime.value = 0;
-  if (manualStart) {
-    startPerformanceTimer();
-  }
+function resetTaskTimer(manualStart = false) {
+  pauseTaskTimer();
+  taskElapsedTime.value = 0;
+  if (manualStart)
+    startTaskTimer();
 }
 
-// ===================================
-// Watchers & Lifecycle Hooks
-// ===================================
-watch([currentAthleteIndex, currentTaskIndex], () => {
-  resetPerformanceTimer();
-  startPerformanceTimer();
+function loadEvaluationData() {
   selectedQuickScore.value = null;
-
   if (!currentAthlete.value || !currentTask.value) {
     currentScores.value = {};
     notes.value = '';
     return;
   }
-
-  const evalKey = `${currentAthlete.value.id}-${currentTask.value.id}`;
+  const evalKey = `${currentAthlete.value.uuid}-${currentTask.value.id}`;
   const existingEval = evaluations.value[evalKey];
-
   if (existingEval) {
     currentScores.value = { ...existingEval.scores };
     notes.value = existingEval.notes;
-    performanceElapsedTime.value = existingEval.time;
   }
   else {
-    const defaultScores: Record<string, number> = {};
-    if (currentTask.value.skillMetrics) {
-      for (const metric of currentTask.value.skillMetrics) {
-        defaultScores[metric.skill] = 0;
-      }
-    }
+    const defaultScores: Record<number, number> = {};
+    currentTask.value.skill_weights.forEach((metric) => {
+      defaultScores[metric.skill_id] = 0;
+    });
     currentScores.value = defaultScores;
     notes.value = '';
   }
-}, { immediate: true });
+}
+
+watch(currentAthleteIndex, () => {
+  loadEvaluationData();
+});
+watch(currentTaskIndex, () => {
+  resetTaskTimer();
+  startTaskTimer();
+  loadEvaluationData();
+});
 
 onMounted(() => {
+  startTaskTimer();
   sessionTimerId = setInterval(() => {
     if (!sessionComplete.value)
       sessionElapsedTime.value++;
@@ -594,42 +604,10 @@ onMounted(() => {
 onUnmounted(() => {
   if (sessionTimerId)
     clearInterval(sessionTimerId);
-  pausePerformanceTimer();
+  pauseTaskTimer();
 });
 
 useHead({
-  title: () => (course.value ? `Live Session: ${course.value.title}` : 'Live Session'),
-});
-
-watchEffect(() => {
-  if (route.matched.length > 0 && !session.value) {
-    console.error('Session not found');
-  }
+  title: () => (course.value ? `Live Session: ${course.value.name}` : 'Live Session'),
 });
 </script>
-
-<style>
-/* This custom style for the thumb is still required */
-.range-thumb::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: #9c1313; /* A red color from your theme */
-  border-radius: 50%;
-  cursor: pointer;
-  border: 3px solid white;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-  margin-top: -7px; /* Center thumb vertically */
-}
-
-.range-thumb::-moz-range-thumb {
-  width: 14px; /* Adjust size to account for border */
-  height: 14px;
-  background: #9c1313;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 3px solid white;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-}
-</style>

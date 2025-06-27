@@ -1,4 +1,6 @@
-import type { Athlete, Course, Session } from './useCourses';
+import type { AthleteDetail } from '../types/athlete';
+import type { CourseDetail, Session } from '../types/course';
+
 import { ref } from 'vue';
 
 // The data structure for a single, completed evaluation
@@ -10,9 +12,9 @@ export interface FinalEvaluationData {
 
 // The complete data package for the session report
 export interface SessionReportData {
-  course: Course | undefined;
+  course: CourseDetail | undefined;
   session: Session | undefined;
-  participatingAthletes: Athlete[];
+  participatingAthletes: AthleteDetail[];
   evaluations: Record<string, FinalEvaluationData>; // Key: "athleteId-taskId"
   totalSessionTime: number;
 }

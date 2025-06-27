@@ -1,34 +1,36 @@
 <template>
   <div class="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8 mt-[4.5rem]">
-    <!-- Use finalReportData for the v-if condition -->
-    <div v-if="!finalReportData" class="flex flex-col items-center justify-center h-[70vh]">
+    <div v-if="pending" class="flex flex-col items-center justify-center h-[70vh]">
+      <h1 class="text-2xl font-bold text-gray-700">
+        Loading Report...
+      </h1>
+    </div>
+
+    <div v-else-if="!sessionReport || error" class="flex flex-col items-center justify-center h-[70vh]">
       <h1 class="text-2xl font-bold text-gray-700">
         No Report Data Found
       </h1>
       <p class="text-gray-500 mt-2">
         The report may not have been generated or the session is not complete.
       </p>
-      <!-- The back link is now smarter -->
       <NuxtLink :to="courseId ? `/course-detail/${courseId}` : '/course-management'" class="mt-6 px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
         Back to Course
       </NuxtLink>
     </div>
 
-    <!-- The entire v-else block now uses `finalReportData` -->
     <div v-else class="max-w-7xl mx-auto">
-      <!-- Header -->
       <header class="flex justify-between items-start mb-8">
         <div>
           <h1 class="text-3xl font-bold text-gray-900 flex items-center">
             <Icon name="mdi:chart-box-outline" class="mr-3 text-gray-700" />
-            Session Report: {{ finalReportData.session?.name }}
+            Session Report: {{ sessionReport.session?.name }}
           </h1>
           <p class="text-gray-500 mt-1 ml-10">
-            Completed on {{ new Date().toLocaleString() }}
+            Completed on {{ new Date(sessionReport.session.scheduled_date).toLocaleString() }}
           </p>
         </div>
         <div class="flex items-center space-x-3">
-          <NuxtLink :to="`/course-detail/${finalReportData.course?.id}`" class="px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
+          <NuxtLink :to="`/course-detail/${sessionReport.course?.id}`" class="px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
             Back to Course
           </NuxtLink>
           <button class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition">
@@ -37,7 +39,6 @@
         </div>
       </header>
 
-      <!-- Stat Cards (rely on `stats` computed, which is updated) -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-md text-center">
           <p class="text-sm text-gray-500 mb-1">
@@ -73,9 +74,7 @@
         </div>
       </div>
 
-      <!-- Main Content -->
       <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <!-- Left: Athlete Summary -->
         <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
           <h2 class="text-xl font-bold text-gray-800 mb-1">
             Athlete Performance Summary
@@ -84,22 +83,20 @@
             Select an athlete to view details
           </p>
           <div class="space-y-2">
-            <!-- This part is unchanged as it depends on `athleteSummaries` -->
             <button
               v-for="athlete in athleteSummaries"
-              :key="athlete.id"
+              :key="athlete.uuid"
               class="w-full flex items-center p-3 rounded-lg text-left transition-colors"
-              :class="[selectedAthleteId === athlete.id ? 'bg-blue-100' : 'hover:bg-gray-50']"
-              @click="selectedAthleteId = athlete.id"
+              :class="[selectedAthleteUuid === athlete.uuid ? 'bg-blue-100' : 'hover:bg-gray-50']"
+              @click="selectedAthleteUuid = athlete.uuid"
             >
-              <img :src="athlete.avatar" :alt="athlete.name" class="w-10 h-10 rounded-full mr-4">
+              <NuxtImg :src="athlete.profile_image_url" :alt="athlete.name" class="w-10 h-10 rounded-full mr-4" />
               <div class="flex-grow">
                 <p class="font-semibold text-gray-800">
                   {{ athlete.name }}
                 </p>
                 <p class="text-xs text-gray-500">
-                  <!-- Use finalReportData here -->
-                  {{ athlete.tasksCompleted }} / {{ finalReportData.session?.tasks.length }} tasks completed
+                  {{ athlete.tasksCompleted }} / {{ sessionReport.session?.tasks.length }} tasks completed
                 </p>
               </div>
               <div class="text-right">
@@ -114,7 +111,6 @@
           </div>
         </div>
 
-        <!-- Right: Skill Assessment -->
         <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
           <h2 class="text-xl font-bold text-gray-800 mb-4">
             Skill Assessment
@@ -123,7 +119,6 @@
             <p>Select an athlete to see their skill breakdown.</p>
           </div>
           <div v-else>
-            <!-- Radar Chart Placeholder (unchanged) -->
             <div class="mb-8 p-4 bg-gray-50 rounded-lg">
               <p class="text-center font-semibold text-gray-600">
                 Radar Chart Visualization
@@ -136,7 +131,6 @@
               </div>
             </div>
 
-            <!-- Skill Bars (unchanged) -->
             <div class="space-y-4">
               <div v-for="skill in skillAssessment" :key="skill.name" class="grid grid-cols-6 gap-4 items-center">
                 <p class="col-span-1 font-semibold text-gray-700 text-sm">
@@ -156,24 +150,21 @@
         </div>
       </main>
 
-      <!-- Bottom: Detailed Evaluations -->
       <section class="mt-8 bg-white p-6 rounded-lg shadow-md">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold text-gray-800">
             Detailed Evaluations
           </h2>
-          <!-- Use finalReportData here for the filter -->
           <select v-model="detailedFilter" class="border rounded-md px-3 py-1.5 text-sm">
             <option value="All">
               All Athletes
             </option>
-            <option v-for="athlete in finalReportData.participatingAthletes" :key="athlete.id" :value="athlete.id">
+            <option v-for="athlete in sessionReport.participatingAthletes" :key="athlete.uuid" :value="athlete.uuid">
               {{ athlete.name }}
             </option>
           </select>
         </div>
         <div class="overflow-x-auto">
-          <!-- Table is unchanged as it depends on `filteredDetailedEvaluations` -->
           <table class="w-full text-left text-sm">
             <thead class="border-b text-gray-500">
               <tr>
@@ -202,7 +193,7 @@
               </tr>
               <tr v-for="(item, index) in filteredDetailedEvaluations" :key="index" class="border-b hover:bg-gray-50">
                 <td class="py-3 px-3 flex items-center">
-                  <img :src="item.athlete.avatar" :alt="item.athlete.name" class="w-8 h-8 rounded-full mr-3">
+                  <img :src="item.athlete.profile_image_url || '/public/default-profile.jpg'" :alt="item.athlete.name" class="w-8 h-8 rounded-full mr-3">
                   <span class="font-medium">{{ item.athlete.name }}</span>
                 </td>
                 <td class="py-3 px-3">
@@ -231,71 +222,33 @@
 </template>
 
 <script lang="ts" setup>
-import type { SessionReportData } from '~/composables/useSessionReport';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCourses } from '~/composables/useCourses';
-import { useSessionReport } from '~/composables/useSessionReport';
 
-// 1. SETUP: Get necessary composables and route info
-const { reportData } = useSessionReport(); // For live redirect
-const { findSessionById } = useCourses(); // For fetching persisted data
+const { fetchSessionReport } = useCourses();
 const route = useRoute();
 const courseId = computed(() => Number(route.params.id));
 const sessionId = computed(() => Number(route.params.sessionId));
 
-// 2. NEW LOGIC: This computed property intelligently finds the report data
-const finalReportData = computed<SessionReportData | null>(() => {
-  // Case 1: Live data exists from an immediate redirect. Use it.
-  if (reportData.value) {
-    return reportData.value;
-  }
+const { data: sessionReport, pending, error } = await fetchSessionReport(sessionId.value);
 
-  // Case 2: No live data. Fetch persisted data using route params.
-  if (courseId.value && sessionId.value) {
-    const { course, session } = findSessionById(courseId.value, sessionId.value);
+const selectedAthleteUuid = ref<string | null>(null);
+const detailedFilter = ref<string>('All');
 
-    // Check if we found the session and it has the required saved data
-    if (course && session && session.evaluationData && session.totalSessionTime !== undefined) {
-      // Reconstruct the participating athletes list from the evaluation data keys
-      const participantIds = new Set(Object.keys(session.evaluationData).map(key => Number(key.split('-')[0])));
-      const participatingAthletes = course.athletes.filter(athlete => participantIds.has(athlete.id));
-
-      // Build the report data object on the fly
-      return {
-        course,
-        session,
-        participatingAthletes,
-        evaluations: session.evaluationData,
-        totalSessionTime: session.totalSessionTime,
-      };
-    }
-  }
-
-  // If we can't find any data, return null
-  return null;
-});
-
-const selectedAthleteId = ref<number | null>(null);
-const detailedFilter = ref<string | number>('All');
-
-// --- FORMATTING HELPERS ---
 function formatTime(totalSeconds: number) {
-  if (isNaN(totalSeconds))
+  if (Number.isNaN(totalSeconds) || totalSeconds === null || totalSeconds === undefined)
     return '00:00';
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// --- COMPUTED PROPERTIES ---
-
-// ALL computed properties below must now depend on `finalReportData`
 const stats = computed(() => {
-  if (!finalReportData.value)
+  if (!sessionReport.value)
     return { totalTime: 0, completedEvals: 0, totalEvals: 0, avgTimePerTask: 0, completion: 0 };
 
-  const report = finalReportData.value;
+  const report = sessionReport.value;
   const completedEvals = Object.keys(report.evaluations).length;
   const totalEvals = report.participatingAthletes.length * (report.session?.tasks.length || 0);
   const totalEvalTime = Object.values(report.evaluations).reduce((sum, evalItem) => sum + evalItem.time, 0);
@@ -310,26 +263,29 @@ const stats = computed(() => {
 });
 
 const athleteSummaries = computed(() => {
-  if (!finalReportData.value)
+  if (!sessionReport.value)
     return [];
 
-  const report = finalReportData.value;
+  const report = sessionReport.value;
   return report.participatingAthletes.map((athlete) => {
     const athleteEvalEntries = Object.entries(report.evaluations)
-      .filter(([key]) => key.startsWith(`${athlete.id}-`));
+      .filter(([key]) => key.startsWith(`${athlete.uuid}-`));
 
     let totalWeightedScoreSum = 0;
     const tasksCompleted = athleteEvalEntries.length;
 
     athleteEvalEntries.forEach(([key, evalData]) => {
-      const taskId = Number(key.split('-')[1]);
-      const task = report.session!.tasks.find(t => t.id === taskId);
-      if (!task)
+      const lastDashIndex = key.lastIndexOf('-');
+      const taskId = Number(key.substring(lastDashIndex + 1));
+      const sessionTask = report.session!.tasks.find(st => st.task.id === taskId);
+      if (!sessionTask)
         return;
 
-      const singleTaskWeightedScore = task.skillMetrics.reduce((taskSum, metric) => {
-        const scoreForSkill = evalData.scores[metric.skill] || 0;
-        return taskSum + (scoreForSkill * (metric.weight / 100));
+      const task = sessionTask.task;
+      const singleTaskWeightedScore = task.skill_weights.reduce((taskSum, metric) => {
+        const scoreForSkill = evalData.scores[metric.skill_id] || 0;
+        const weight = Number.parseFloat(String(metric.weight));
+        return taskSum + (scoreForSkill * weight);
       }, 0);
 
       totalWeightedScoreSum += singleTaskWeightedScore;
@@ -338,9 +294,9 @@ const athleteSummaries = computed(() => {
     const totalTime = athleteEvalEntries.reduce((sum, [, evalData]) => sum + evalData.time, 0);
 
     return {
-      id: athlete.id,
+      uuid: athlete.uuid,
       name: athlete.name,
-      avatar: athlete.avatar,
+      profile_image_url: athlete.profile_image_url || '/public/default-profile.jpg',
       tasksCompleted,
       averageScore: tasksCompleted > 0 ? (totalWeightedScoreSum / tasksCompleted) : 0,
       totalTime,
@@ -349,61 +305,82 @@ const athleteSummaries = computed(() => {
 });
 
 const selectedAthlete = computed(() => {
-  if (!selectedAthleteId.value || !finalReportData.value)
+  if (!selectedAthleteUuid.value || !sessionReport.value)
     return null;
-  return finalReportData.value.participatingAthletes.find(a => a.id === selectedAthleteId.value);
+  return sessionReport.value.participatingAthletes.find(a => a.uuid === selectedAthleteUuid.value);
 });
 
 const skillAssessment = computed(() => {
-  if (!selectedAthleteId.value || !finalReportData.value)
+  if (!selectedAthleteUuid.value || !sessionReport.value)
     return [];
 
-  const report = finalReportData.value;
+  const report = sessionReport.value;
   const athleteEvals = Object.entries(report.evaluations)
-    .filter(([key]) => key.startsWith(`${selectedAthleteId.value}-`))
+    .filter(([key]) => key.startsWith(`${selectedAthleteUuid.value}-`))
     .map(([, evalData]) => evalData);
 
-  const skillTotals: Record<string, { total: number; count: number }> = {};
+  const skillTotals: Record<string, { total: number; count: number; name: string }> = {};
 
   athleteEvals.forEach((evalItem) => {
-    Object.entries(evalItem.scores).forEach(([skill, score]) => {
-      if (!skillTotals[skill]) {
-        skillTotals[skill] = { total: 0, count: 0 };
+    Object.entries(evalItem.scores).forEach(([skillId, score]) => {
+      let skillName = `Skill #${skillId}`;
+      const foundSkill = report.session.tasks
+        .flatMap(st => st.task.skill_weights)
+        .find(sw => sw.skill_id === Number(skillId));
+
+      if (foundSkill) {
+        skillName = foundSkill.skill_name;
       }
-      skillTotals[skill].total += score;
-      skillTotals[skill].count++;
+
+      if (!skillTotals[skillId]) {
+        skillTotals[skillId] = { total: 0, count: 0, name: skillName };
+      }
+      skillTotals[skillId].total += score;
+      skillTotals[skillId].count++;
     });
   });
 
-  return Object.entries(skillTotals).map(([name, data]) => ({
-    name,
+  return Object.values(skillTotals).map(data => ({
+    name: data.name,
     averageScore: data.count > 0 ? data.total / data.count : 0,
   }));
 });
 
 const filteredDetailedEvaluations = computed(() => {
-  if (!finalReportData.value)
+  if (!sessionReport.value)
     return [];
 
-  const report = finalReportData.value;
+  const report = sessionReport.value;
   return Object.entries(report.evaluations)
     .map(([key, evaluation]) => {
-      const [athleteId, taskId] = key.split('-').map(Number);
+      const lastDashIndex = key.lastIndexOf('-');
+      const athleteUuid = key.substring(0, lastDashIndex);
+      const taskId = Number(key.substring(lastDashIndex + 1));
+
+      const athlete = report.participatingAthletes.find(a => a.uuid === athleteUuid);
+      const sessionTask = report.session!.tasks.find(st => st.task.id === taskId);
+
+      if (!athlete || !sessionTask) {
+        return null;
+      }
+
       return {
-        athleteId,
-        taskId,
-        athlete: report.participatingAthletes.find(a => a.id === athleteId)!,
-        task: report.session!.tasks.find(t => t.id === taskId)!,
+        athlete,
+        task: sessionTask.task,
         evaluation,
+        athleteUuid,
       };
     })
-    .filter(item => detailedFilter.value === 'All' || item.athleteId === detailedFilter.value);
+    .filter((item): item is NonNullable<typeof item> => {
+      if (!item)
+        return false;
+      return detailedFilter.value === 'All' || item.athleteUuid === detailedFilter.value;
+    });
 });
 
-// Set default selected athlete on mount
 onMounted(() => {
   if (athleteSummaries.value.length > 0) {
-    selectedAthleteId.value = athleteSummaries.value[0].id;
+    selectedAthleteUuid.value = athleteSummaries.value[0].uuid;
   }
 });
 

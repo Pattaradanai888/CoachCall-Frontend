@@ -82,15 +82,23 @@ export interface Session {
   scheduled_date: string;
   is_template: boolean;
   status: 'To Do' | 'Complete' | 'In Progress';
-  tasks: Task[];
+  tasks: SessionTask[];
+  task_count: number;
+  total_duration_minutes: number;
+
+  completions?: any[];
+  evaluationData?: Record<string, FinalEvaluationData>;
+  totalSessionTime?: number;
 }
 
 export interface SessionTemplate {
+  tasks: any;
   id: number;
   name: string;
   description: string | null;
   total_duration_minutes: number;
   task_count: number;
+  scheduled_date: string;
 }
 
 export interface Task {
@@ -105,6 +113,36 @@ export interface Task {
   }>;
 }
 
+export interface SessionTask {
+  sequence: number;
+  task: Task;
+}
+
+export interface DroppedItem extends SessionTemplate {
+  timelineId: string;
+  date: Date | null;
+  tasks_full?: any[];
+}
+
 export interface CourseListEntryWithProgress extends CourseListEntry {
   progressValue: number;
+}
+
+export interface TaskCompletionPayload {
+  athlete_uuid: string;
+  task_id: number;
+  score: number;
+  scores: Record<number, number>;
+  notes: string;
+  time: number;
+}
+export interface SessionCompletionPayload {
+  completions: TaskCompletionPayload[];
+  totalSessionTime: number;
+}
+
+export interface FinalEvaluationData {
+  scores: Record<string, number>;
+  notes: string;
+  time: number;
 }
