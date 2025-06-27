@@ -23,7 +23,7 @@
           No templates found.
         </p>
       </div>
-      <div v-else class="mt-6 space-y-4">
+      <div v-else ref="templatesContainer" class="mt-6 space-y-4">
         <SessionTemplateComponent
           v-for="template in paginatedTemplates"
           :key="template.id"
@@ -62,18 +62,16 @@
         </button>
       </div>
       <div
-        class="min-h-[400px] border-2 border-dashed rounded-lg p-6 mt-5"
+        ref="timelineDropZone"
+        class="min-h-[400px] border-2 border-dashed rounded-lg p-6 mt-5 timeline-drop-zone"
         :class="{ 'border-gray-300 bg-gray-50': !isDragOver, 'border-blue-500 bg-blue-50': isDragOver }"
-        @dragover.prevent="isDragOver = true"
-        @dragleave="isDragOver = false"
-        @drop.prevent="handleDrop"
       >
-        <div v-if="droppedItems.length === 0" class="text-center py-20">
+        <div v-if="droppedItems.length === 0" class="text-center py-20 pointer-events-none">
           <p class="text-gray-500">
             Drop templates here
           </p>
         </div>
-        <div v-else ref="timelineContainer" class="space-y-4">
+        <div v-else class="space-y-4">
           <TimelineItem
             v-for="(item, index) in droppedItems"
             :key="item.timelineId"
@@ -115,21 +113,15 @@
 </template>
 
 <script setup lang="ts">
-import type { SessionCreatePayload, SessionTemplate } from '~/types/course';
+import type { DroppedItem, Session, SessionCreatePayload } from '~/types/course';
 import { PaginationBar } from '#components';
 import Sortable from 'sortablejs';
-import { computed, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import SessionBuilderModal from '~/components/course/SessionBuilderModal.vue';
 import { useCourses } from '~/composables/useCourses';
 import { useSubmit } from '~/composables/useSubmit';
 import SessionTemplateComponent from './AddSession/SessionTemplate.vue';
 import TimelineItem from './AddSession/TimelineItem.vue';
-
-interface DroppedItem extends SessionTemplate {
-  timelineId: string;
-  date: Date | null;
-  tasks_full?: any[];
-}
 
 const props = withDefaults(defineProps<{
   modelValue?: DroppedItem[];
@@ -141,19 +133,33 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits(['update:modelValue', 'editStep']);
 
+const templatesContainer = ref<HTMLElement | null>(null);
+const timelineDropZone = ref<HTMLElement | null>(null);
+
 const showAddModal = ref(false);
 const currentPage = ref(1);
 const itemsPerPage = 5;
 const searchQuery = ref('');
 const droppedItems = ref<DroppedItem[]>([]);
 const isDragOver = ref(false);
-const timelineContainer = ref<HTMLElement | null>(null);
-let sortableInstance: Sortable | null = null;
+let timelineSortable: Sortable | null = null;
+let templateSortable: Sortable | null = null;
 const editingDateIndex = ref<number | null>(null);
 const selectedDate = ref<Date | null>(null);
 
 const { fetchSessionTemplates, fetchSkills, createSession } = useCourses();
-const { data: templates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
+const { data: initialTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
+
+// Create a local, mutable copy of the templates. This is the source of truth for available templates.
+const localTemplates = ref<Session[]>([]);
+watch(initialTemplates, (newVal) => {
+  if (newVal) {
+    // Filter out templates that are already in the timeline
+    const droppedIds = new Set(droppedItems.value.map(item => item.id));
+    localTemplates.value = JSON.parse(JSON.stringify(newVal)).filter(t => !droppedIds.has(t.id));
+  }
+}, { immediate: true, deep: true });
+
 const { data: availableSkills } = await fetchSkills();
 
 const { submit: performSaveTemplate } = useSubmit(createSession, {
@@ -180,12 +186,10 @@ const courseStartDate = computed(() => props.courseData?.dateRange?.start ? new 
 const courseEndDate = computed(() => props.courseData?.dateRange?.end ? new Date(props.courseData.dateRange.end) : null);
 
 const filteredTemplates = computed(() => {
-  if (!templates.value)
-    return [];
   const query = searchQuery.value.toLowerCase();
   if (!query)
-    return templates.value;
-  return templates.value.filter(t => t.name.toLowerCase().includes(query));
+    return localTemplates.value;
+  return localTemplates.value.filter(t => t.name.toLowerCase().includes(query));
 });
 
 const totalItems = computed(() => filteredTemplates.value.length);
@@ -212,35 +216,102 @@ async function handleTemplateCreated(payload: SessionCreatePayload) {
   await performSaveTemplate(payload);
 }
 
-watch(timelineContainer, (newEl) => {
-  if (newEl) {
-    sortableInstance = Sortable.create(newEl, {
+function initializeSortable() {
+  if (templateSortable)
+    templateSortable.destroy();
+  if (templatesContainer.value) {
+    templateSortable = new Sortable(templatesContainer.value, {
+      group: 'sessions',
+      animation: 150,
+      draggable: '.session-template',
+      onStart: () => { isDragOver.value = true; },
+      onEnd: () => { isDragOver.value = false; },
+    });
+  }
+
+  if (timelineSortable)
+    timelineSortable.destroy();
+  if (timelineDropZone.value) {
+    timelineSortable = new Sortable(timelineDropZone.value, {
+      group: 'sessions',
       animation: 150,
       handle: '.drag-handle',
+      draggable: '.timeline-item',
+      ghostClass: 'sortable-ghost',
       onEnd: (evt) => {
-        if (evt.oldIndex !== undefined && evt.newIndex !== undefined) {
-          const [movedItem] = droppedItems.value.splice(evt.oldIndex, 1);
-          droppedItems.value.splice(evt.newIndex, 0, movedItem);
+        isDragOver.value = false;
+        if (evt.from === evt.to && evt.oldIndex !== undefined && evt.newIndex !== undefined) {
+          const item = droppedItems.value.splice(evt.oldIndex, 1)[0];
+          droppedItems.value.splice(evt.newIndex, 0, item);
         }
+      },
+      onAdd: (evt) => {
+        const templateId = Number(evt.item.dataset.id);
+        if (Number.isNaN(templateId))
+          return;
+
+        const templateIndex = localTemplates.value.findIndex(t => t.id === templateId);
+        if (templateIndex === -1)
+          return;
+
+        const [originalTemplate] = localTemplates.value.splice(templateIndex, 1);
+
+        let tasks_full: any[] = [];
+        if (originalTemplate.tasks && Array.isArray(originalTemplate.tasks)) {
+          tasks_full = originalTemplate.tasks.map(sessionTask => ({
+            id: sessionTask.task?.id || 0,
+            title: sessionTask.task?.name || '',
+            description: sessionTask.task?.description || '',
+            duration: sessionTask.task?.duration_minutes || 0,
+            selectedSkillIds: sessionTask.task?.skill_weights?.map(sw => sw.skill_id) || [],
+            skillWeights: sessionTask.task?.skill_weights?.reduce((acc, sw) => {
+              acc[sw.skill_id] = Number.parseFloat(sw.weight) * 100;
+              return acc;
+            }, {} as Record<number, number>) || {},
+          }));
+        }
+
+        const newItem: DroppedItem = {
+          ...(originalTemplate as any),
+          date: null,
+          timelineId: `${originalTemplate.id}-${Date.now()}`,
+          tasks_full,
+        };
+
+        if (evt.newIndex !== undefined) {
+          droppedItems.value.splice(evt.newIndex, 0, newItem);
+        }
+
+        evt.item.remove();
       },
     });
   }
+}
+
+watch(paginatedTemplates, () => {
+  nextTick(() => initializeSortable());
+}, { deep: true });
+
+onMounted(() => {
+  initializeSortable();
 });
 
-function handleDrop(evt: DragEvent) {
-  isDragOver.value = false;
-  const templateData = evt.dataTransfer?.getData('template');
-  if (templateData) {
-    const template: SessionTemplate = JSON.parse(templateData);
-    const newItem: DroppedItem = { ...template, date: null, timelineId: `${template.id}-${Date.now()}` };
-    droppedItems.value.push(newItem);
-  }
-}
+onUnmounted(() => {
+  if (timelineSortable)
+    timelineSortable.destroy();
+  if (templateSortable)
+    templateSortable.destroy();
+});
 
 function removeItem(index: number) {
-  droppedItems.value.splice(index, 1);
+  const [removedItem] = droppedItems.value.splice(index, 1);
+  // Add it back to the beginning of the local templates array
+  localTemplates.value.unshift(removedItem);
 }
+
 function clearTimeline() {
+  // Add all items back to the templates list and clear the timeline
+  localTemplates.value.unshift(...droppedItems.value);
   droppedItems.value = [];
 }
 
@@ -260,9 +331,38 @@ function saveDateSelection() {
   }
   cancelDateSelection();
 }
-
-onUnmounted(() => {
-  if (sortableInstance)
-    sortableInstance.destroy();
-});
 </script>
+
+<style scoped>
+.timeline-drop-zone {
+  position: relative;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+  background: #f3f4f6;
+  border: 2px dashed #9ca3af;
+}
+
+.sortable-chosen {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.sortable-drag {
+  transform: rotate(5deg);
+  opacity: 0.8;
+}
+
+.timeline-item {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.session-template {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+</style>

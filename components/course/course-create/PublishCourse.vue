@@ -109,7 +109,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <h4 class="font-semibold text-gray-900 truncate">
-                {{ session.title || 'Untitled Session' }}
+                {{ session.name || 'Untitled Session' }}
               </h4>
               <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
                 <div class="flex items-center">
@@ -122,7 +122,7 @@
                 </div>
                 <div class="flex items-center">
                   <Icon name="mdi:format-list-checks" class="w-4 h-4 mr-1.5" />
-                  <span>{{ session.tasks_full?.length || session.tasks || 0 }} task{{ (session.tasks_full?.length || session.tasks || 0) !== 1 ? 's' : '' }}</span>
+                  <span>{{ session.task_count || 0 }} task{{ (session.task_count || 0) !== 1 ? 's' : '' }}</span>
                 </div>
               </div>
             </div>

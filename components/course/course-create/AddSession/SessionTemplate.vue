@@ -1,8 +1,7 @@
 <template>
   <div
-    draggable="true"
-    class="bg-white rounded-lg shadow-md border border-gray-200 p-4 cursor-move hover:shadow-lg transition-all duration-200 hover:scale-105"
-    @dragstart="startDrag"
+    :data-id="template.id"
+    class="session-template bg-white rounded-lg shadow-md border border-gray-200 p-4 cursor-move hover:shadow-lg transition-all duration-200 hover:scale-105"
   >
     <div class="flex items-center space-x-3">
       <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
@@ -28,10 +27,9 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps(['template']);
+import type { Session } from '~/types/course';
 
-function startDrag(event: { dataTransfer: { setData: (arg0: string, arg1: string) => void; effectAllowed: string } }) {
-  event.dataTransfer.setData('template', JSON.stringify(props.template));
-  event.dataTransfer.effectAllowed = 'copy';
-}
+defineProps<{
+  template: Session;
+}>();
 </script>

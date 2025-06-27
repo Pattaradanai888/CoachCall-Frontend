@@ -5,7 +5,6 @@ import type {
   Session,
   SessionCompletionPayload,
   SessionCreatePayload,
-  SessionTemplate,
   Skill,
 } from '~/types/course';
 import { useAsyncData, useNuxtApp } from '#app';
@@ -59,7 +58,7 @@ export function useCourses() {
   };
 
   const fetchSessionTemplates = () => {
-    return useAsyncData<SessionTemplate[]>(
+    return useAsyncData<Session[]>(
       'session-templates',
       () => $api('/course/sessions', {
         params: { is_template: true },
@@ -94,11 +93,27 @@ export function useCourses() {
     return course.sessions.find(session => session.id === sessionId) || null;
   };
 
+  const updateSessionStatus = async (sessionId: number, status: 'Complete' | 'To do') => {
+    return $api<Session>(`/course/session/${sessionId}/status`, {
+      method: 'PUT',
+      body: { status },
+    });
+  };
+
   const saveSessionCompletions = async (sessionId: number, payload: SessionCompletionPayload) => {
-    return $api(`/course/${sessionId}/complete`, {
+    return $api(`/course/session/${sessionId}/complete`, {
       method: 'POST',
       body: payload,
     });
+  };
+
+  const fetchSessionReport = (sessionId: number) => {
+    // Note: The frontend uses SessionReportData from the useSessionReport composable
+    // which should be compatible. We tell useAsyncData to expect that shape.
+    return useAsyncData<any>( // Using `any` for simplicity, but you can define a matching interface
+      `session-report-${sessionId}`,
+      () => $api(`/course/session/${sessionId}/report`),
+    );
   };
 
   return {
@@ -113,5 +128,7 @@ export function useCourses() {
     fetchSkills,
     createSession,
     saveSessionCompletions,
+    updateSessionStatus,
+    fetchSessionReport,
   };
 }
