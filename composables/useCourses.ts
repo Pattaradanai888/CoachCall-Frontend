@@ -57,6 +57,13 @@ export function useCourses() {
     });
   };
 
+  const updateSessionTemplate = async (sessionId: number, payload: SessionCreatePayload) => {
+    return $api<Session>(`/course/sessions/${sessionId}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  };
+
   const fetchSessionTemplates = () => {
     return useAsyncData<Session[]>(
       'session-templates',
@@ -127,6 +134,7 @@ export function useCourses() {
     uploadCourseImage,
     fetchSkills,
     createSession,
+    updateSessionTemplate,
     saveSessionCompletions,
     updateSessionStatus,
     fetchSessionReport,

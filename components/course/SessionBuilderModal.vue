@@ -16,10 +16,10 @@
           <div class="flex justify-between items-center">
             <div>
               <h2 class="text-2xl font-bold">
-                Create Training Session
+                {{ isEditMode ? 'Edit Training Session' : 'Create Training Session' }}
               </h2>
               <p class="text-red-100 text-sm mt-1">
-                Build your next practice with precision
+                {{ isEditMode ? 'Refine your existing template.' : 'Build your next practice with precision.' }}
               </p>
             </div>
             <button
@@ -58,7 +58,7 @@
               </div>
             </div>
 
-            <div class="col-span">
+            <div class="col-span-1">
               <div class="bg-white shadow-md p-4 rounded-md mb-3">
                 <div class="text-sm text-gray-600">
                   Total Time
@@ -104,25 +104,37 @@
           </div>
 
           <div class="mt-6 border-t pt-6">
-            <label v-if="mode === 'timeline'" class="flex items-center cursor-pointer mb-6">
+            <label v-if="!isEditMode && mode === 'timeline'" class="flex items-center cursor-pointer mb-6">
               <input v-model="saveAsTemplateFlag" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-[#9c1313] focus:ring-[#9c1313]">
               <span class="ml-3 text-gray-700">Save this session as a template for future use</span>
             </label>
 
-            <div class="flex justify-end space-x-3">
+            <div class="flex justify-between w-full">
               <button
-                class="px-4 py-2 w-32 text-gray-600 hover:text-gray-800 transition-colors border-2 border-[#D9D9D9] rounded-lg"
-                @click="emitClose"
+                v-if="isEditMode"
+                class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors border-2 border-gray-300 rounded-lg flex items-center"
+                @click="resetToInitial"
               >
-                Cancel
+                <Icon name="mdi:refresh" class="mr-2" />
+                Reset
               </button>
-              <button
-                class="px-6 py-2 w-48 bg-[#9c1313] text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!canCreate"
-                @click="handleFinalize"
-              >
-                {{ finalButtonText }}
-              </button>
+              <div v-else />
+
+              <div class="flex justify-end space-x-3">
+                <button
+                  class="px-4 py-2 w-32 text-gray-600 hover:text-gray-800 transition-colors border-2 border-[#D9D9D9] rounded-lg"
+                  @click="emitClose"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="px-6 py-2 w-48 bg-[#9c1313] text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="!canCreate"
+                  @click="handleFinalize"
+                >
+                  {{ finalButtonText }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -132,7 +144,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { SessionCreatePayload, Skill, TaskCreatePayload } from '~/types/course';
+import type { Session, SessionCreatePayload, Skill, TaskCreatePayload } from '~/types/course';
 import { computed, ref, watch } from 'vue';
 import TaskComponent from '~/components/TaskComponent.vue';
 
@@ -160,52 +172,134 @@ const props = withDefaults(defineProps<{
   show: boolean;
   mode?: ModalMode;
   availableSkills: Skill[];
+  initialData?: Session | null;
 }>(), {
   mode: 'timeline',
+  initialData: null,
 });
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'create-session', payload: SessionUIData): void;
   (e: 'create-template', payload: SessionCreatePayload): void;
+  (e: 'update-template', payload: SessionCreatePayload): void;
 }>();
+
+const isEditMode = computed(() => !!props.initialData);
 
 const sessionName = ref('');
 const sessionDescription = ref('');
 let taskIdCounter = 1;
-const tasks = ref<UITask[]>([{
-  id: taskIdCounter++,
-  title: '',
-  description: '',
-  duration: 0,
-  selectedSkillIds: [],
-  skillWeights: {},
-}]);
-
+const tasks = ref<UITask[]>([]);
 const saveAsTemplateFlag = ref(props.mode === 'template');
-watch(() => props.mode, (newMode) => {
-  saveAsTemplateFlag.value = newMode === 'template';
-});
-
+const originalDataForReset = ref<Session | null>(null);
 const totalTime = computed(() => tasks.value.reduce((sum, t) => sum + (Number(t.duration) || 0), 0));
 const canCreate = computed(() => sessionName.value.trim() !== '' && tasks.value.length > 0 && tasks.value.every(t => t.title.trim() !== ''));
 
-const finalButtonText = computed(() => {
-  if (saveAsTemplateFlag.value) {
-    return props.mode === 'template' ? 'Create Template' : 'Save as Template';
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    if (isEditMode.value && props.initialData) {
+      populateForm(props.initialData);
+      originalDataForReset.value = JSON.parse(JSON.stringify(props.initialData));
+    }
+    else {
+      resetForm();
+    }
   }
-  return 'Add to Timeline';
 });
+
+watch(() => props.mode, (newMode) => {
+  if (!isEditMode.value) {
+    saveAsTemplateFlag.value = newMode === 'template';
+  }
+});
+
+const finalButtonText = computed(() => {
+  if (isEditMode.value)
+    return 'Update Template';
+  if (props.mode === 'timeline') {
+    return saveAsTemplateFlag.value ? 'Save as Template' : 'Add to Timeline';
+  }
+  return 'Create Template';
+});
+
+function handleFinalize() {
+  if (!canCreate.value)
+    return;
+
+  if (isEditMode.value) {
+    emit('update-template', buildTemplatePayload());
+  }
+  else {
+    const isSavingAsTemplate = props.mode === 'template' || (props.mode === 'timeline' && saveAsTemplateFlag.value);
+
+    if (isSavingAsTemplate) {
+      emit('create-template', buildTemplatePayload());
+    }
+    else {
+      const sessionUIData: SessionUIData = {
+        id: `custom-${Date.now()}`,
+        name: sessionName.value,
+        description: sessionDescription.value,
+        total_duration_minutes: totalTime.value,
+        task_count: tasks.value.length,
+        tasks_full: JSON.parse(JSON.stringify(tasks.value)),
+      };
+      emit('create-session', sessionUIData);
+    }
+  }
+  emitClose();
+}
+
+function populateForm(data: Session) {
+  sessionName.value = data.name;
+  sessionDescription.value = data.description || '';
+  tasks.value = (data.tasks || []).map((sessionTask) => {
+    const skillWeights = (sessionTask.task?.skill_weights || []).reduce((acc, sw) => {
+      acc[sw.skill_id] = Number.parseFloat(sw.weight) * 100;
+      return acc;
+    }, {} as Record<number, number>);
+
+    return {
+      id: taskIdCounter++,
+      title: sessionTask.task?.name || '',
+      description: sessionTask.task?.description || '',
+      duration: sessionTask.task?.duration_minutes || 0,
+      selectedSkillIds: Object.keys(skillWeights).map(Number),
+      skillWeights,
+    };
+  });
+  if (tasks.value.length === 0)
+    addTask();
+}
+
+function resetToInitial() {
+  if (originalDataForReset.value) {
+    populateForm(originalDataForReset.value);
+  }
+}
+
+function resetForm() {
+  sessionName.value = '';
+  sessionDescription.value = '';
+  tasks.value = [];
+  taskIdCounter = 1;
+  addTask();
+  originalDataForReset.value = null;
+  saveAsTemplateFlag.value = props.mode === 'template';
+}
+
+function emitClose() {
+  resetForm();
+  emit('close');
+}
 
 function toggleSkill({ id, skill }: { id: number; skill: Skill }) {
   const task = tasks.value.find(t => t.id === id);
   if (!task)
     return;
-
   const skillIndex = task.selectedSkillIds.indexOf(skill.id);
-  const isCurrentlySelected = skillIndex > -1;
-
-  if (isCurrentlySelected) {
+  if (skillIndex > -1) {
     task.selectedSkillIds.splice(skillIndex, 1);
     delete task.skillWeights[skill.id];
   }
@@ -213,51 +307,12 @@ function toggleSkill({ id, skill }: { id: number; skill: Skill }) {
     task.selectedSkillIds.push(skill.id);
     task.skillWeights[skill.id] = 0;
   }
-  redistributeWeights(task);
 }
 
 function updateSkillWeight({ id, skillId, value }: { id: number; skillId: number; value: number }) {
   const task = tasks.value.find(t => t.id === id);
-  if (task) {
+  if (task)
     task.skillWeights[skillId] = value;
-  }
-}
-
-function redistributeWeights(task: UITask) {
-  const { selectedSkillIds, skillWeights } = task;
-  const count = selectedSkillIds.length;
-  if (count === 0)
-    return;
-
-  const currentTotal = selectedSkillIds.reduce((sum, id) => sum + (skillWeights[id] || 0), 0);
-
-  if (currentTotal < 100) {
-    const zeroWeightSkills = selectedSkillIds.filter(id => (skillWeights[id] || 0) === 0);
-    if (zeroWeightSkills.length > 0) {
-      const remainder = 100 - currentTotal;
-      const share = remainder / zeroWeightSkills.length;
-      zeroWeightSkills.forEach((id) => {
-        skillWeights[id] = share;
-      });
-    }
-  }
-  else {
-    selectedSkillIds.forEach((id) => {
-      skillWeights[id] = (skillWeights[id] / currentTotal) * 100;
-    });
-  }
-
-  let roundedTotal = 0;
-  selectedSkillIds.forEach((id) => {
-    const rounded = Math.round(skillWeights[id]);
-    skillWeights[id] = rounded;
-    roundedTotal += rounded;
-  });
-
-  const diff = 100 - roundedTotal;
-  if (diff !== 0 && selectedSkillIds.length > 0) {
-    skillWeights[selectedSkillIds[0]] += diff;
-  }
 }
 
 function buildTemplatePayload(): SessionCreatePayload {
@@ -282,41 +337,6 @@ function buildTemplatePayload(): SessionCreatePayload {
   };
 }
 
-function resetForm() {
-  sessionName.value = '';
-  sessionDescription.value = '';
-  tasks.value = [{ id: 1, title: '', description: '', duration: 0, selectedSkillIds: [], skillWeights: {} }];
-  taskIdCounter = 2;
-  saveAsTemplateFlag.value = props.mode === 'template';
-}
-
-function emitClose() {
-  resetForm();
-  emit('close');
-}
-
-async function handleFinalize() {
-  if (!canCreate.value)
-    return;
-
-  if (saveAsTemplateFlag.value) {
-    const payload = buildTemplatePayload();
-    emit('create-template', payload);
-  }
-  else {
-    const sessionUIData: SessionUIData = {
-      id: `custom-${Date.now()}`,
-      name: sessionName.value,
-      description: sessionDescription.value,
-      total_duration_minutes: totalTime.value,
-      task_count: tasks.value.length,
-      tasks_full: JSON.parse(JSON.stringify(tasks.value)),
-    };
-    emit('create-session', sessionUIData);
-  }
-  emitClose();
-}
-
 function addTask() {
   tasks.value.push({ id: taskIdCounter++, title: '', description: '', duration: 0, selectedSkillIds: [], skillWeights: {} });
 }
@@ -329,9 +349,8 @@ function removeTask(id: number) {
 }
 function updateField({ id, field, value }: { id: number; field: keyof UITask; value: any }) {
   const task = tasks.value.find(t => t.id === id);
-  if (task) {
+  if (task)
     (task as any)[field] = value;
-  }
 }
 </script>
 

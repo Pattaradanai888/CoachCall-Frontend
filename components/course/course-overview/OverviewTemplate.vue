@@ -1,5 +1,4 @@
 <template>
-  <!-- Template Section -->
   <div class="bg-white p-5 md:min-h-[250px]">
     <div class="flex justify-between">
       <div>
@@ -10,7 +9,7 @@
       <div class="flex">
         <button
           class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg"
-          @click="openCreateModal"
+          @click="$emit('open-create-modal')"
         >
           <div class="flex items-center justify-center">
             <Icon name="mdi:plus" size="1rem" class="mr-1" />
@@ -20,15 +19,12 @@
           </div>
         </button>
         <div class="ml-2">
-          <!-- Search Bar Container -->
           <div class="relative w-full max-w-md shadow-lg">
-            <!-- Input Field -->
             <input
               type="text"
               placeholder="Search..."
               class="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:border-[#9C1313] transition duration-300 ease-in-out"
             >
-            <!-- Magnifying Glass Icon -->
             <Icon
               name="mdi:magnify"
               size="1rem"
@@ -38,10 +34,9 @@
         </div>
       </div>
     </div>
-    <!-- Template Items -->
+
     <div v-if="paginatedTemplates.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 px-6 py-4">
       <div v-for="(template, index) in paginatedTemplates" :key="template.id" class="shadow-lg px-4 flex flex-col">
-        <!-- Card Content -->
         <div class="flex-grow">
           <div class="flex justify-between items-start pt-4">
             <div class="flex-1 pr-2 min-w-0">
@@ -58,7 +53,7 @@
               </button>
               <div v-if="isOpen[index]" class="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10">
                 <ul class="py-1 text-sm text-gray-700">
-                  <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" @click.prevent="handleEdit(template)">Edit</a></li>
+                  <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" @click.prevent="$emit('open-edit-modal', template)">Edit</a></li>
                   <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 text-red-600" @click.prevent="handleRemove(template)">Remove</a></li>
                 </ul>
               </div>
@@ -77,7 +72,6 @@
             </div>
           </div>
         </div>
-
         <div class="flex justify-center my-3">
           <button class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto">
             <p>Quick Session</p>
@@ -85,11 +79,11 @@
         </div>
       </div>
     </div>
+
     <div v-else class="text-center p-8 text-gray-500">
       No session templates found.
     </div>
 
-    <!-- Pagination -->
     <PaginationBar
       v-model:current-page="currentPage"
       :total-items="totalItems"
@@ -97,45 +91,22 @@
       class="mt-4"
     />
   </div>
-  <SessionBuilderModal
-    :show="showAddModal"
-    mode="template"
-    :available-skills="availableSkills || []"
-    @close="closeCreateModal"
-    @create-template="handleCreateTemplate"
-  />
 </template>
 
 <script lang="ts" setup>
-import type { SessionCreatePayload, SessionTemplate, Skill } from '~/types/course';
+import type { SessionTemplate } from '~/types/course';
 import { PaginationBar } from '#components';
 import { computed, ref, watchEffect } from 'vue';
-import SessionBuilderModal from '~/components/course/SessionBuilderModal.vue'; // Correct path
 
 const props = defineProps<{
   templates: SessionTemplate[] | null;
-  availableSkills: Skill[] | null;
 }>();
 
 const emit = defineEmits<{
-  (e: 'save-template', payload: SessionCreatePayload): void;
+  (e: 'open-create-modal'): void;
+  (e: 'open-edit-modal', template: SessionTemplate): void;
 }>();
 
-const showAddModal = ref(false);
-
-function openCreateModal() {
-  showAddModal.value = true;
-}
-
-function closeCreateModal() {
-  showAddModal.value = false;
-}
-
-function handleCreateTemplate(payload: SessionCreatePayload) {
-  emit('save-template', payload);
-}
-
-// --- Pagination Logic ---
 const currentPage = ref(1);
 const itemsPerPage = 3;
 const totalItems = computed(() => props.templates?.length || 0);
@@ -148,7 +119,6 @@ const paginatedTemplates = computed(() => {
   return props.templates.slice(start, end);
 });
 
-// --- Dropdown Menu Logic ---
 const isOpen = ref<boolean[]>([]);
 
 watchEffect(() => {
@@ -158,17 +128,15 @@ watchEffect(() => {
 });
 
 function toggle(index: number) {
-  isOpen.value[index] = !isOpen.value[index];
-}
-function handleEdit(template: SessionTemplate) {
-  const index = paginatedTemplates.value.findIndex(t => t.id === template.id);
-  if (index !== -1)
-    isOpen.value[index] = false;
+  const currentStatus = isOpen.value[index];
+  isOpen.value.fill(false);
+  isOpen.value[index] = !currentStatus;
 }
 
 function handleRemove(template: SessionTemplate) {
   const index = paginatedTemplates.value.findIndex(t => t.id === template.id);
   if (index !== -1)
     isOpen.value[index] = false;
+  alert(`Remove functionality for "${template.name}" not implemented yet.`);
 }
 </script>

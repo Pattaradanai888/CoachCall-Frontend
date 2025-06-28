@@ -4,7 +4,6 @@
 
     <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] max-h-[none]">
       <div class="w-full mx-7 lg:mx-0">
-        <!-- This animation should work as it's not subject to the same v-if condition -->
         <div v-motion-slide-visible-once-top class="flex justify-between mb-5">
           <div>
             <h1 class="text-3xl font-bold">
@@ -14,9 +13,7 @@
           </div>
           <div>
             <NuxtLink to="course-create">
-              <button
-                class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg"
-              >
+              <button class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg">
                 <div class="flex items-center justify-center">
                   <Icon name="mdi:plus" size="1.5rem" class="mr-2" />
                   <p>Create Course</p>
@@ -33,12 +30,11 @@
           <OverviewTemplate
             v-else
             :templates="sessionTemplates"
-            :available-skills="availableSkills"
-            @save-template="saveNewTemplate"
+            @open-create-modal="openCreateModal"
+            @open-edit-modal="openEditModal"
           />
         </div>
 
-        <!-- CORRECTED ACTIVE COURSE SECTION -->
         <div v-motion-slide-visible-once-right :delay="200">
           <div v-if="coursesPending" class="text-center p-8 bg-white min-h-[300px] flex items-center justify-center">
             Loading Courses...
@@ -50,18 +46,53 @@
         </div>
       </div>
     </div>
+
+    <SessionBuilderModal
+      :show="showModal"
+      mode="template"
+      :available-skills="availableSkills || []"
+      :initial-data="editingTemplate"
+      @close="closeModal"
+      @create-template="saveNewTemplate"
+      @update-template="(data) => { if (editingTemplate) updateExistingTemplate({ id: editingTemplate.id, data }) }"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { SessionCreatePayload } from '~/types/course';
+import type { Session, SessionCreatePayload, SessionTemplate } from '~/types/course';
 import OverviewActiveCourse from '~/components/course/course-overview/OverviewActiveCourse.vue';
 import OverviewTemplate from '~/components/course/course-overview/OverviewTemplate.vue';
+import SessionBuilderModal from '~/components/course/SessionBuilderModal.vue';
 import { useCourses } from '~/composables/useCourses';
+import { useSubmit } from '~/composables/useSubmit';
 
-const { fetchAllCourseDetails, fetchSessionTemplates, fetchSkills, createSession } = useCourses();
+const showModal = ref(false);
+const editingTemplate = ref<Session | null>(null);
 
-// Use the new function to get all course details
+function openCreateModal() {
+  editingTemplate.value = null;
+  showModal.value = true;
+}
+
+function openEditModal(template: SessionTemplate) {
+  editingTemplate.value = template as Session;
+  showModal.value = true;
+}
+
+function closeModal() {
+  showModal.value = false;
+  editingTemplate.value = null;
+}
+
+const {
+  fetchAllCourseDetails,
+  fetchSessionTemplates,
+  fetchSkills,
+  createSession,
+  updateSessionTemplate,
+} = useCourses();
+
 const { data: allCourses, pending: coursesPending } = await fetchAllCourseDetails();
 const { data: sessionTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
 const { data: availableSkills } = await fetchSkills();
@@ -69,7 +100,8 @@ const { data: availableSkills } = await fetchSkills();
 const { submit: performSaveTemplate } = useSubmit(createSession, {
   onSuccess: () => {
     alert('Template saved successfully!');
-    refreshTemplates(); // Refresh the list to show the new template
+    refreshTemplates();
+    closeModal();
   },
   onError: (err: any) => {
     const errorMessage = err?.data?.detail || 'An unknown error occurred.';
@@ -79,6 +111,25 @@ const { submit: performSaveTemplate } = useSubmit(createSession, {
 
 async function saveNewTemplate(payload: SessionCreatePayload) {
   await performSaveTemplate(payload);
+}
+
+const { submit: performUpdateTemplate } = useSubmit(
+  ({ id, data }: { id: number; data: SessionCreatePayload }) => updateSessionTemplate(id, data),
+  {
+    onSuccess: () => {
+      alert('Template updated successfully!');
+      refreshTemplates();
+      closeModal();
+    },
+    onError: (err: any) => {
+      const errorMessage = err?.data?.detail || 'An unknown error occurred.';
+      alert(`Failed to update template: ${errorMessage}`);
+    },
+  },
+);
+
+async function updateExistingTemplate(payload: { id: number; data: SessionCreatePayload }) {
+  await performUpdateTemplate(payload);
 }
 
 const coursesWithProgress = computed(() => {
