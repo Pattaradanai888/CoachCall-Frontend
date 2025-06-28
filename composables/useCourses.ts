@@ -64,6 +64,12 @@ export function useCourses() {
     });
   };
 
+  const deleteSessionTemplate = async (sessionId: number) => {
+    return $api<void>(`/course/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  };
+
   const fetchSessionTemplates = () => {
     return useAsyncData<Session[]>(
       'session-templates',
@@ -135,6 +141,7 @@ export function useCourses() {
     fetchSkills,
     createSession,
     updateSessionTemplate,
+    deleteSessionTemplate,
     saveSessionCompletions,
     updateSessionStatus,
     fetchSessionReport,

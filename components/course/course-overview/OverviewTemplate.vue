@@ -54,7 +54,7 @@
               <div v-if="isOpen[index]" class="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10">
                 <ul class="py-1 text-sm text-gray-700">
                   <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" @click.prevent="$emit('open-edit-modal', template)">Edit</a></li>
-                  <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 text-red-600" @click.prevent="handleRemove(template)">Remove</a></li>
+                  <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 text-red-600" @click.prevent="$emit('remove-template', template.id)">Remove</a></li>
                 </ul>
               </div>
               <div v-if="isOpen[index]" class="fixed inset-0 bg-transparent z-0" @click="isOpen[index] = false" />
@@ -105,6 +105,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'open-create-modal'): void;
   (e: 'open-edit-modal', template: SessionTemplate): void;
+  (e: 'remove-template', templateId: number): void;
 }>();
 
 const currentPage = ref(1);
@@ -131,12 +132,5 @@ function toggle(index: number) {
   const currentStatus = isOpen.value[index];
   isOpen.value.fill(false);
   isOpen.value[index] = !currentStatus;
-}
-
-function handleRemove(template: SessionTemplate) {
-  const index = paginatedTemplates.value.findIndex(t => t.id === template.id);
-  if (index !== -1)
-    isOpen.value[index] = false;
-  alert(`Remove functionality for "${template.name}" not implemented yet.`);
 }
 </script>

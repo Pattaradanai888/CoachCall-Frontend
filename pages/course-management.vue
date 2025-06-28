@@ -32,6 +32,7 @@
             :templates="sessionTemplates"
             @open-create-modal="openCreateModal"
             @open-edit-modal="openEditModal"
+            @remove-template="handleRemoveTemplate"
           />
         </div>
 
@@ -91,6 +92,7 @@ const {
   fetchSkills,
   createSession,
   updateSessionTemplate,
+  deleteSessionTemplate,
 } = useCourses();
 
 const { data: allCourses, pending: coursesPending } = await fetchAllCourseDetails();
@@ -127,6 +129,26 @@ const { submit: performUpdateTemplate } = useSubmit(
     },
   },
 );
+
+const { submit: performDeleteTemplate } = useSubmit(deleteSessionTemplate, {
+  onSuccess: () => {
+    alert('Template deleted successfully!');
+    refreshTemplates(); // Refresh the list to show the change
+  },
+  onError: (err: any) => {
+    const errorMessage = err?.data?.detail || 'An unknown error occurred.';
+    alert(`Failed to delete template: ${errorMessage}`);
+  },
+});
+
+async function handleRemoveTemplate(templateId: number) {
+  // Use a native browser confirm dialog for simplicity
+  const confirmed = window.confirm('Are you sure you want to delete this template? This action cannot be undone.');
+
+  if (confirmed) {
+    await performDeleteTemplate(templateId);
+  }
+}
 
 async function updateExistingTemplate(payload: { id: number; data: SessionCreatePayload }) {
   await performUpdateTemplate(payload);
