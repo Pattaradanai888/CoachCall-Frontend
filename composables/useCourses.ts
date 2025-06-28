@@ -89,6 +89,13 @@ export function useCourses() {
     });
   };
 
+  const updateCourse = async (courseId: number, payload: CourseCreatePayload) => {
+    return $api<CourseDetail>(`/course/${courseId}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  };
+
   const uploadCourseImage = async (courseId: number, imageFile: File) => {
     const formData = new FormData();
     formData.append('file', imageFile, imageFile.name);
@@ -137,6 +144,7 @@ export function useCourses() {
     updateCourseAthletes,
     findSessionById,
     createCourse,
+    updateCourse,
     uploadCourseImage,
     fetchSkills,
     createSession,

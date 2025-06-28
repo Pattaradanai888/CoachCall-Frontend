@@ -12,7 +12,7 @@
             <p>Manage your athletes and track their progress</p>
           </div>
           <div>
-            <NuxtLink to="course-create">
+            <NuxtLink to="/course/form/new">
               <button class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg">
                 <div class="flex items-center justify-center">
                   <Icon name="mdi:plus" size="1.5rem" class="mr-2" />
@@ -43,6 +43,7 @@
           <OverviewActiveCourse
             v-else
             :courses="coursesWithProgress"
+            @edit-course="handleEditCourse"
           />
         </div>
       </div>
@@ -84,6 +85,10 @@ function openEditModal(template: SessionTemplate) {
 function closeModal() {
   showModal.value = false;
   editingTemplate.value = null;
+}
+
+function handleEditCourse(courseId: number) {
+  navigateTo(`/course/form/${courseId}`);
 }
 
 const {

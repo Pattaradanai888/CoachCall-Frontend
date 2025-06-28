@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white p-10">
     <h2 class="text-xl font-bold mb-2">
-      Create New Course
+      Course Information
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div v-motion-slide-visible-once-left :delay="200">

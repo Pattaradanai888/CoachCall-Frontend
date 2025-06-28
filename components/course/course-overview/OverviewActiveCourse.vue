@@ -181,6 +181,11 @@ const props = defineProps<{
   courses: (CourseDetail & { progressValue: number })[] | null;
 }>();
 
+const emit = defineEmits<{
+  (e: 'edit-course', id: number): void;
+  (e: 'remove-course', id: number): void;
+}>();
+
 const tabs = [
   { label: 'Active', isArchived: false },
   { label: 'Archive', isArchived: true },
@@ -245,9 +250,13 @@ function toggleMenu(courseId: number) {
 
 function handleEdit(courseId: number) {
   openMenuFor.value = null;
+  emit('edit-course', courseId);
 }
+
+// UPDATE THIS FUNCTION
 function handleRemove(courseId: number) {
   openMenuFor.value = null;
+  alert(`Remove functionality for course ${courseId} is not yet implemented.`);
 }
 </script>
 
