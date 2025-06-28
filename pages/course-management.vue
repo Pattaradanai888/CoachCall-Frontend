@@ -4,6 +4,7 @@
 
     <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] max-h-[none]">
       <div class="w-full mx-7 lg:mx-0">
+        <!-- This animation should work as it's not subject to the same v-if condition -->
         <div v-motion-slide-visible-once-top class="flex justify-between mb-5">
           <div>
             <h1 class="text-3xl font-bold">
@@ -25,28 +26,28 @@
           </div>
         </div>
 
-        <div v-if="templatesPending" class="text-center p-8">
-          Loading Templates...
+        <div v-motion-slide-visible-once-left :delay="200" class="mb-12">
+          <div v-if="templatesPending" class="text-center p-8 bg-white min-h-[250px] flex items-center justify-center">
+            Loading Templates...
+          </div>
+          <OverviewTemplate
+            v-else
+            :templates="sessionTemplates"
+            :available-skills="availableSkills"
+            @save-template="saveNewTemplate"
+          />
         </div>
-        <OverviewTemplate
-          v-else
-          v-motion-slide-visible-once-left
-          :delay="200"
-          :templates="sessionTemplates"
-          :available-skills="availableSkills"
-          class="mb-12"
-          @save-template="saveNewTemplate"
-        />
 
-        <div v-if="coursesPending" class="text-center p-8">
-          Loading Courses...
+        <!-- CORRECTED ACTIVE COURSE SECTION -->
+        <div v-motion-slide-visible-once-right :delay="200">
+          <div v-if="coursesPending" class="text-center p-8 bg-white min-h-[300px] flex items-center justify-center">
+            Loading Courses...
+          </div>
+          <OverviewActiveCourse
+            v-else
+            :courses="coursesWithProgress"
+          />
         </div>
-        <OverviewActiveCourse
-          v-else
-          v-motion-slide-visible-once-right
-          :delay="400"
-          :courses="coursesWithProgress"
-        />
       </div>
     </div>
   </div>

@@ -261,7 +261,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ConfirmModal from '~/components/ConfirmModal.vue';
 import { useCourses } from '~/composables/useCourses';
-import { useSessionReport } from '~/composables/useSessionReport';
 import { useSubmit } from '~/composables/useSubmit';
 
 interface EvaluationData {

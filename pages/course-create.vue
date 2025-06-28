@@ -130,11 +130,10 @@ const { submit: performPublish, loading: isPublishing } = useSubmit(
     const newCourse = await createCourse(payload);
     if (!newCourse || !newCourse.id)
       throw new Error('Failed to create course.');
-    /*
-    if (imageFile)
-      await uploadCourseImage(newCourse.id, imageFile);
 
-    */
+    if (imageFile) {
+      await uploadCourseImage(newCourse.id, imageFile);
+    }
     return newCourse;
   },
   {
@@ -143,7 +142,8 @@ const { submit: performPublish, loading: isPublishing } = useSubmit(
       navigateTo('/course-management');
     },
     onError: (error) => {
-      alert(`An error occurred: ${error.message}`);
+      const message = (error as any)?.message || 'An unknown error occurred.';
+      alert(`An error occurred: ${message}`);
     },
   },
 );
