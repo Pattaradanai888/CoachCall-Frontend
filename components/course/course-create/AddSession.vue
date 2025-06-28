@@ -150,13 +150,10 @@ const selectedDate = ref<Date | null>(null);
 const { fetchSessionTemplates, fetchSkills, createSession } = useCourses();
 const { data: initialTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
 
-// Create a local, mutable copy of the templates. This is the source of truth for available templates.
 const localTemplates = ref<Session[]>([]);
 watch(initialTemplates, (newVal) => {
   if (newVal) {
-    // Filter out templates that are already in the timeline
-    const droppedIds = new Set(droppedItems.value.map(item => item.id));
-    localTemplates.value = JSON.parse(JSON.stringify(newVal)).filter(t => !droppedIds.has(t.id));
+    localTemplates.value = JSON.parse(JSON.stringify(newVal));
   }
 }, { immediate: true, deep: true });
 
@@ -179,6 +176,7 @@ watch(droppedItems, (newVal) => {
 watch(() => props.modelValue, (newVal) => {
   if (JSON.stringify(newVal) !== JSON.stringify(droppedItems.value)) {
     droppedItems.value = newVal;
+    enforceTimelineOrder(); // Enforce order when modelValue is updated externally
   }
 }, { immediate: true, deep: true });
 
@@ -209,6 +207,7 @@ function closeCreateModal() {
 function handleSessionCreated(sessionData: any) {
   const newItem = { ...sessionData, timelineId: `custom-${Date.now()}`, date: null };
   droppedItems.value.push(newItem);
+  enforceTimelineOrder();
   closeCreateModal();
 }
 
@@ -216,21 +215,39 @@ async function handleTemplateCreated(payload: SessionCreatePayload) {
   await performSaveTemplate(payload);
 }
 
-function initializeSortable() {
+/**
+ * Sorts the timeline: dated items first (chronologically), then undated items (preserving manual order).
+ */
+function enforceTimelineOrder() {
+  const dated = droppedItems.value.filter(item => item.date);
+  const undated = droppedItems.value.filter(item => !item.date);
+
+  // Sort the dated items chronologically
+  dated.sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
+
+  // Combine them back, assigning to the ref's value to trigger reactivity.
+  droppedItems.value = [...dated, ...undated];
+}
+
+async function initializeSortable() {
+  await nextTick();
+
   if (templateSortable)
     templateSortable.destroy();
+  if (timelineSortable)
+    timelineSortable.destroy();
+
   if (templatesContainer.value) {
     templateSortable = new Sortable(templatesContainer.value, {
-      group: 'sessions',
+      group: { name: 'sessions', pull: 'clone', put: false },
       animation: 150,
       draggable: '.session-template',
+      sort: false,
       onStart: () => { isDragOver.value = true; },
       onEnd: () => { isDragOver.value = false; },
     });
   }
 
-  if (timelineSortable)
-    timelineSortable.destroy();
   if (timelineDropZone.value) {
     timelineSortable = new Sortable(timelineDropZone.value, {
       group: 'sessions',
@@ -243,6 +260,8 @@ function initializeSortable() {
         if (evt.from === evt.to && evt.oldIndex !== undefined && evt.newIndex !== undefined) {
           const item = droppedItems.value.splice(evt.oldIndex, 1)[0];
           droppedItems.value.splice(evt.newIndex, 0, item);
+          // After any manual re-order, enforce the sorting rules
+          enforceTimelineOrder();
         }
       },
       onAdd: (evt) => {
@@ -250,11 +269,9 @@ function initializeSortable() {
         if (Number.isNaN(templateId))
           return;
 
-        const templateIndex = localTemplates.value.findIndex(t => t.id === templateId);
-        if (templateIndex === -1)
+        const originalTemplate = localTemplates.value.find(t => t.id === templateId);
+        if (!originalTemplate)
           return;
-
-        const [originalTemplate] = localTemplates.value.splice(templateIndex, 1);
 
         let tasks_full: any[] = [];
         if (originalTemplate.tasks && Array.isArray(originalTemplate.tasks)) {
@@ -280,6 +297,8 @@ function initializeSortable() {
 
         if (evt.newIndex !== undefined) {
           droppedItems.value.splice(evt.newIndex, 0, newItem);
+          // After adding, enforce the sorting rules to place the new (undated) item correctly
+          enforceTimelineOrder();
         }
 
         evt.item.remove();
@@ -304,14 +323,10 @@ onUnmounted(() => {
 });
 
 function removeItem(index: number) {
-  const [removedItem] = droppedItems.value.splice(index, 1);
-  // Add it back to the beginning of the local templates array
-  localTemplates.value.unshift(removedItem);
+  droppedItems.value.splice(index, 1);
 }
 
 function clearTimeline() {
-  // Add all items back to the templates list and clear the timeline
-  localTemplates.value.unshift(...droppedItems.value);
   droppedItems.value = [];
 }
 
@@ -328,6 +343,8 @@ function cancelDateSelection() {
 function saveDateSelection() {
   if (editingDateIndex.value !== null && selectedDate.value) {
     droppedItems.value[editingDateIndex.value].date = selectedDate.value;
+    // After changing a date, enforce the sorting rules
+    enforceTimelineOrder();
   }
   cancelDateSelection();
 }
