@@ -79,7 +79,7 @@
                     <a
                       href="#"
                       class="block px-4 py-2 hover:bg-gray-100 text-red-600"
-                      @click.prevent="handleRemove(course.id)"
+                      @click.prevent="handleRemove(course)"
                     >
                       Remove
                     </a>
@@ -183,7 +183,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'edit-course', id: number): void;
-  (e: 'remove-course', id: number): void;
+  (e: 'remove-course', course: { id: number; name: string }): void;
 }>();
 
 const tabs = [
@@ -254,9 +254,9 @@ function handleEdit(courseId: number) {
 }
 
 // UPDATE THIS FUNCTION
-function handleRemove(courseId: number) {
+function handleRemove(course: { id: number; name: string }) {
   openMenuFor.value = null;
-  alert(`Remove functionality for course ${courseId} is not yet implemented.`);
+  emit('remove-course', { id: course.id, name: course.name });
 }
 </script>
 

@@ -96,6 +96,12 @@ export function useCourses() {
     });
   };
 
+  const deleteCourse = async (courseId: number) => {
+    return $api<{ message: string; deleted_course_id: number }>(`/course/${courseId}`, {
+      method: 'DELETE',
+    });
+  };
+
   const uploadCourseImage = async (courseId: number, imageFile: File) => {
     const formData = new FormData();
     formData.append('file', imageFile, imageFile.name);
@@ -145,6 +151,7 @@ export function useCourses() {
     findSessionById,
     createCourse,
     updateCourse,
+    deleteCourse,
     uploadCourseImage,
     fetchSkills,
     createSession,

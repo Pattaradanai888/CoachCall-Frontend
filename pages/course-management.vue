@@ -44,6 +44,7 @@
             v-else
             :courses="coursesWithProgress"
             @edit-course="handleEditCourse"
+            @remove-course="promptForDelete"
           />
         </div>
       </div>
@@ -58,6 +59,14 @@
       @create-template="saveNewTemplate"
       @update-template="(data) => { if (editingTemplate) updateExistingTemplate({ id: editingTemplate.id, data }) }"
     />
+    <ConfirmModal
+      :show="showConfirmModal"
+      title="Confirm Deletion"
+      :message="`Are you sure you want to delete the course '${courseToDelete?.name}'? This action cannot be undone.`"
+      confirm-text="Delete"
+      @close="closeConfirmModal"
+      @confirm="handleConfirmDelete"
+    />
   </div>
 </template>
 
@@ -71,6 +80,8 @@ import { useSubmit } from '~/composables/useSubmit';
 
 const showModal = ref(false);
 const editingTemplate = ref<Session | null>(null);
+const showConfirmModal = ref(false);
+const courseToDelete = ref<{ id: number; name: string } | null>(null);
 
 function openCreateModal() {
   editingTemplate.value = null;
@@ -98,9 +109,10 @@ const {
   createSession,
   updateSessionTemplate,
   deleteSessionTemplate,
+  deleteCourse,
 } = useCourses();
 
-const { data: allCourses, pending: coursesPending } = await fetchAllCourseDetails();
+const { data: allCourses, pending: coursesPending, refresh } = await fetchAllCourseDetails();
 const { data: sessionTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
 const { data: availableSkills } = await fetchSkills();
 
@@ -120,17 +132,48 @@ async function saveNewTemplate(payload: SessionCreatePayload) {
   await performSaveTemplate(payload);
 }
 
+function promptForDelete(course: { id: number; name: string }) {
+  courseToDelete.value = course;
+  showConfirmModal.value = true;
+}
+
+function closeConfirmModal() {
+  showConfirmModal.value = false;
+  courseToDelete.value = null;
+}
+const { submit: performDelete, loading: isDeleting } = useSubmit(deleteCourse, {
+  // Make the onSuccess handler ASYNC
+  onSuccess: async () => {
+    try {
+      await refresh();
+    }
+    catch (refreshError) {
+      console.error('Failed to refresh course list after deletion:', refreshError);
+    }
+
+    closeConfirmModal();
+  },
+  onError: () => {
+    alert('Failed to delete course. Please try again.');
+    closeConfirmModal();
+  },
+});
+
+async function handleConfirmDelete() {
+  if (!courseToDelete.value)
+    return;
+  await performDelete(courseToDelete.value.id);
+}
+
 const { submit: performUpdateTemplate } = useSubmit(
   ({ id, data }: { id: number; data: SessionCreatePayload }) => updateSessionTemplate(id, data),
   {
     onSuccess: () => {
-      alert('Template updated successfully!');
       refreshTemplates();
       closeModal();
     },
-    onError: (err: any) => {
-      const errorMessage = err?.data?.detail || 'An unknown error occurred.';
-      alert(`Failed to update template: ${errorMessage}`);
+    onError: () => {
+      alert('Failed to update template. Please try again.');
     },
   },
 );
@@ -138,11 +181,10 @@ const { submit: performUpdateTemplate } = useSubmit(
 const { submit: performDeleteTemplate } = useSubmit(deleteSessionTemplate, {
   onSuccess: () => {
     alert('Template deleted successfully!');
-    refreshTemplates(); // Refresh the list to show the change
+    refreshTemplates();
   },
-  onError: (err: any) => {
-    const errorMessage = err?.data?.detail || 'An unknown error occurred.';
-    alert(`Failed to delete template: ${errorMessage}`);
+  onError: () => {
+    alert('Failed to delete template. Please try again.');
   },
 });
 
@@ -160,18 +202,21 @@ async function updateExistingTemplate(payload: { id: number; data: SessionCreate
 }
 
 const coursesWithProgress = computed(() => {
-  if (!allCourses.value)
+  if (!allCourses.value) {
     return [];
-  return allCourses.value.map((course) => {
-    if (!course.sessions || course.sessions.length === 0) {
-      return { ...course, progressValue: 0 };
-    }
-    const completed = course.sessions.filter(s => s.status === 'Complete').length;
-    const total = course.sessions.length;
-    return {
-      ...course,
-      progressValue: Math.round((completed / total) * 100),
-    };
-  });
+  }
+  return allCourses.value
+    .filter(Boolean)
+    .map((course) => {
+      if (!course.sessions || course.sessions.length === 0) {
+        return { ...course, progressValue: 0 };
+      }
+      const completed = course.sessions.filter(s => s.status === 'Complete').length;
+      const total = course.sessions.length;
+      return {
+        ...course,
+        progressValue: Math.round((completed / total) * 100),
+      };
+    });
 });
 </script>
