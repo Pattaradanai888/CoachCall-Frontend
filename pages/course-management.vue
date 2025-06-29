@@ -45,6 +45,7 @@
             :courses="coursesWithProgress"
             @edit-course="handleEditCourse"
             @remove-course="promptForDelete"
+            @toggle-archive="promptForArchive"
           />
         </div>
       </div>
@@ -67,6 +68,29 @@
       @close="closeConfirmModal"
       @confirm="handleConfirmDelete"
     />
+    <ConfirmModal
+      :show="showArchiveConfirmModal"
+      :title="archiveModalTitle"
+      :message="archiveModalMessage"
+      :confirm-text="archiveModalActionText"
+      @close="closeArchiveConfirmModal"
+      @confirm="handleConfirmArchive"
+    />
+    <ConfirmModal
+      :show="showTemplateDeleteConfirmModal"
+      title="Confirm Template Deletion"
+      message="Are you sure you want to delete this template? This action cannot be undone."
+      confirm-text="Delete"
+      @close="closeTemplateDeleteConfirmModal"
+      @confirm="handleConfirmTemplateDelete"
+    />
+    <NotificationModal
+      :show="showNotificationModal"
+      :title="notificationTitle"
+      :message="notificationMessage"
+      :type="notificationType"
+      @close="closeNotificationModal"
+    />
   </div>
 </template>
 
@@ -75,6 +99,7 @@ import type { Session, SessionCreatePayload, SessionTemplate } from '~/types/cou
 import OverviewActiveCourse from '~/components/course/course-overview/OverviewActiveCourse.vue';
 import OverviewTemplate from '~/components/course/course-overview/OverviewTemplate.vue';
 import SessionBuilderModal from '~/components/course/SessionBuilderModal.vue';
+import NotificationModal from '~/components/NotificationModal.vue';
 import { useCourses } from '~/composables/useCourses';
 import { useSubmit } from '~/composables/useSubmit';
 
@@ -82,6 +107,81 @@ const showModal = ref(false);
 const editingTemplate = ref<Session | null>(null);
 const showConfirmModal = ref(false);
 const courseToDelete = ref<{ id: number; name: string } | null>(null);
+const showArchiveConfirmModal = ref(false);
+const courseToArchive = ref<{ id: number; name: string; is_archived: boolean } | null>(null);
+const showTemplateDeleteConfirmModal = ref(false);
+const templateToDelete = ref<number | null>(null);
+
+// Notification modal state
+const showNotificationModal = ref(false);
+const notificationTitle = ref('');
+const notificationMessage = ref('');
+const notificationType = ref<'success' | 'error'>('success');
+
+const archiveModalTitle = computed(() => courseToArchive.value?.is_archived ? 'Unarchive Course' : 'Archive Course');
+const archiveModalMessage = computed(() => {
+  if (!courseToArchive.value)
+    return '';
+  const action = courseToArchive.value.is_archived ? 'unarchive' : 'archive';
+  return `Are you sure you want to ${action} the course "${courseToArchive.value.name}"?`;
+});
+const archiveModalActionText = computed(() => courseToArchive.value?.is_archived ? 'Unarchive' : 'Archive');
+
+// Notification functions
+function showNotification(title: string, message: string, type: 'success' | 'error' = 'success') {
+  notificationTitle.value = title;
+  notificationMessage.value = message;
+  notificationType.value = type;
+  showNotificationModal.value = true;
+}
+
+function closeNotificationModal() {
+  showNotificationModal.value = false;
+}
+
+const {
+  fetchAllCourseDetails,
+  fetchSessionTemplates,
+  fetchSkills,
+  createSession,
+  updateSessionTemplate,
+  deleteSessionTemplate,
+  deleteCourse,
+  updateCourseArchiveStatus,
+} = useCourses();
+
+const { data: allCourses, pending: coursesPending, refresh } = await fetchAllCourseDetails();
+const { data: sessionTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
+const { data: availableSkills } = await fetchSkills();
+
+// Define performDeleteTemplate early so it can be used in functions below
+const { submit: performDeleteTemplate } = useSubmit(deleteSessionTemplate, {
+  onSuccess: () => {
+    showNotification('Success', 'Template deleted successfully!', 'success');
+    refreshTemplates();
+    closeTemplateDeleteConfirmModal();
+  },
+  onError: () => {
+    showNotification('Error', 'Failed to delete template. Please try again.', 'error');
+    closeTemplateDeleteConfirmModal();
+  },
+});
+
+function promptForTemplateDelete(templateId: number) {
+  templateToDelete.value = templateId;
+  showTemplateDeleteConfirmModal.value = true;
+}
+
+function closeTemplateDeleteConfirmModal() {
+  showTemplateDeleteConfirmModal.value = false;
+  templateToDelete.value = null;
+}
+
+async function handleConfirmTemplateDelete() {
+  if (!templateToDelete.value)
+    return;
+  await performDeleteTemplate(templateToDelete.value);
+}
 
 function openCreateModal() {
   editingTemplate.value = null;
@@ -102,29 +202,15 @@ function handleEditCourse(courseId: number) {
   navigateTo(`/course/form/${courseId}`);
 }
 
-const {
-  fetchAllCourseDetails,
-  fetchSessionTemplates,
-  fetchSkills,
-  createSession,
-  updateSessionTemplate,
-  deleteSessionTemplate,
-  deleteCourse,
-} = useCourses();
-
-const { data: allCourses, pending: coursesPending, refresh } = await fetchAllCourseDetails();
-const { data: sessionTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
-const { data: availableSkills } = await fetchSkills();
-
 const { submit: performSaveTemplate } = useSubmit(createSession, {
   onSuccess: () => {
-    alert('Template saved successfully!');
+    showNotification('Success', 'Template saved successfully!', 'success');
     refreshTemplates();
     closeModal();
   },
   onError: (err: any) => {
     const errorMessage = err?.data?.detail || 'An unknown error occurred.';
-    alert(`Failed to save template: ${errorMessage}`);
+    showNotification('Error', `Failed to save template: ${errorMessage}`, 'error');
   },
 });
 
@@ -141,8 +227,8 @@ function closeConfirmModal() {
   showConfirmModal.value = false;
   courseToDelete.value = null;
 }
-const { submit: performDelete, loading: isDeleting } = useSubmit(deleteCourse, {
-  // Make the onSuccess handler ASYNC
+
+const { submit: performDelete } = useSubmit(deleteCourse, {
   onSuccess: async () => {
     try {
       await refresh();
@@ -150,11 +236,10 @@ const { submit: performDelete, loading: isDeleting } = useSubmit(deleteCourse, {
     catch (refreshError) {
       console.error('Failed to refresh course list after deletion:', refreshError);
     }
-
     closeConfirmModal();
   },
   onError: () => {
-    alert('Failed to delete course. Please try again.');
+    showNotification('Error', 'Failed to delete course. Please try again.', 'error');
     closeConfirmModal();
   },
 });
@@ -173,32 +258,52 @@ const { submit: performUpdateTemplate } = useSubmit(
       closeModal();
     },
     onError: () => {
-      alert('Failed to update template. Please try again.');
+      showNotification('Error', 'Failed to update template. Please try again.', 'error');
     },
   },
 );
 
-const { submit: performDeleteTemplate } = useSubmit(deleteSessionTemplate, {
-  onSuccess: () => {
-    alert('Template deleted successfully!');
-    refreshTemplates();
-  },
-  onError: () => {
-    alert('Failed to delete template. Please try again.');
-  },
-});
-
 async function handleRemoveTemplate(templateId: number) {
-  // Use a native browser confirm dialog for simplicity
-  const confirmed = window.confirm('Are you sure you want to delete this template? This action cannot be undone.');
-
-  if (confirmed) {
-    await performDeleteTemplate(templateId);
-  }
+  promptForTemplateDelete(templateId);
 }
 
 async function updateExistingTemplate(payload: { id: number; data: SessionCreatePayload }) {
   await performUpdateTemplate(payload);
+}
+
+function promptForArchive(course: { id: number; name: string; is_archived: boolean }) {
+  courseToArchive.value = course;
+  showArchiveConfirmModal.value = true;
+}
+
+function closeArchiveConfirmModal() {
+  showArchiveConfirmModal.value = false;
+  courseToArchive.value = null;
+}
+
+const { submit: performArchive } = useSubmit(
+  (courseToUpdate: { id: number; is_archived: boolean }) => updateCourseArchiveStatus(courseToUpdate.id, !courseToUpdate.is_archived),
+  {
+    onSuccess: async () => {
+      try {
+        await refresh();
+      }
+      catch (refreshError) {
+        console.error('Failed to refresh course list after archive:', refreshError);
+      }
+      closeArchiveConfirmModal();
+    },
+    onError: () => {
+      showNotification('Error', 'Failed to update course status. Please try again.', 'error');
+      closeArchiveConfirmModal();
+    },
+  },
+);
+
+async function handleConfirmArchive() {
+  if (!courseToArchive.value)
+    return;
+  await performArchive(courseToArchive.value);
 }
 
 const coursesWithProgress = computed(() => {

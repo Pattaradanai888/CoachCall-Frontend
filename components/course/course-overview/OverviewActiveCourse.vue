@@ -67,20 +67,19 @@
               >
                 <ul class="py-1 text-sm text-gray-700">
                   <li>
-                    <a
-                      href="#"
-                      class="block px-4 py-2 hover:bg-gray-100"
-                      @click.prevent="handleEdit(course.id)"
-                    >
+                    <a href="#" class="block px-4 py-2 hover:bg-gray-100" @click.prevent="handleEdit(course.id)">
                       Edit
                     </a>
                   </li>
+                  <!-- MODIFICATION: Added Archive/Unarchive option -->
                   <li>
-                    <a
-                      href="#"
-                      class="block px-4 py-2 hover:bg-gray-100 text-red-600"
-                      @click.prevent="handleRemove(course)"
-                    >
+                    <a href="#" class="block px-4 py-2 hover:bg-gray-100" @click.prevent="handleToggleArchive(course)">
+                      <span v-if="course.is_archived">Unarchive</span>
+                      <span v-else>Archive</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 hover:bg-gray-100 text-red-600" @click.prevent="handleRemove(course)">
                       Remove
                     </a>
                   </li>
@@ -184,6 +183,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit-course', id: number): void;
   (e: 'remove-course', course: { id: number; name: string }): void;
+  (e: 'toggle-archive', course: { id: number; name: string; is_archived: boolean }): void;
 }>();
 
 const tabs = [
@@ -257,6 +257,11 @@ function handleEdit(courseId: number) {
 function handleRemove(course: { id: number; name: string }) {
   openMenuFor.value = null;
   emit('remove-course', { id: course.id, name: course.name });
+}
+
+function handleToggleArchive(course: { id: number; name: string; is_archived: boolean }) {
+  openMenuFor.value = null;
+  emit('toggle-archive', course);
 }
 </script>
 

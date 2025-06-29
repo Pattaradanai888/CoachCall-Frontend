@@ -163,6 +163,17 @@ export function useCourses() {
     });
   };
 
+  const updateCourseArchiveStatus = async (courseId: number, is_archived: boolean) => {
+    if (import.meta.server) {
+      throw new Error('updateCourseArchiveStatus should not be called during SSR');
+    }
+
+    return $api<CourseDetail>(`/course/${courseId}/archive-status`, {
+      method: 'PUT',
+      body: { is_archived },
+    });
+  };
+
   const deleteCourse = async (courseId: number) => {
     if (import.meta.server) {
       throw new Error('deleteCourse should not be called during SSR');
@@ -233,6 +244,7 @@ export function useCourses() {
     deleteSessionTemplate,
     createCourse,
     updateCourse,
+    updateCourseArchiveStatus,
     deleteCourse,
     uploadCourseImage,
     saveSessionCompletions,

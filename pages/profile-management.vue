@@ -54,8 +54,6 @@
             v-if="activeTab === 'overview' && profileData"
             :profile="profileData"
             :achievements="achievements"
-            :total-courses="mockTotalCourses"
-            :total-athletes="mockTotalAthletes"
           />
 
           <DisplayNameTab
@@ -118,24 +116,7 @@ const pageError = ref<string | null>(null); // Renamed from 'error'
 const profileData = computed<User | null>(() => auth.user);
 
 // Mock data (replace with real data fetching if needed)
-const achievements = ref<Achievement[]>([
-  {
-    id: '1',
-    title: 'First Course Created',
-    description: 'Created your first training course',
-    date: '2024-01-15',
-    icon: 'mdi:trophy',
-  },
-  {
-    id: '2',
-    title: 'Coach Milestone',
-    description: 'Trained 10 athletes successfully',
-    date: '2024-02-20',
-    icon: 'mdi:medal',
-  },
-]);
-const mockTotalCourses = ref(5); // Example mock data
-const mockTotalAthletes = ref(12); // Example mock data
+const achievements = ref<Achievement[]>([]);
 
 const tabs = [
   { id: 'overview', name: 'Overview', icon: 'mdi:account-details-outline' },
