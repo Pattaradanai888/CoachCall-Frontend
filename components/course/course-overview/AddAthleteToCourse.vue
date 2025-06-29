@@ -165,7 +165,6 @@ import type { AthleteSelectionInfo } from '~/types/athlete';
 import type { CourseDetail } from '~/types/course';
 import { computed, ref } from 'vue';
 
-// PROPS & EMITS
 const props = defineProps<{
   show: boolean;
   course: CourseDetail | null;
@@ -182,20 +181,19 @@ const searchQuery = ref('');
 const showFilter = ref(false);
 const selectedPositions = ref<string[]>([]);
 const selectedGroups = ref<string[]>([]);
-const selectedAthletes = ref<string[]>([]); // Holds UUIDs of athletes to be added
+const selectedAthletes = ref<string[]>([]);
 
-// COMPUTED PROPERTIES
-const currentCourseAthleteUuids = computed(() => {
-  return props.course?.attendees.map(a => a.uuid) ?? [];
-});
-
-const availableAthletesForCourse = computed<AthleteSelectionInfo[]>(() => {
-  // Filter out athletes already in the current course from the master list
-  return props.allAthletes.filter(athlete => !currentCourseAthleteUuids.value.includes(athlete.uuid));
+watch(() => props.show, (isShowing) => {
+  if (isShowing && props.course) {
+    selectedAthletes.value = props.course.attendees.map(a => a.uuid);
+  }
+  else {
+    selectedAthletes.value = [];
+  }
 });
 
 const filteredAthletes = computed<AthleteSelectionInfo[]>(() => {
-  return availableAthletesForCourse.value.filter((athlete) => {
+  return props.allAthletes.filter((athlete) => {
     const searchLower = searchQuery.value.toLowerCase();
     const matchesSearch = athlete.name.toLowerCase().includes(searchLower)
       || athlete.positions.some(p => p.name.toLowerCase().includes(searchLower));
@@ -203,9 +201,8 @@ const filteredAthletes = computed<AthleteSelectionInfo[]>(() => {
     const matchesPosition = selectedPositions.value.length === 0
       || athlete.positions.some(p => selectedPositions.value.includes(p.name));
 
-    // Note: AthleteSelectionInfo doesn't have groups, so we'll skip group filtering
-    // If you need group filtering, you'll need to add groups to AthleteSelectionInfo
-    const matchesGroup = selectedGroups.value.length === 0; // Always true for now
+    const matchesGroup = selectedGroups.value.length === 0
+      || athlete.groups.some(g => selectedGroups.value.includes(g.name));
 
     return matchesSearch && matchesPosition && matchesGroup;
   });
@@ -213,22 +210,17 @@ const filteredAthletes = computed<AthleteSelectionInfo[]>(() => {
 
 const totalAthletes = computed(() => filteredAthletes.value.length);
 
-// Dynamic filter options based on available (unassigned) athletes
 const availablePositions = computed(() => {
-  const positions = availableAthletesForCourse.value
-    .flatMap(a => a.positions.map(p => p.name));
+  const positions = props.allAthletes.flatMap(a => a.positions.map(p => p.name));
   return [...new Set(positions)].sort();
 });
 
 const availableGroups = computed(() => {
-  // Since AthleteSelectionInfo doesn't have groups, return empty array
-  // You may need to modify the AthleteSelectionInfo type to include groups
-  return [];
+  const groups = props.allAthletes.flatMap(a => a.groups.map(g => g.name));
+  return [...new Set(groups)].sort();
 });
 
-// METHODS
 function emitClose() {
-  // Reset state when closing
   selectedAthletes.value = [];
   searchQuery.value = '';
   selectedPositions.value = [];
@@ -258,18 +250,8 @@ function toggleAthlete(athleteUuid: string) {
 }
 
 function addSelectedAthletes() {
-  // Merge existing attendees with newly selected athletes
-  const existingUuids = currentCourseAthleteUuids.value;
-  const finalAthleteUuids = [...existingUuids, ...selectedAthletes.value];
-
-  emit('update-attendees', finalAthleteUuids);
-
-  // Reset state
-  selectedAthletes.value = [];
-  searchQuery.value = '';
-  selectedPositions.value = [];
-  selectedGroups.value = [];
-  showFilter.value = false;
+  emit('update-attendees', selectedAthletes.value);
+  emitClose();
 }
 </script>
 
