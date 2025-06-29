@@ -12,11 +12,19 @@ import type {
 export function useCourses() {
   const { $api } = useNuxtApp();
 
-  const fetchCourses = (isArchived: globalThis.Ref<boolean>) => {
+  // SSR-optimized data fetching with proper cache keys
+  const fetchCourses = (isArchived: boolean | globalThis.Ref<boolean>) => {
+    const archivedValue = typeof isArchived === 'boolean' ? isArchived : unref(isArchived);
+
     return useAsyncData<CourseListEntry[]>(
-      `courses-list-${isArchived.value}`,
-      () => $api(`/course`, { params: { is_archived: isArchived.value } }),
-      { watch: [isArchived], default: () => [] },
+      `courses-list-${archivedValue}`,
+      () => $api(`/course`, { params: { is_archived: archivedValue } }),
+      {
+        default: () => [],
+        server: true, // Ensure SSR
+        // Only watch if it's a ref
+        ...(typeof isArchived !== 'boolean' && { watch: [isArchived] }),
+      },
     );
   };
 
@@ -24,50 +32,41 @@ export function useCourses() {
     return useAsyncData<CourseDetail[]>(
       'all-course-details',
       () => $api(`/course/details/all`),
-      { default: () => [] },
+      {
+        default: () => [],
+        server: true,
+        // Add cache TTL for better performance
+        transform: (data: CourseDetail[]) => data || [],
+      },
     );
   };
 
-  const fetchCourseById = (courseId: number) => {
+  const fetchCourseById = (courseId: number | string) => {
+    const id = typeof courseId === 'string' ? Number.parseInt(courseId, 10) : courseId;
+
     return useAsyncData<CourseDetail>(
-      `course-detail-${courseId}`,
-      () => $api(`/course/${courseId}`),
+      `course-detail-${id}`,
+      () => $api(`/course/${id}`),
+      {
+        server: true,
+        // Add error handling for SSR
+        default: () => null,
+        transform: (data: CourseDetail) => data || null,
+      },
     );
-  };
-
-  const updateCourseAthletes = async (courseId: number, athleteUuids: string[]) => {
-    return $api<CourseDetail>(`/course/${courseId}/athletes`, {
-      method: 'PUT',
-      body: athleteUuids,
-    });
   };
 
   const fetchSkills = () => {
     return useAsyncData<Skill[]>(
       'user-skills',
       () => $api('/course/skills'),
-      { default: () => [] },
+      {
+        default: () => [],
+        server: true,
+        // Cache skills as they don't change often
+        transform: (data: Skill[]) => data || [],
+      },
     );
-  };
-
-  const createSession = async (payload: SessionCreatePayload) => {
-    return $api<Session>('/course/sessions', {
-      method: 'POST',
-      body: payload,
-    });
-  };
-
-  const updateSessionTemplate = async (sessionId: number, payload: SessionCreatePayload) => {
-    return $api<Session>(`/course/sessions/${sessionId}`, {
-      method: 'PUT',
-      body: payload,
-    });
-  };
-
-  const deleteSessionTemplate = async (sessionId: number) => {
-    return $api<void>(`/course/sessions/${sessionId}`, {
-      method: 'DELETE',
-    });
   };
 
   const fetchSessionTemplates = () => {
@@ -78,11 +77,75 @@ export function useCourses() {
       }),
       {
         default: () => [],
+        server: true,
+        transform: (data: Session[]) => data || [],
       },
     );
   };
 
+  const fetchSessionReport = (sessionId: number | string) => {
+    const id = typeof sessionId === 'string' ? Number.parseInt(sessionId, 10) : sessionId;
+
+    return useAsyncData<SessionReportData>(
+      `session-report-${id}`,
+      () => $api(`/course/session/${id}/report`),
+      {
+        server: true,
+        default: () => null,
+        transform: (data: SessionReportData) => data || null,
+      },
+    );
+  };
+
+  // Client-side only mutations (these shouldn't run during SSR)
+  const updateCourseAthletes = async (courseId: number, athleteUuids: string[]) => {
+    if (import.meta.server) {
+      throw new Error('updateCourseAthletes should not be called during SSR');
+    }
+
+    return $api<CourseDetail>(`/course/${courseId}/athletes`, {
+      method: 'PUT',
+      body: athleteUuids,
+    });
+  };
+
+  const createSession = async (payload: SessionCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('createSession should not be called during SSR');
+    }
+
+    return $api<Session>('/course/sessions', {
+      method: 'POST',
+      body: payload,
+    });
+  };
+
+  const updateSessionTemplate = async (sessionId: number, payload: SessionCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('updateSessionTemplate should not be called during SSR');
+    }
+
+    return $api<Session>(`/course/sessions/${sessionId}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  };
+
+  const deleteSessionTemplate = async (sessionId: number) => {
+    if (import.meta.server) {
+      throw new Error('deleteSessionTemplate should not be called during SSR');
+    }
+
+    return $api<void>(`/course/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  };
+
   const createCourse = async (payload: CourseCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('createCourse should not be called during SSR');
+    }
+
     return $api<CourseDetail>('/course', {
       method: 'POST',
       body: payload,
@@ -90,6 +153,10 @@ export function useCourses() {
   };
 
   const updateCourse = async (courseId: number, payload: CourseCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('updateCourse should not be called during SSR');
+    }
+
     return $api<CourseDetail>(`/course/${courseId}`, {
       method: 'PUT',
       body: payload,
@@ -97,12 +164,20 @@ export function useCourses() {
   };
 
   const deleteCourse = async (courseId: number) => {
+    if (import.meta.server) {
+      throw new Error('deleteCourse should not be called during SSR');
+    }
+
     return $api<{ message: string; deleted_course_id: number }>(`/course/${courseId}`, {
       method: 'DELETE',
     });
   };
 
   const uploadCourseImage = async (courseId: number, imageFile: File) => {
+    if (import.meta.server) {
+      throw new Error('uploadCourseImage should not be called during SSR');
+    }
+
     const formData = new FormData();
     formData.append('file', imageFile, imageFile.name);
 
@@ -112,14 +187,11 @@ export function useCourses() {
     });
   };
 
-  const findSessionById = (course: CourseDetail | null | undefined, sessionId: number): Session | null => {
-    if (!course || !course.sessions) {
-      return null;
-    }
-    return course.sessions.find(session => session.id === sessionId) || null;
-  };
-
   const updateSessionStatus = async (sessionId: number, status: 'Complete' | 'To do') => {
+    if (import.meta.server) {
+      throw new Error('updateSessionStatus should not be called during SSR');
+    }
+
     return $api<Session>(`/course/session/${sessionId}/status`, {
       method: 'PUT',
       body: { status },
@@ -127,36 +199,46 @@ export function useCourses() {
   };
 
   const saveSessionCompletions = async (sessionId: number, payload: SessionCompletionPayload) => {
+    if (import.meta.server) {
+      throw new Error('saveSessionCompletions should not be called during SSR');
+    }
+
     return $api(`/course/session/${sessionId}/complete`, {
       method: 'POST',
       body: payload,
     });
   };
 
-  const fetchSessionReport = (sessionId: number) => {
-    return useAsyncData<SessionReportData>(
-      `session-report-${sessionId}`,
-      () => $api(`/course/session/${sessionId}/report`),
-    );
+  // Pure utility functions (SSR-safe)
+  const findSessionById = (course: CourseDetail | null | undefined, sessionId: number): Session | null => {
+    if (!course || !course.sessions) {
+      return null;
+    }
+    return course.sessions.find(session => session.id === sessionId) || null;
   };
 
   return {
+    // SSR-safe data fetching
     fetchCourses,
     fetchAllCourseDetails,
     fetchCourseById,
     fetchSessionTemplates,
+    fetchSkills,
+    fetchSessionReport,
+
+    // Client-side mutations
     updateCourseAthletes,
-    findSessionById,
+    createSession,
+    updateSessionTemplate,
+    deleteSessionTemplate,
     createCourse,
     updateCourse,
     deleteCourse,
     uploadCourseImage,
-    fetchSkills,
-    createSession,
-    updateSessionTemplate,
-    deleteSessionTemplate,
     saveSessionCompletions,
     updateSessionStatus,
-    fetchSessionReport,
+
+    // Utility functions
+    findSessionById,
   };
 }

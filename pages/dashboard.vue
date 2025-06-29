@@ -1,22 +1,16 @@
 <template>
   <div>
     <SubNavbar />
-    <div
-      class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] lg:h-[600px] max-h-[none] lg:max-h-[80vh]"
-    >
-      <!-- Overview Cards -->
-      <div class="w-full mx-7 lg:mx-0">
+    <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px]">
+      <div v-if="pending" class="w-full text-center py-20 text-gray-500">
+        <p>Loading Dashboard...</p>
+      </div>
+      <div v-else class="w-full mx-7 lg:mx-0">
+        <!-- Overview Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          <!-- Cards grid responsive changes -->
-          <div
-            v-for="(card, index) in cards"
-            :key="index"
-            v-motion-slide-visible-once-top
-            :delay="100"
-            class="bg-white shadow-md p-4 rounded-md"
-          >
-            <div class="flex">
-              <Icon :name="card.icon" size="1.25rem" style="color: black" class="mr-1" />
+          <div v-for="(card, index) in cards" :key="index" class="bg-white shadow-md p-4 rounded-md">
+            <div class="flex items-center">
+              <Icon :name="card.icon" size="1.25rem" class="mr-2" />
               <div class="text-sm text-gray-600">
                 {{ card.label }}
               </div>
@@ -24,113 +18,119 @@
             <div class="text-2xl sm:text-3xl font-bold">
               {{ card.value }}
             </div>
-            <div class="flex">
-              <Icon
-                :name="
-                  card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'
-                "
-                size="1.25rem"
-                :style="{
-                  color: card.changeDirection === 'up' ? 'green' : 'red',
-                }"
-                class=""
-              />
-              <div
-                :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'"
-                class="text-sm"
-              >
-                {{ card.changePercentage }}% {{ card.changePeriod }}
+            <div class="flex items-center">
+              <Icon :name="card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'" size="1.25rem" :style="{ color: card.changeDirection === 'up' ? 'green' : 'red' }" />
+              <div :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'" class="text-sm">
+                {{ card.changePercentage }}%
               </div>
             </div>
           </div>
         </div>
-        <!-- Middle Sections -->
-        <div class="mb-4">
-          <!-- Calendar Section -->
-          <div
-            v-motion-slide-visible-once-bottom
-            :delay="100"
-            class="bg-white shadow-md p-4 sm:p-8 rounded-md flex-1"
-          >
-            <div class="flex">
-              <Icon name="mdi:calendar" size="2rem" style="color: black" class="mr-1" />
-              <h1 class="text-xl sm:text-2xl font-bold">
-                Calendar
-              </h1>
+
+        <!-- Calendar Section -->
+        <div class="bg-white shadow-md p-4 sm:p-8 rounded-md flex-1">
+          <div class="flex items-center">
+            <Icon name="mdi:calendar" size="2rem" class="mr-2" />
+            <h1 class="text-xl sm:text-2xl font-bold">
+              Calendar
+            </h1>
+          </div>
+          <p class="mb-4 text-sm sm:text-base">
+            Your scheduled training sessions. Click a day to see details.
+          </p>
+          <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
+            <!-- Calendar Component -->
+            <div class="flex justify-center w-full lg:w-1/2">
+              <VDatePicker
+                v-model="selectedDate"
+                expanded
+                mode="date"
+                :attributes="calendarAttributes"
+                locale="en-US"
+                class="border-2 border-[#9C1313] rounded-md"
+              />
             </div>
-            <p class="mb-4 text-sm sm:text-base">
-              Your scheduled training sessions for this week
-            </p>
-            <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
-              <!-- Changed to flex-col for mobile -->
-              <div class="flex justify-center w-full">
-                <div class="w-full max-w-[320px] lg:max-w-none">
-                  <VDatePicker
-                    v-model="selectedDate"
-                    expanded
-                    mode="date"
-                    :attributes="calendarAttributes"
-                    class="border-2 border-[#9C1313] rounded-md"
-                  />
-                </div>
-              </div>
-              <div class="mt-4 lg:mt-0 lg:ml-5 w-full">
-                <!-- Added top margin for mobile -->
+
+            <!-- Right-hand Side Panel -->
+            <div class="mt-4 lg:mt-0 lg:ml-5 w-full lg:w-1/2 flex flex-col">
+              <!-- Header for the panel -->
+              <div class="flex justify-between items-center mb-2 flex-shrink-0">
                 <h1 class="font-bold text-lg">
-                  Upcoming Courses
+                  <span v-if="viewMode === 'today'">Today's Focus</span>
+                  <span v-else-if="viewMode === 'agenda'">Upcoming Agenda</span>
+                  <span v-else>Sessions on {{ formatSelectedDate }}</span>
                 </h1>
-                <div v-if="upcomingCourses.length > 0">
-                  <div
-                    v-for="(course, index) in upcomingCourses"
-                    :key="index"
-                    v-motion
-                    class="mt-2 bg-white shadow-md rounded-md p-4 transition-shadow hover:shadow-lg"
-                    :initial="{
-                      opacity: 0,
-                      x: 100,
-                    }"
-                    :enter="{
-                      opacity: 1,
-                      x: 0,
-                      transition: {
-                        delay: 200,
-                      },
-                    }"
-                    :leave="{
-                      x: -100,
-                      opacity: 0,
-                      transition: {
-                        delay: 200,
-                      },
-                    }"
-                  >
-                    <h2 class="font-semibold text-gray-700 mb-2">
-                      {{ course.name }}
-                    </h2>
-                    <ul class="list-disc pl-5">
-                      <li
-                        v-for="(session, sessionIndex) in course.sessions"
-                        :key="sessionIndex"
-                        class="text-gray-600 text-sm"
-                      >
-                        {{ session.name }}
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div
-                  v-else
-                  v-motion-pop-visible
-                  class="flex flex-col justify-center items-center h-full py-8"
-                >
-                  <Icon
-                    name="material-symbols:event-busy"
-                    size="2rem"
-                    style="color: black"
-                    class="mb-2"
+                <button class="text-sm text-blue-600 hover:underline" @click="toggleViewMode">
+                  <span v-if="viewMode === 'today'">View Full Agenda →</span>
+                  <span v-else>← Back to Today</span>
+                </button>
+              </div>
+
+              <!-- Scrollable Content Area -->
+              <div class="flex-grow overflow-y-auto pr-2">
+                <!-- TODAY'S VIEW -->
+                <div v-if="viewMode === 'today'" class="space-y-4">
+                  <DashboardSessionGroup
+                    title="Upcoming Today"
+                    icon="mdi:clock-outline"
+                    :sessions="sessionsForToday.upcoming"
+                    color-class="text-blue-700"
                   />
-                  <p class="text-center">
-                    No sessions scheduled.
+                  <DashboardSessionGroup
+                    title="Completed Today"
+                    icon="mdi:check-circle-outline"
+                    :sessions="sessionsForToday.completed"
+                    color-class="text-green-700"
+                  />
+                  <p v-if="sessionsForToday.total === 0" class="text-center text-gray-500 pt-10">
+                    No sessions scheduled for today.
+                  </p>
+                </div>
+
+                <!-- AGENDA VIEW -->
+                <div v-else-if="viewMode === 'agenda'" class="space-y-3">
+                  <div v-if="agendaSessions.length > 0">
+                    <NuxtLink
+                      v-for="event in agendaSessions"
+                      :key="`agenda-${event.id}`"
+                      :to="getEventPath(event)"
+                      class="block p-3 rounded-lg transition-all border-2 bg-blue-50 border-blue-200 hover:border-red-500"
+                    >
+                      <p class="font-semibold text-gray-800">
+                        {{ event.title }}
+                      </p>
+                      <p class="text-sm font-medium text-blue-700">
+                        {{ formatEventDate(event.date) }}
+                      </p>
+                    </NuxtLink>
+                  </div>
+                  <p v-else class="text-center text-gray-500 pt-10">
+                    Nothing scheduled for the week ahead.
+                  </p>
+                </div>
+
+                <!-- SELECTED DAY VIEW -->
+                <div v-else class="space-y-4">
+                  <DashboardSessionGroup
+                    title="Upcoming"
+                    icon="mdi:clock-outline"
+                    :sessions="sessionsOnSelectedDate.upcoming"
+                    color-class="text-blue-700"
+                  />
+                  <DashboardSessionGroup
+                    title="Completed"
+                    icon="mdi:check-circle-outline"
+                    :sessions="sessionsOnSelectedDate.completed"
+                    color-class="text-green-700"
+                  />
+                  <DashboardSessionGroup
+                    title="Missed"
+                    icon="mdi:alert-circle-outline"
+                    :sessions="sessionsOnSelectedDate.missed"
+                    color-class="text-gray-500"
+                  />
+                  <p v-if="sessionsOnSelectedDate.total === 0" class="text-center text-gray-500 pt-10">
+                    No sessions scheduled for this day.
                   </p>
                 </div>
               </div>
@@ -142,30 +142,79 @@
   </div>
 </template>
 
-<!-- Script remains unchanged -->
-
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import type { EventItem } from '~/types/course';
 
-const currentDate = ref(new Date());
-const selectedDate = ref(new Date());
+const { $api } = useNuxtApp();
 
-const cards = ref([
+const [
+  { data: events, pending },
+  { data: activeCourses },
+] = await Promise.all([
+  useAsyncData<EventItem[]>('coach-events-all', () => $api('/course/events/all'), {
+    default: () => [],
+    server: true,
+  }),
+  useAsyncData('active-courses', () => $api('/course', { params: { is_archived: false } }), {
+    default: () => [],
+    server: true,
+  }),
+]);
+
+type ViewMode = 'today' | 'agenda' | 'selected_day';
+const viewMode = ref<ViewMode>('today');
+
+const now = new Date();
+const selectedDate = ref(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+
+function createSafeDate(dateString?: string): Date {
+  if (import.meta.server && !dateString) {
+    return new Date(Date.UTC(2024, 0, 1));
+  }
+  return dateString ? new Date(dateString) : new Date();
+}
+
+function isSameDay(d1: Date, d2: Date): boolean {
+  const utc1 = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+  const utc2 = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
+  return utc1.getTime() === utc2.getTime();
+}
+
+function getTodayUTC(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function getStatusInfo(event: EventItem): {
+  label: 'Upcoming' | 'Completed' | 'Missed';
+  color: 'blue' | 'green' | 'gray';
+} {
+  const eventDate = createSafeDate(event.date);
+  const today = getTodayUTC();
+
+  if (event.is_complete) {
+    return { label: 'Completed', color: 'green' };
+  }
+  if (eventDate < today) {
+    return { label: 'Missed', color: 'gray' };
+  }
+  return { label: 'Upcoming', color: 'blue' };
+}
+
+const cards = computed(() => [
   {
     icon: 'mynaui:academic-hat-solid',
     label: 'Active Courses',
-    value: 18,
+    value: activeCourses.value?.length ?? 0,
     changeDirection: 'up',
     changePercentage: 8,
-    changePeriod: 'from last month',
   },
   {
     icon: 'mdi:calendar-account',
     label: 'Upcoming Sessions',
-    value: 12,
+    value: events.value?.filter(e => getStatusInfo(e).label === 'Upcoming').length ?? 0,
     changeDirection: 'down',
     changePercentage: 5,
-    changePeriod: 'from last week',
   },
   {
     icon: 'material-symbols:flag',
@@ -173,103 +222,112 @@ const cards = ref([
     value: 7,
     changeDirection: 'up',
     changePercentage: 10,
-    changePeriod: 'from last month',
   },
 ]);
 
-const courses = ref([
-  {
-    name: 'Strength Training 101',
-    sessions: [
-      {
-        name: 'Introduction to Strength Training',
-        date: new Date(2025, 4, 26),
-      },
-      { name: 'Advanced Techniques', date: new Date(2025, 4, 28) },
-    ],
-  },
-  {
-    name: 'Endurance Running',
-    sessions: [
-      { name: 'Building Stamina', date: new Date(2025, 4, 27) },
-      { name: 'Interval Training', date: new Date(2025, 4, 29) },
-    ],
-  },
-]);
+const sessionsOnSelectedDate = computed(() => {
+  if (!events.value)
+    return { upcoming: [], completed: [], missed: [], total: 0 };
 
-// Helper function to check if two dates are the same day
-function isSameDay(date1: Date, date2: Date) {
-  return (
-    date1.getFullYear() === date2.getFullYear()
-    && date1.getMonth() === date2.getMonth()
-    && date1.getDate() === date2.getDate()
+  const filtered = events.value.filter(event =>
+    isSameDay(createSafeDate(event.date), selectedDate.value),
   );
+
+  return {
+    upcoming: filtered.filter(e => getStatusInfo(e).label === 'Upcoming'),
+    completed: filtered.filter(e => getStatusInfo(e).label === 'Completed'),
+    missed: filtered.filter(e => getStatusInfo(e).label === 'Missed'),
+    total: filtered.length,
+  };
+});
+
+const sessionsForToday = computed(() => {
+  if (!events.value)
+    return { upcoming: [], completed: [], total: 0 };
+
+  const today = getTodayUTC();
+  const filtered = events.value.filter(event =>
+    isSameDay(createSafeDate(event.date), today),
+  );
+
+  return {
+    upcoming: filtered.filter(e => getStatusInfo(e).label === 'Upcoming'),
+    completed: filtered.filter(e => getStatusInfo(e).label === 'Completed'),
+    total: filtered.length,
+  };
+});
+
+const agendaSessions = computed(() => {
+  if (!events.value)
+    return [];
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+
+  const sevenDaysFromNow = new Date(tomorrow);
+  sevenDaysFromNow.setDate(tomorrow.getDate() + 6);
+
+  return events.value
+    .filter((event) => {
+      const eventDate = createSafeDate(event.date);
+      return getStatusInfo(event).label === 'Upcoming'
+        && eventDate >= tomorrow
+        && eventDate <= sevenDaysFromNow;
+    })
+    .sort((a, b) => createSafeDate(a.date).getTime() - createSafeDate(b.date).getTime());
+});
+
+const calendarAttributes = computed(() =>
+  (events.value || []).map(event => ({
+    key: event.id,
+    dot: { color: getStatusInfo(event).color },
+    dates: createSafeDate(event.date),
+    popover: {
+      label: `${event.title} (${getStatusInfo(event).label})`,
+      visibility: 'hover',
+    },
+  })),
+);
+
+const formatSelectedDate = computed(() => {
+  return selectedDate.value.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+  });
+});
+
+function formatEventDate(dateString: string): string {
+  return createSafeDate(dateString).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
-// show upcoming session for selected date
-const upcomingCourses = computed(() => {
-  const selected = selectedDate.value;
-  const selectedYear = selected.getFullYear();
-  const selectedMonth = selected.getMonth();
-  const selectedDay = selected.getDate();
+function getEventPath(event: EventItem): string {
+  const courseSegment = event.type === 'course' ? event.course_id : 'quick';
+  return getStatusInfo(event).label === 'Completed'
+    ? `/course-detail/${courseSegment}/session/${event.id}/report`
+    : `/course-detail/${courseSegment}/session/${event.id}`;
+}
 
-  return courses.value
-    .map(course => ({
-      name: course.name,
-      sessions: course.sessions.filter((session) => {
-        const sessionDate = session.date;
-        return (
-          sessionDate.getFullYear() === selectedYear
-          && sessionDate.getMonth() === selectedMonth
-          && sessionDate.getDate() === selectedDay
-        );
-      }),
-    }))
-    .filter(course => course.sessions.length > 0);
-});
+function toggleViewMode() {
+  viewMode.value = viewMode.value === 'today' ? 'agenda' : 'today';
+}
 
-const calendarAttributes = computed(() => {
-  const attributes = [];
-  const sessionDates = courses.value.flatMap(course =>
-    course.sessions.map(session => session.date),
-  );
+if (import.meta.server) {
+  watch(selectedDate, (newDate, oldDate) => {
+    if (oldDate && newDate && !isSameDay(newDate, oldDate)) {
+      viewMode.value = 'selected_day';
+    }
+  });
+}
 
-  // Check if current date is a session date
-  const isCurrentDateSession = sessionDates.some(date => isSameDay(date, currentDate.value));
-
-  // 1. Session dates with light highlight
-  attributes.push(
-    ...sessionDates.map(date => ({
-      key: `session-${date.toISOString()}`,
-      highlight: { color: 'red', fillMode: 'light' },
-      dates: date,
-    })),
-  );
-
-  // 2. Current date (solid if it's a session)
-  if (isCurrentDateSession) {
-    attributes.push({
-      key: 'current-date',
-      highlight: { color: 'red', fillMode: 'solid' },
-      dates: currentDate.value,
-    });
-  }
-
-  // 3. Selected date (outline unless current)
-  if (!isSameDay(selectedDate.value, currentDate.value)) {
-    attributes.push({
-      key: 'selected-date',
-      highlight: {
-        color: 'red',
-        fillMode: 'outline',
-        class: 'selected-date-outline',
-      },
-      dates: selectedDate.value,
-    });
-  }
-
-  return attributes;
+useHead({
+  title: 'Coach Dashboard',
+  meta: [
+    { name: 'description', content: 'Coach dashboard for managing training sessions and courses' },
+  ],
 });
 </script>
-
-<style></style>

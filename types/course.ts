@@ -154,3 +154,13 @@ export interface SessionReportData {
   evaluations: Record<string, FinalEvaluationData>;
   totalSessionTime: number;
 }
+
+export interface EventItem {
+  id: number;
+  title: string;
+  date: string;
+  type: 'course' | 'quick_session';
+  is_complete: boolean;
+  course_id: number | null;
+  course_name: string | null;
+}
