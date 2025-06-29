@@ -1,15 +1,28 @@
 <template>
-  <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] max-h-[none] mt-[7rem]">
-    <!-- Error State (now handled by the check below) -->
-    <!-- Template will only render when data is valid -->
-    <div v-if="!session || !course" class="text-center">
-      <h1 class="text-2xl font-bold text-gray-700">
+  <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] mt-[7rem]">
+    <!-- Loading / Error State -->
+    <div v-if="pending || error || !session" class="w-full text-center py-10">
+      <h1 v-if="pending" class="text-2xl font-bold text-gray-700">
+        Loading Session...
+      </h1>
+      <h1 v-else class="text-2xl font-bold text-gray-700">
         Session not found.
       </h1>
     </div>
 
     <!-- Session Details -->
     <div v-else class="bg-white rounded-lg p-6 lg:p-8 shadow-xl w-full">
+      <!-- Back Link -->
+      <NuxtLink v-if="mode === 'course'" :to="`/course-detail/${courseId}`" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors">
+        <Icon name="mdi:arrow-left" size="1.25rem" />
+        <span>Back to Course Details</span>
+      </NuxtLink>
+      <NuxtLink v-else to="/course-management" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors">
+        <Icon name="mdi:arrow-left" size="1.25rem" />
+        <span>Back to Course Management</span>
+      </NuxtLink>
+
+      <!-- Session Header -->
       <div class="border-b pb-4 mb-6">
         <h1 class="text-3xl font-extrabold text-gray-900">
           {{ session.name }}
@@ -26,12 +39,12 @@
           </p>
           <p class="text-gray-500 font-mono">
             <Icon name="mdi:calendar-blank" class="inline-block -mt-1 mr-1" />
-            Scheduled: {{ session.scheduledDate }}
+            Scheduled: {{ new Date(session.scheduled_date).toLocaleString() }}
           </p>
         </div>
       </div>
 
-      <!-- Task List -->
+      <!-- Task List (un-changed) -->
       <div>
         <h2 class="text-2xl font-bold text-gray-800 mb-4">
           Tasks
@@ -42,14 +55,14 @@
           </p>
           <div
             v-for="(task, index) in session.tasks"
-            :key="task.id"
+            :key="task.sequence"
             class="pb-6 border-b border-gray-200 last:border-b-0"
           >
             <h4 class="text-xl font-semibold text-[#9C1313]">
-              Task {{ index + 1 }}: {{ task.name }}
+              Task {{ index + 1 }}: {{ task.task.name }}
             </h4>
             <p class="text-gray-600 mt-1 mb-4">
-              {{ task.description }}
+              {{ task.task.description }}
             </p>
             <div class="flex items-center justify-between bg-gray-50 p-3 rounded-md">
               <div>
@@ -57,8 +70,8 @@
                   Metrics & Weights
                 </h5>
                 <div class="flex flex-wrap gap-x-4 gap-y-1">
-                  <span v-for="metric in task.skillMetrics" :key="metric.skill" class="text-sm text-gray-600 ">
-                    {{ metric.skill }}: <strong class="font-mono">{{ metric.weight }}%</strong>
+                  <span v-for="metric in task.task.skill_weights" :key="metric.skill_id" class="text-sm text-gray-600 ">
+                    {{ metric.skill_name }}: <strong class="font-mono">{{ parseFloat(metric.weight) * 100 }}%</strong>
                   </span>
                 </div>
               </div>
@@ -67,7 +80,7 @@
                   Duration
                 </h5>
                 <p class="text-2xl font-bold text-gray-800 font-mono">
-                  {{ task.duration }}<span class="text-base font-sans ml-1">min</span>
+                  {{ task.task.duration_minutes }}<span class="text-base font-sans ml-1">min</span>
                 </p>
               </div>
             </div>
@@ -75,218 +88,241 @@
         </div>
       </div>
 
-      <!-- ============== NEW ATHLETE SECTION ============== -->
-      <div>
+      <!-- Athlete Attendance Section -->
+      <div class="mt-8">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-bold text-gray-800">
             Athlete Attendance
           </h2>
-          <!-- NEW: Actions and Counter Group -->
-          <div v-if="course.athletes.length > 0" class="flex items-center space-x-4">
-            <!-- "Mark All / Clear All" Button -->
+          <!-- Actions and Counter Group -->
+          <div class="flex items-center space-x-4">
             <button
-              v-if="!allArePresent"
               class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-              @click="markAllPresent"
+              @click="showAddAthleteModal = true"
             >
-              <Icon name="mdi:check-all" class="mr-1" />
-              Mark All Present
+              <Icon name="mdi:account-plus-outline" class="mr-1" />
+              Add / Manage Athletes
             </button>
-            <button
-              v-else
-              class="flex items-center text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-              @click="clearAll"
-            >
-              <Icon name="mdi:close-box-multiple-outline" class="mr-1" />
-              Clear All
-            </button>
-
-            <!-- Attendance Counter -->
-            <span class="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-              {{ totalPresent }} / {{ course.athletes.length }} Present
+            <span v-if="sessionAthletes.length > 0" class="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+              {{ totalPresent }} / {{ sessionAthletes.length }} Present
             </span>
           </div>
         </div>
 
-        <!-- Case where no athletes are enrolled -->
-        <div v-if="!course.athletes || course.athletes.length === 0" class="text-center bg-gray-50 p-6 rounded-lg">
-          <p class="text-gray-500">
-            No athletes are enrolled in this course.
-          </p>
+        <!-- Mark All / Clear All Buttons -->
+        <div v-if="sessionAthletes.length > 0" class="flex items-center space-x-4 mb-4">
+          <button
+            v-if="!allArePresent"
+            class="flex items-center px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-300 rounded transition-colors"
+            @click="markAllPresent"
+          >
+            <Icon name="mdi:check-all" class="mr-1" />
+            Mark All Present
+          </button>
+          <button
+            v-else
+            class="flex items-center px-3 py-1.5 text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-300 rounded transition-colors"
+            @click="clearAll"
+          >
+            <Icon name="mdi:close-box-multiple-outline" class="mr-1" />
+            Clear All
+          </button>
         </div>
 
+        <!-- Case where no athletes are selected/enrolled -->
+        <div v-if="!sessionAthletes || sessionAthletes.length === 0" class="text-center bg-gray-50 p-6 rounded-lg">
+          <p class="text-gray-500">
+            No athletes selected for this session.
+          </p>
+          <button class="mt-4 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700" @click="showAddAthleteModal = true">
+            Select Athletes
+          </button>
+        </div>
+
+        <!-- Athlete Grid -->
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <button
-            v-for="athlete in course.athletes"
-            :key="athlete.id"
-            class="flex items-center w-full p-3 border rounded-lg shadow-sm text-left transition-all duration-200"
-            :class="[
-              isAthletePresent(athlete.id)
-                ? 'bg-green-100 border-green-500'
-                : 'bg-white border-gray-200 hover:bg-gray-50',
-            ]"
-            @click="toggleAttendance(athlete.id)"
+            v-for="athlete in sessionAthletes"
+            :key="athlete.uuid"
+            class="flex items-center w-full p-3 border rounded-lg shadow-sm text-left transition-all"
+            :class="[isAthletePresent(athlete.uuid) ? 'bg-green-100 border-green-500' : 'bg-white hover:bg-gray-50']"
+            @click="toggleAttendance(athlete.uuid)"
           >
-            <img
-              :src="athlete.avatar"
+            <NuxtImg
+              :src="athlete.profile_image_url || '/default-profile.jpg'"
               :alt="athlete.name"
               class="w-10 h-10 rounded-full object-cover mr-4 flex-shrink-0"
-            >
+            />
             <div class="flex-grow">
               <p class="font-semibold text-gray-800 leading-tight">
                 {{ athlete.name }}
               </p>
-              <p v-if="athlete.position" class="text-sm text-gray-500">
-                {{ athlete.position }}
+              <p v-if="athlete.positions" class="text-sm text-gray-500">
+                {{ athlete.positions.map(p => p.name).join(', ') || 'No positions' }}
               </p>
             </div>
             <!-- Checkmark icon for present athletes -->
-            <div v-if="isAthletePresent(athlete.id)" class="ml-2 text-green-600">
+            <div v-if="isAthletePresent(athlete.uuid)" class="ml-2 text-green-600">
               <Icon name="mdi:check-circle" size="1.5rem" />
             </div>
           </button>
         </div>
-        <div>
-          <!-- Show this button only if at least one athlete is selected -->
+
+        <!-- Start Session Button -->
+        <div class="mt-8 flex justify-end">
           <NuxtLink
             v-if="totalPresent > 0"
             :to="startSessionUrl"
-            class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition shadow-lg text-lg flex items-center"
+            class="px-8 py-4 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition shadow-lg text-lg flex items-center"
           >
             <Icon name="mdi:play-circle-outline" class="mr-2" size="1.5rem" />
             Start Session ({{ totalPresent }})
           </NuxtLink>
-          <!-- Show a disabled placeholder if no athletes are selected -->
           <div
             v-else
-            class="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg font-bold text-lg flex items-center cursor-not-allowed"
+            class="px-8 py-4 bg-gray-300 text-gray-500 rounded-lg font-bold text-lg flex items-center cursor-not-allowed"
             title="Select at least one athlete to start the session"
           >
             <Icon name="mdi:play-circle-outline" class="mr-2" size="1.5rem" />
             Start Session
           </div>
-          <p v-if="totalPresent === 0" class="text-xs text-gray-500 mt-2">
-            Select athletes below to begin.
-          </p>
         </div>
       </div>
     </div>
+
+    <!-- Add Athlete Modal -->
+    <AddAthleteToCourse
+      :show="showAddAthleteModal"
+      :course="course || null"
+      :all-athletes="allCoachAthletes || []"
+      :initial-selected-uuids="sessionAthletes.map(a => a.uuid)"
+      @close="showAddAthleteModal = false"
+      @update-attendees="handleUpdateAttendees"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watchEffect } from 'vue';
-import { useRoute } from 'vue-router';
-import { useCourses } from '~/composables/useCourses';
+import type { Attendee, Session } from '~/types/course';
 
 const route = useRoute();
-const { findSessionById } = useCourses();
+const { fetchCourseById, fetchSessionTemplates } = useCourses();
+const { fetchAllAthleteSelectionInfo } = useAthleteData();
 
-// ===============================================
-//           DATA FETCHING
-// ===============================================
-// Get IDs reactively from the route
-const courseId = computed(() => Number(route.params.id)); // <-- Use 'id' to match the folder name [id]
+const mode = computed<'course' | 'quick'>(() => (route.params.id === 'quick' ? 'quick' : 'course'));
+const courseId = computed(() => (mode.value === 'course' ? Number(route.params.id) : null));
 const sessionId = computed(() => Number(route.params.sessionId));
 
-// Wrap the data lookup in a computed property.
-// This creates a reactive dependency on courseId and sessionId.
-const data = computed(() => {
-  // Ensure we have valid numbers before proceeding
-  if (isNaN(courseId.value) || isNaN(sessionId.value)) {
-    return { course: undefined, session: undefined };
+const { data: course, pending: coursePending, error: courseError } = await useAsyncData(
+  `course-for-session-${route.params.id}`,
+  () => (mode.value === 'course' && courseId.value ? fetchCourseById(courseId.value).then(r => r.data.value) : Promise.resolve(null)),
+  { watch: [mode, courseId] },
+);
+
+const { data: allSessionTemplates, pending: templatesPending, error: templatesError } = await fetchSessionTemplates();
+
+const { data: allCoachAthletes } = await fetchAllAthleteSelectionInfo();
+
+const pending = computed(() => coursePending.value || templatesPending.value);
+const error = computed(() => courseError.value || templatesError.value);
+
+const session = computed<Session | undefined>(() => {
+  if (Number.isNaN(sessionId.value))
+    return undefined;
+
+  if (mode.value === 'course' && course.value?.sessions) {
+    return course.value.sessions.find(s => s.id === sessionId.value);
   }
-  return findSessionById(courseId.value, sessionId.value);
+  if (mode.value === 'quick' && allSessionTemplates.value) {
+    return allSessionTemplates.value.find(t => t.id === sessionId.value);
+  }
+  return undefined;
 });
 
-// Create separate computed properties for easier use in the template
-const course = computed(() => data.value.course);
-const session = computed(() => data.value.session);
+const sessionAthletes = ref<Attendee[]>([]);
+const presentAthleteIds = ref<string[]>([]);
+const showAddAthleteModal = ref(false);
 
-// ==========================================================
-//                 ATTENDANCE LOGIC
-// ==========================================================
-// This state holds the user's selections on this page.
-const presentAthleteIds = ref<number[]>([]);
+watch(session, (newSession) => {
+  if (newSession) {
+    if (mode.value === 'course' && course.value) {
+      sessionAthletes.value = [...course.value.attendees];
+    }
+    else {
+      sessionAthletes.value = [];
+    }
+    presentAthleteIds.value = [];
+  }
+}, { immediate: true });
 
-// A counter for the UI.
 const totalPresent = computed(() => presentAthleteIds.value.length);
-
-// Checks if all athletes are marked as present for the "Mark All / Clear All" button.
 const allArePresent = computed(() => {
-  if (!course.value?.athletes || course.value.athletes.length === 0) {
+  if (sessionAthletes.value.length === 0)
     return false;
-  }
-  return presentAthleteIds.value.length === course.value.athletes.length;
+  return presentAthleteIds.value.length === sessionAthletes.value.length;
 });
 
-// Toggles an individual athlete's attendance status.
-function toggleAttendance(athleteId: number) {
-  const index = presentAthleteIds.value.indexOf(athleteId);
+function toggleAttendance(athleteUuid: string) {
+  const index = presentAthleteIds.value.indexOf(athleteUuid);
   if (index > -1) {
-    // If ID is already in the array, remove it (mark as absent).
     presentAthleteIds.value.splice(index, 1);
   }
   else {
-    // If ID is not in the array, add it (mark as present).
-    presentAthleteIds.value.push(athleteId);
+    presentAthleteIds.value.push(athleteUuid);
   }
 }
 
-// Helper for dynamic class binding in the template.
-function isAthletePresent(athleteId: number): boolean {
-  return presentAthleteIds.value.includes(athleteId);
+function isAthletePresent(athleteUuid: string): boolean {
+  return presentAthleteIds.value.includes(athleteUuid);
 }
 
-// Marks all athletes as present.
 function markAllPresent() {
-  if (course.value?.athletes) {
-    presentAthleteIds.value = course.value.athletes.map(a => a.id);
-  }
+  presentAthleteIds.value = sessionAthletes.value.map(a => a.uuid);
 }
 
-// Clears all attendance selections.
 function clearAll() {
   presentAthleteIds.value = [];
 }
 
-// ==========================================================
-//    DYNAMIC URL FOR THE "START SESSION" BUTTON
-// ==========================================================
-// This is the core logic that connects this page to the start page.
-const startSessionUrl = computed(() => {
-  // 1. Define the base path to the live session page.
-  const basePath = `/course-detail/${courseId.value}/session/${sessionId.value}/start`;
+function handleUpdateAttendees(updatedUuids: string[]) {
+  if (!allCoachAthletes.value)
+    return;
+  sessionAthletes.value = allCoachAthletes.value.filter(athlete => updatedUuids.includes(athlete.uuid));
+  presentAthleteIds.value = presentAthleteIds.value.filter(id => updatedUuids.includes(id));
+  showAddAthleteModal.value = false;
+}
 
-  // 2. If no athletes are selected, the button is disabled, but we can return a default path.
-  if (presentAthleteIds.value.length === 0) {
-    return basePath;
+const startSessionUrl = computed(() => {
+  const athleteQuery = presentAthleteIds.value.join(',');
+  let basePath = '';
+  if (mode.value === 'course') {
+    basePath = `/course-detail/${courseId.value}/session/${sessionId.value}/start`;
+  }
+  else {
+    basePath = `/course-detail/quick/session/${sessionId.value}/start`;
   }
 
-  // 3. Take the array of checked-in IDs (e.g., [101, 105]) and join them into a string ("101,105").
-  const athleteQuery = presentAthleteIds.value.join(',');
-
-  // 4. Append this string as a URL query parameter.
-  // The final URL will look like: /.../start?athletes=101,105
+  if (presentAthleteIds.value.length === 0)
+    return basePath;
   return `${basePath}?athletes=${athleteQuery}`;
 });
 
-// ===============================================
-//       404 ERROR HANDLING & METADATA
-// ===============================================
-// Use watchEffect to react to changes in the computed data.
-watchEffect(() => {
-  // route.matched.length > 0 ensures the router has finished its initial navigation
-  if (route.matched.length > 0 && !session.value) {
+const stopWatcher = watchEffect(() => {
+  if (pending.value)
+    return;
+  if (!Number.isNaN(sessionId.value) && !session.value) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Session or Course Not Found',
+      statusMessage: 'Session Not Found',
       fatal: true,
     });
   }
 });
 
-// Set the page title reactively.
+onUnmounted(() => {
+  stopWatcher();
+});
+
 useHead({
   title: () => (session.value ? `Session: ${session.value.name}` : 'Session Details'),
 });

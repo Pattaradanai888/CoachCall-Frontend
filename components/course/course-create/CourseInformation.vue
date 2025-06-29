@@ -1,10 +1,9 @@
 <template>
   <div class="bg-white p-10">
     <h2 class="text-xl font-bold mb-2">
-      Create New Course
+      Course Information
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <!-- Left Column (Course Details) -->
       <div v-motion-slide-visible-once-left :delay="200">
         <div class="mb-4">
           <h1 class="font-bold mb-2 text-gray-700">
@@ -31,35 +30,98 @@
           <h1 class="font-bold mb-2 text-gray-700">
             Course Duration
           </h1>
-          <VDatePicker
-            v-model.range="form.dateRange"
-            mode="dateTime"
-            :masks="{ input: 'YYYY-MM-DD HH:mm' }"
-            class="w-full"
-          >
-            <template #default="{ inputValue, inputEvents }">
-              <div class="flex space-x-2">
-                <input
-                  :value="inputValue.start"
-                  placeholder="Start date & time"
-                  class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
-                  readonly
-                  v-on="inputEvents.start"
+          <div class="space-y-4">
+            <div v-if="form.dateRange?.start && form.dateRange?.end" class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                  <span class="font-medium">Selected Duration:</span>
+                  <div class="mt-1">
+                    <span class="text-gray-900">{{ formatDate(form.dateRange.start) }}</span>
+                    <span class="mx-2 text-gray-500">to</span>
+                    <span class="text-gray-900">{{ formatDate(form.dateRange.end) }}</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    Duration: {{ calculateDuration(form.dateRange.start, form.dateRange.end) }}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="text-red-500 hover:text-red-700 transition-colors"
+                  title="Clear dates"
+                  @click="clearDateRange"
                 >
-                <input
-                  :value="inputValue.end"
-                  placeholder="End date & time"
-                  class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
-                  readonly
-                  v-on="inputEvents.end"
-                >
+                  <Icon name="mdi:close" class="w-4 h-4" />
+                </button>
               </div>
-            </template>
-          </VDatePicker>
+            </div>
+
+            <button
+              type="button"
+              class="w-full border-2 rounded-lg shadow-lg p-3 h-auto min-h-[44px] border-[#d9d9d9] hover:border-[#9c1313] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] transition-colors text-left"
+              @click="showDatePicker = !showDatePicker"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <div v-if="!form.dateRange?.start || !form.dateRange?.end" class="text-gray-500">
+                    Click to select course start and end dates
+                  </div>
+                  <div v-else class="text-gray-900">
+                    {{ formatDate(form.dateRange.start) }} - {{ formatDate(form.dateRange.end) }}
+                  </div>
+                </div>
+                <Icon
+                  name="mdi:calendar"
+                  class="w-5 h-5 text-gray-400"
+                  :class="{ 'rotate-180': showDatePicker }"
+                />
+              </div>
+            </button>
+
+            <div v-if="showDatePicker" class="border border-gray-200 rounded-lg p-4 bg-white shadow-lg">
+              <VDatePicker
+                v-model.range="dateRange"
+                mode="dateTime"
+                :masks="{ input: 'MMM DD, YYYY HH:mm' }"
+                :min-date="new Date()"
+                class="w-full"
+              />
+              <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+                <div class="flex space-x-2">
+                  <button
+                    type="button"
+                    class="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                    @click="setQuickDuration(7)"
+                  >
+                    1 Week
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                    @click="setQuickDuration(30)"
+                  >
+                    1 Month
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                    @click="setQuickDuration(90)"
+                  >
+                    3 Months
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="text-sm px-4 py-2 bg-[#9c1313] text-white rounded-md hover:bg-[#7a0f0f] transition-colors"
+                  @click="showDatePicker = false"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Right Column (Image Upload) -->
       <div v-motion-slide-visible-once-right :delay="200" class="w-full min-w-0">
         <div class="flex items-center mb-3">
           <Icon name="mdi:image-area" class="w-6 h-6 text-gray-700 mr-2 flex-shrink-0" />
@@ -68,7 +130,6 @@
           </h3>
         </div>
 
-        <!-- Image Preview Section -->
         <div v-if="form.imagePreview" class="mb-6">
           <div class="flex justify-between items-center mb-2">
             <h3 class="font-bold text-gray-700">
@@ -95,14 +156,13 @@
           </div>
         </div>
 
-        <!-- Upload Area -->
         <div
           :class="{ 'border-[#9c1313] bg-red-50': dragOver, 'border-gray-300': !dragOver }"
           class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-300 mb-6 relative"
           @dragover.prevent="dragOver = true"
           @dragleave="dragOver = false"
           @drop.prevent="handleDrop"
-          @click="$refs.fileInput.click()"
+          @click="fileInput?.click()"
         >
           <div v-if="!form.imagePreview" class="pointer-events-none">
             <Icon
@@ -138,7 +198,6 @@
           >
         </div>
 
-        <!-- Requirements Card -->
         <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 shadow-sm">
           <div class="flex">
             <Icon
@@ -171,113 +230,192 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'CourseInformation',
-  props: {
-    courseData: {
-      type: Object,
-      default: () => ({}),
-    },
-  },
-  emits: ['error'],
-  data() {
+<script setup lang="ts">
+import { computed, reactive, ref, watch } from 'vue';
+
+interface DateRange {
+  start: Date | null;
+  end: Date | null;
+}
+
+interface CourseFormState {
+  title: string;
+  description: string;
+  dateRange: DateRange;
+  imageFile: File | null;
+  imagePreview: string | null;
+}
+
+const props = withDefaults(defineProps<{
+  courseData?: any;
+}>(), {
+  courseData: () => ({}),
+});
+
+const emit = defineEmits<{
+  (e: 'error', message: string): void;
+  (e: 'editStep', step: number): void;
+}>();
+
+const dragOver = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+const showDatePicker = ref(false);
+
+const form = reactive<CourseFormState>({
+  title: '',
+  description: '',
+  dateRange: { start: null, end: null },
+  imageFile: null,
+  imagePreview: null,
+});
+
+// Create a computed property for the date range that v-calendar can work with
+const dateRange = computed({
+  get(): DateRange {
     return {
-      dragOver: false,
-      form: {
-        title: '',
-        description: '',
-        dateRange: {
-          start: null,
-          end: null,
-        },
-        image: null,
-        imagePreview: null,
-      },
+      start: form.dateRange.start,
+      end: form.dateRange.end,
     };
   },
-  watch: {
-    courseData: {
-      handler(newData) {
-        this.form.title = newData.title || '';
-        this.form.description = newData.description || '';
-
-        // Handle date range from courseData
-        if (newData.startDate && newData.endDate) {
-          this.form.dateRange = {
-            start: new Date(newData.startDate),
-            end: new Date(newData.endDate),
-          };
-        }
-        else if (newData.startDate) {
-          // If only startDate exists (for backward compatibility)
-          this.form.dateRange = {
-            start: new Date(newData.startDate),
-            end: null,
-          };
-        }
-        else {
-          this.form.dateRange = {
-            start: null,
-            end: null,
-          };
-        }
-
-        this.form.imagePreview = newData.image || null;
-        this.form.image = null;
-      },
-      immediate: true,
-      deep: true,
-    },
+  set(value: DateRange | null) {
+    if (value) {
+      form.dateRange.start = value.start;
+      form.dateRange.end = value.end;
+    }
+    else {
+      form.dateRange.start = null;
+      form.dateRange.end = null;
+    }
   },
-  methods: {
-    handleDrop(event) {
-      this.dragOver = false;
-      const files = event.dataTransfer.files;
-      if (files && files.length) {
-        this.handleFileUpload({ target: { files } });
-      }
-    },
+});
 
-    removeImage() {
-      this.form.image = null;
-      this.form.imagePreview = null;
-      if (this.$refs.fileInput) {
-        this.$refs.fileInput.value = '';
-      }
-    },
+watch(() => props.courseData, (newData) => {
+  if (!newData)
+    return;
+  form.title = newData.title || '';
+  form.description = newData.description || '';
 
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file)
-        return;
+  // Handle date range more safely
+  if (newData.dateRange) {
+    form.dateRange = {
+      start: newData.dateRange.start ? new Date(newData.dateRange.start) : null,
+      end: newData.dateRange.end ? new Date(newData.dateRange.end) : null,
+    };
+  }
+  else {
+    form.dateRange = { start: null, end: null };
+  }
 
-      // File type validation
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      if (!validTypes.includes(file.type)) {
-        this.$emit('error', 'Please select a valid image file (JPEG, PNG, WEBP, GIF)');
-        return;
-      }
+  form.imagePreview = newData.imagePreview || null;
+  form.imageFile = newData.imageFile || null;
+}, { immediate: true, deep: true });
 
-      // File size validation
-      if (file.size > 5 * 1024 * 1024) {
-        this.$emit('error', 'File size exceeds 5MB limit');
-        return;
-      }
+function formatDate(date: Date | string | null | undefined): string {
+  if (!date)
+    return '';
+  try {
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime()))
+      return '';
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d);
+  }
+  catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+}
 
-      this.form.image = file;
-      this.form.imagePreview = URL.createObjectURL(file);
-    },
+function calculateDuration(start: Date | string | null | undefined, end: Date | string | null | undefined): string {
+  if (!start || !end)
+    return '';
+  try {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()))
+      return '';
 
-    getData() {
-      return {
-        title: this.form.title,
-        description: this.form.description,
-        startDate: this.form.dateRange.start,
-        endDate: this.form.dateRange.end,
-        image: this.form.imagePreview || null,
-      };
-    },
-  },
-};
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays <= 1)
+      return '1 day';
+    if (diffDays < 7)
+      return `${diffDays} days`;
+    const weeks = Math.floor(diffDays / 7);
+    const remainingDays = diffDays % 7;
+    if (remainingDays === 0)
+      return `${weeks} week${weeks > 1 ? 's' : ''}`;
+    return `${weeks} week${weeks > 1 ? 's' : ''} and ${remainingDays} day${remainingDays > 1 ? 's' : ''}`;
+  }
+  catch (error) {
+    console.error('Error calculating duration:', error);
+    return '';
+  }
+}
+
+function clearDateRange() {
+  form.dateRange = { start: null, end: null };
+}
+
+function setQuickDuration(days: number) {
+  const start = new Date();
+  start.setHours(9, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + days - 1);
+  end.setHours(17, 0, 0, 0);
+  form.dateRange = { start, end };
+}
+
+function handleDrop(event: DragEvent) {
+  dragOver.value = false;
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0)
+    processFile(files[0]);
+}
+
+function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0)
+    processFile(target.files[0]);
+}
+
+function processFile(file: File) {
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!validTypes.includes(file.type)) {
+    emit('error', 'Please select a valid image file (JPEG, PNG, WEBP, GIF)');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    emit('error', 'File size exceeds 5MB limit');
+    return;
+  }
+  form.imageFile = file;
+  form.imagePreview = URL.createObjectURL(file);
+}
+
+function removeImage() {
+  form.imageFile = null;
+  form.imagePreview = null;
+  if (fileInput.value)
+    fileInput.value.value = '';
+}
+
+function getData() {
+  return {
+    title: form.title,
+    description: form.description,
+    dateRange: form.dateRange,
+    imageFile: form.imageFile,
+    imagePreview: form.imagePreview,
+    start_date: form.dateRange.start ? form.dateRange.start.toISOString() : null,
+    end_date: form.dateRange.end ? form.dateRange.end.toISOString() : null,
+  };
+}
+
+defineExpose({ getData });
 </script>

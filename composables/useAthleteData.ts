@@ -1,11 +1,6 @@
 // composables/useAthleteData.ts
-import type { AthleteCreationStatus, AthleteDetail, AthleteListEntry, AthleteListResponse, AthleteResponse } from '~/types/athlete';
+import type { AthleteCreationStatus, AthleteDetail, AthleteListEntry, AthleteListResponse, AthleteResponse, AthleteSelectionInfo } from '~/types/athlete';
 
-/**
- * Normalizes the detailed athlete data from the backend to the frontend model.
- * @param backendAthlete - The raw athlete object from the API.
- * @returns A consistent, frontend-friendly AthleteDetail object.
- */
 function mapBackendAthleteToFrontend(backendAthlete: AthleteResponse): AthleteDetail {
   return {
     uuid: backendAthlete.uuid,
@@ -178,6 +173,14 @@ export function useAthleteData() {
     }
   }
 
+  const fetchAllAthleteSelectionInfo = () => {
+    return useAsyncData<AthleteSelectionInfo[]>(
+      'all-athlete-selection-info',
+      () => $api('/athlete/all'), // This will now work!
+      { default: () => [] },
+    );
+  };
+
   return {
     athletes,
     stats,
@@ -194,5 +197,6 @@ export function useAthleteData() {
     prevPage,
     nextPage,
     deleteSelectedAthlete,
+    fetchAllAthleteSelectionInfo,
   };
 }

@@ -1,135 +1,244 @@
-import { ref } from 'vue';
-
-// ==========================================================
-// DEFINE INTERFACES
-// ==========================================================
-export interface Athlete {
-  id: number;
-  name: string;
-  avatar: string;
-  age: number;
-  position?: string;
-  group?: string;
-}
-
-export interface SkillMetric {
-  skill: string;
-  weight: number;
-}
-
-export interface Task {
-  id: number;
-  order: number;
-  name: string;
-  description: string;
-  duration: number;
-  skillMetrics: SkillMetric[];
-}
-
-export interface Session {
-  id: number;
-  name: string;
-  description: string;
-  scheduledDate: string;
-  status: 'To Do' | 'Complete';
-  tasks: Task[];
-}
-
-export interface Course {
-  id: number;
-  image: string;
-  title: string;
-  description: string;
-  status: 'Active' | 'Archive';
-  athletes: Athlete[];
-  sessions: Session[];
-  progressValue: number;
-  participants: number;
-  startDate: string;
-  endDate: string;
-}
-
-// EXPORT a master list of all athletes available in the system
-export const allAthletes: Athlete[] = [
-  { id: 101, name: 'Alex Johnson', age: 22, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', position: 'Guard', group: 'A' },
-  { id: 102, name: 'Maria Garcia', age: 24, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026705d', position: 'Forward', group: 'B' },
-  { id: 103, name: 'James Smith', age: 21, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026706d', position: 'Guard', group: 'A' },
-  { id: 104, name: 'Li Wei', age: 25, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026707d', position: 'Center', group: 'C' },
-  { id: 105, name: 'Chris Lee', age: 23, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026708d', position: 'Center', group: 'C' },
-  { id: 106, name: 'Emily Davis', age: 20, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026709d', position: 'Guard', group: 'B' },
-  { id: 107, name: 'John Doe', age: 26, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026710d', position: 'Forward', group: 'A' },
-  { id: 108, name: 'Sarah Connor', age: 22, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026711d', position: 'Guard', group: 'C' },
-  { id: 109, name: 'Michael Brown', age: 27, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026712d', position: 'Forward', group: 'B' },
-  { id: 110, name: 'Jessica Lee', age: 24, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026713d', position: 'Center', group: 'A' },
-  { id: 111, name: 'David Wilson', age: 21, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026714d', position: 'Guard', group: 'C' },
-  { id: 112, name: 'Sophia Martinez', age: 23, avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026715d', position: 'Forward', group: 'B' },
-];
-
-const coursesData: Course[] = [
-  {
-    id: 1,
-    image: '/course-img.png',
-    title: 'Advanced Dribbling',
-    description: 'Ball handling drills for all positions.',
-    status: 'Active',
-    athletes: [allAthletes[0], allAthletes[2], allAthletes[3], allAthletes[5], allAthletes[6], allAthletes[7], allAthletes[8], allAthletes[9], allAthletes[10]],
-    sessions: [
-      { id: 1001, name: 'Session 1: Foundational Control', description: 'Focus on stationary drills.', scheduledDate: '2025-05-20', status: 'Complete', tasks: [
-        { id: 1, order: 1, name: 'Two-Ball Stationary Dribble', description: 'Dribble two balls simultaneously.', duration: 15, skillMetrics: [{ skill: 'Dribbling', weight: 100 }] },
-        { id: 2, order: 2, name: 'Figure 8 Dribble', description: 'Weave a single ball through the legs.', duration: 10, skillMetrics: [{ skill: 'Dribbling', weight: 80 }, { skill: 'Basketball IQ', weight: 20 }] },
-      ] },
-      { id: 1002, name: 'Session 2: Dribbling on the Move', description: 'Applying skills in motion.', scheduledDate: '2025-05-27', status: 'To Do', tasks: [
-        { id: 3, order: 1, name: 'Full-Court Speed Dribble', description: 'Dribble the length of the court.', duration: 10, skillMetrics: [{ skill: 'Dribbling', weight: 50 }, { skill: 'Athleticism', weight: 50 }] },
-      ] },
-    ],
-    // Populating the re-added fields
-    participants: 3,
-    startDate: '2025-05-20',
-    endDate: '2025-05-27',
-    progressValue: 50, // 1 of 2 sessions is complete
-  },
-  {
-    id: 2,
-    image: '/course-img-2.png',
-    title: 'Shooting Fundamentals',
-    description: 'Improve your jump shot and free throws.',
-    status: 'Active',
-    athletes: [allAthletes[1], allAthletes[3]],
-    sessions: [
-      { id: 2001, name: 'Form Shooting', description: 'Breaking down mechanics.', scheduledDate: '2025-04-05', status: 'Complete', tasks: [
-        { id: 5, order: 1, name: 'One-Handed Form Shots', description: 'Close-range shots focusing on follow-through.', duration: 20, skillMetrics: [{ skill: 'Shooting', weight: 100 }] },
-      ] },
-      { id: 2002, name: 'Range and Repetition', description: 'Extending shooting range.', scheduledDate: '2025-04-12', status: 'Complete', tasks: [
-        { id: 7, order: 1, name: 'Spot-Up Shooting (5 Spots)', description: 'Take 20 shots from 5 key locations.', duration: 25, skillMetrics: [{ skill: 'Shooting', weight: 90 }, { skill: 'Athleticism', weight: 10 }] },
-      ] },
-      { id: 2003, name: 'Shooting Off the Dribble', description: 'Creating your own shot.', scheduledDate: '2025-04-19', status: 'To Do', tasks: [] },
-    ],
-    participants: 2,
-    startDate: '2025-04-05',
-    endDate: '2025-04-19',
-    progressValue: 67, // 2 of 3 sessions are complete
-  },
-];
+import type {
+  CourseCreatePayload,
+  CourseDetail,
+  CourseListEntry,
+  Session,
+  SessionCompletionPayload,
+  SessionCreatePayload,
+  SessionReportData,
+  Skill,
+} from '~/types/course';
 
 export function useCourses() {
-  const courses = ref<Course[]>(coursesData);
+  const { $api } = useNuxtApp();
 
-  const findCourseById = (id: number) => {
-    return courses.value.find(course => course.id === id);
+  // SSR-optimized data fetching with proper cache keys
+  const fetchCourses = (isArchived: boolean | globalThis.Ref<boolean>) => {
+    const archivedValue = typeof isArchived === 'boolean' ? isArchived : unref(isArchived);
+
+    return useAsyncData<CourseListEntry[]>(
+      `courses-list-${archivedValue}`,
+      () => $api(`/course`, { params: { is_archived: archivedValue } }),
+      {
+        default: () => [],
+        server: true, // Ensure SSR
+        // Only watch if it's a ref
+        ...(typeof isArchived !== 'boolean' && { watch: [isArchived] }),
+      },
+    );
   };
 
-  const findSessionById = (courseId: number, sessionId: number) => {
-    const course = findCourseById(courseId);
-    if (!course) {
-      return { course: undefined, session: undefined };
+  const fetchAllCourseDetails = () => {
+    return useAsyncData<CourseDetail[]>(
+      'all-course-details',
+      () => $api(`/course/details/all`),
+      {
+        default: () => [],
+        server: true,
+        // Add cache TTL for better performance
+        transform: (data: CourseDetail[]) => data || [],
+      },
+    );
+  };
+
+  const fetchCourseById = (courseId: number | string) => {
+    const id = typeof courseId === 'string' ? Number.parseInt(courseId, 10) : courseId;
+
+    return useAsyncData<CourseDetail>(
+      `course-detail-${id}`,
+      () => $api(`/course/${id}`),
+      {
+        server: true,
+        // Add error handling for SSR
+        default: () => null,
+        transform: (data: CourseDetail) => data || null,
+      },
+    );
+  };
+
+  const fetchSkills = () => {
+    return useAsyncData<Skill[]>(
+      'user-skills',
+      () => $api('/course/skills'),
+      {
+        default: () => [],
+        server: true,
+        // Cache skills as they don't change often
+        transform: (data: Skill[]) => data || [],
+      },
+    );
+  };
+
+  const fetchSessionTemplates = () => {
+    return useAsyncData<Session[]>(
+      'session-templates',
+      () => $api('/course/sessions', {
+        params: { is_template: true },
+      }),
+      {
+        default: () => [],
+        server: true,
+        transform: (data: Session[]) => data || [],
+      },
+    );
+  };
+
+  const fetchSessionReport = (sessionId: number | string) => {
+    const id = typeof sessionId === 'string' ? Number.parseInt(sessionId, 10) : sessionId;
+
+    return useAsyncData<SessionReportData>(
+      `session-report-${id}`,
+      () => $api(`/course/session/${id}/report`),
+      {
+        server: true,
+        default: () => null,
+        transform: (data: SessionReportData) => data || null,
+      },
+    );
+  };
+
+  // Client-side only mutations (these shouldn't run during SSR)
+  const updateCourseAthletes = async (courseId: number, athleteUuids: string[]) => {
+    if (import.meta.server) {
+      throw new Error('updateCourseAthletes should not be called during SSR');
     }
-    const session = course.sessions.find(s => s.id === sessionId);
-    return { course, session };
+
+    return $api<CourseDetail>(`/course/${courseId}/athletes`, {
+      method: 'PUT',
+      body: athleteUuids,
+    });
+  };
+
+  const createSession = async (payload: SessionCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('createSession should not be called during SSR');
+    }
+
+    return $api<Session>('/course/sessions', {
+      method: 'POST',
+      body: payload,
+    });
+  };
+
+  const updateSessionTemplate = async (sessionId: number, payload: SessionCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('updateSessionTemplate should not be called during SSR');
+    }
+
+    return $api<Session>(`/course/sessions/${sessionId}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  };
+
+  const deleteSessionTemplate = async (sessionId: number) => {
+    if (import.meta.server) {
+      throw new Error('deleteSessionTemplate should not be called during SSR');
+    }
+
+    return $api<void>(`/course/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  };
+
+  const createCourse = async (payload: CourseCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('createCourse should not be called during SSR');
+    }
+
+    return $api<CourseDetail>('/course', {
+      method: 'POST',
+      body: payload,
+    });
+  };
+
+  const updateCourse = async (courseId: number, payload: CourseCreatePayload) => {
+    if (import.meta.server) {
+      throw new Error('updateCourse should not be called during SSR');
+    }
+
+    return $api<CourseDetail>(`/course/${courseId}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  };
+
+  const deleteCourse = async (courseId: number) => {
+    if (import.meta.server) {
+      throw new Error('deleteCourse should not be called during SSR');
+    }
+
+    return $api<{ message: string; deleted_course_id: number }>(`/course/${courseId}`, {
+      method: 'DELETE',
+    });
+  };
+
+  const uploadCourseImage = async (courseId: number, imageFile: File) => {
+    if (import.meta.server) {
+      throw new Error('uploadCourseImage should not be called during SSR');
+    }
+
+    const formData = new FormData();
+    formData.append('file', imageFile, imageFile.name);
+
+    return $api<{ message: string; image_url: string }>(`/course/${courseId}/upload-image`, {
+      method: 'POST',
+      body: formData,
+    });
+  };
+
+  const updateSessionStatus = async (sessionId: number, status: 'Complete' | 'To do') => {
+    if (import.meta.server) {
+      throw new Error('updateSessionStatus should not be called during SSR');
+    }
+
+    return $api<Session>(`/course/session/${sessionId}/status`, {
+      method: 'PUT',
+      body: { status },
+    });
+  };
+
+  const saveSessionCompletions = async (sessionId: number, payload: SessionCompletionPayload) => {
+    if (import.meta.server) {
+      throw new Error('saveSessionCompletions should not be called during SSR');
+    }
+
+    return $api(`/course/session/${sessionId}/complete`, {
+      method: 'POST',
+      body: payload,
+    });
+  };
+
+  // Pure utility functions (SSR-safe)
+  const findSessionById = (course: CourseDetail | null | undefined, sessionId: number): Session | null => {
+    if (!course || !course.sessions) {
+      return null;
+    }
+    return course.sessions.find(session => session.id === sessionId) || null;
   };
 
   return {
-    courses,
-    findCourseById,
+    // SSR-safe data fetching
+    fetchCourses,
+    fetchAllCourseDetails,
+    fetchCourseById,
+    fetchSessionTemplates,
+    fetchSkills,
+    fetchSessionReport,
+
+    // Client-side mutations
+    updateCourseAthletes,
+    createSession,
+    updateSessionTemplate,
+    deleteSessionTemplate,
+    createCourse,
+    updateCourse,
+    deleteCourse,
+    uploadCourseImage,
+    saveSessionCompletions,
+    updateSessionStatus,
+
+    // Utility functions
     findSessionById,
   };
 }

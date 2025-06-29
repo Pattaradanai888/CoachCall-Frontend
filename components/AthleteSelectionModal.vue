@@ -26,7 +26,7 @@
                 Add Athletes
               </h2>
               <p class="text-red-100 text-sm mt-1">
-                Add athletes to {{ course?.title || 'this course' }}
+                Select athletes for {{ course?.name || 'this quick session' }}
               </p>
             </div>
             <button
@@ -106,30 +106,27 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
               <div
                 v-for="athlete in filteredAthletes"
-                :key="athlete.id"
+                :key="athlete.uuid"
                 class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-[#9C1313] transition cursor-pointer"
-                :class="{ 'bg-red-50 border-[#9C1313]': selectedAthletes.includes(athlete.id) }"
-                @click="toggleAthlete(athlete.id)"
+                :class="{ 'bg-red-50 border-[#9C1313]': selectedAthletes.includes(athlete.uuid) }"
+                @click="toggleAthlete(athlete.uuid)"
               >
                 <input
                   type="checkbox"
-                  :checked="selectedAthletes.includes(athlete.id)"
+                  :checked="selectedAthletes.includes(athlete.uuid)"
                   class="mr-4 w-4 h-4 text-[#9C1313] border-gray-300 rounded focus:ring-[#9C1313]"
                   @click.stop
-                  @change="toggleAthlete(athlete.id)"
+                  @change="toggleAthlete(athlete.uuid)"
                 >
                 <div class="w-12 h-12 rounded-full overflow-hidden mr-4 flex-shrink-0">
-                  <img :src="athlete.avatar" :alt="athlete.name" class="w-full h-full object-cover">
+                  <img :src="athlete.profile_image_url || '/default-profile.jpg'" :alt="athlete.name" class="w-full h-full object-cover">
                 </div>
                 <div class="flex-grow">
                   <h3 class="font-semibold text-gray-900">
                     {{ athlete.name }}
                   </h3>
                   <p class="text-sm text-gray-600">
-                    {{ athlete.position }} · {{ athlete.age }} yrs
-                  </p>
-                  <p class="text-xs text-gray-500">
-                    Group: {{ athlete.group }}
+                    {{ athlete.positions.map(p => p.name).join(', ') || 'No Position' }}
                   </p>
                 </div>
               </div>
@@ -153,9 +150,9 @@
           <button
             class="px-4 py-2 text-sm font-medium text-white bg-red-700 border border-transparent rounded-md shadow-sm hover:bg-red-800 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none"
             :disabled="selectedAthletes.length === 0"
-            @click="addSelectedAthletes"
+            @click="saveChanges"
           >
-            Add {{ selectedAthletes.length }} Athlete{{ selectedAthletes.length !== 1 ? 's' : '' }}
+            Update Selection ({{ selectedAthletes.length }})
           </button>
         </div>
       </div>
@@ -164,61 +161,48 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import type { AthleteSelectionInfo } from '~/types/athlete';
+import type { CourseDetail } from '~/types/course';
 
-// PROPS & EMITS
-const props = defineProps({
-  show: {
-    type: Boolean,
-    default: false,
-  },
-  courseId: {
-    type: Number,
-    required: true,
-  },
-});
+const props = defineProps<{
+  show: boolean;
+  course: CourseDetail | null;
+  allAthletes: AthleteSelectionInfo[];
+  initialSelectedUuids: {
+    type: PropType<string[]>;
+    default: () => [];
+  };
+}>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'add-athletes', athleteIds: number[]): void;
+  (e: 'update-attendees', athleteUuids: string[]): void;
 }>();
-
-// COMPOSABLES
-const { findCourseById } = useCourses();
 
 // STATE
 const searchQuery = ref('');
 const showFilter = ref(false);
 const selectedPositions = ref<string[]>([]);
 const selectedGroups = ref<string[]>([]);
-const selectedAthletes = ref<number[]>([]); // Holds IDs of athletes to be added
+const selectedAthletes = ref<string[]>([]);
 
-// DATA & COMPUTED PROPERTIES
-const course = computed(() => findCourseById(props.courseId));
-
-const currentCourseAthleteIds = computed(() => {
-  return course.value?.athletes.map(a => a.id) ?? [];
+watch(() => props.show, (isShowing) => {
+  if (isShowing) {
+    selectedAthletes.value = [...props.initialSelectedUuids];
+  }
 });
 
-const availableAthletesForCourse = computed<Athlete[]>(() => {
-  // Filter out athletes already in the current course from the master list
-  return allAthletes.filter(athlete => !currentCourseAthleteIds.value.includes(athlete.id));
-});
-
-const filteredAthletes = computed<Athlete[]>(() => {
-  return availableAthletesForCourse.value.filter((athlete) => {
+const filteredAthletes = computed<AthleteSelectionInfo[]>(() => {
+  return props.allAthletes.filter((athlete) => {
     const searchLower = searchQuery.value.toLowerCase();
-    const matchesSearch
-      = athlete.name.toLowerCase().includes(searchLower)
-        || athlete.position?.toLowerCase().includes(searchLower);
+    const matchesSearch = athlete.name.toLowerCase().includes(searchLower)
+      || athlete.positions.some(p => p.name.toLowerCase().includes(searchLower));
 
-    const matchesPosition
-      = selectedPositions.value.length === 0
-        || (athlete.position && selectedPositions.value.includes(athlete.position));
+    const matchesPosition = selectedPositions.value.length === 0
+      || athlete.positions.some(p => selectedPositions.value.includes(p.name));
 
-    const matchesGroup
-      = selectedGroups.value.length === 0
-        || (athlete.group && selectedGroups.value.includes(athlete.group));
+    const matchesGroup = selectedGroups.value.length === 0
+      || athlete.groups.some(g => selectedGroups.value.includes(g.name));
 
     return matchesSearch && matchesPosition && matchesGroup;
   });
@@ -226,23 +210,21 @@ const filteredAthletes = computed<Athlete[]>(() => {
 
 const totalAthletes = computed(() => filteredAthletes.value.length);
 
-// Dynamic filter options based on available (unassigned) athletes
 const availablePositions = computed(() => {
-  const positions = availableAthletesForCourse.value
-    .map(a => a.position)
-    .filter((p): p is string => !!p); // Type guard to filter out undefined/null
+  const positions = props.allAthletes.flatMap(a => a.positions.map(p => p.name));
   return [...new Set(positions)].sort();
 });
 
 const availableGroups = computed(() => {
-  const groups = availableAthletesForCourse.value
-    .map(a => a.group)
-    .filter((g): g is string => !!g);
+  const groups = props.allAthletes.flatMap(a => a.groups.map(g => g.name));
   return [...new Set(groups)].sort();
 });
 
-// METHODS
 function emitClose() {
+  searchQuery.value = '';
+  selectedPositions.value = [];
+  selectedGroups.value = [];
+  showFilter.value = false;
   emit('close');
 }
 
@@ -256,22 +238,18 @@ function clearFilters() {
   selectedGroups.value = [];
 }
 
-function toggleAthlete(athleteId: number) {
-  const index = selectedAthletes.value.indexOf(athleteId);
+function toggleAthlete(athleteUuid: string) {
+  const index = selectedAthletes.value.indexOf(athleteUuid);
   if (index > -1) {
     selectedAthletes.value.splice(index, 1);
   }
   else {
-    selectedAthletes.value.push(athleteId);
+    selectedAthletes.value.push(athleteUuid);
   }
 }
 
-function addSelectedAthletes() {
-  // In a real app, you'd make an API call here.
-  // We emit an event for the parent to handle.
-  emit('add-athletes', selectedAthletes.value);
-  // Reset state and close the modal
-  selectedAthletes.value = [];
+function saveChanges() {
+  emit('update-attendees', selectedAthletes.value);
   emitClose();
 }
 </script>

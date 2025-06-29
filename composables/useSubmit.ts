@@ -9,7 +9,6 @@ export function useSubmit<T extends (...args: any[]) => Promise<any>>(
   },
 ) {
   const loading = ref(false);
-  // Renamed to avoid conflicts with vee-validate's 'errors'
   const submissionError = ref<string | null>(null);
 
   const submit = async (...args: Parameters<T>) => {
