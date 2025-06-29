@@ -302,16 +302,21 @@ function getEventPath(event: EventItem): string {
 }
 
 function toggleViewMode() {
-  viewMode.value = viewMode.value === 'today' ? 'agenda' : 'today';
+  if (viewMode.value === 'today') {
+    viewMode.value = 'agenda';
+  }
+  else {
+    viewMode.value = 'today';
+    const today = new Date();
+    selectedDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  }
 }
 
-if (import.meta.server) {
-  watch(selectedDate, (newDate, oldDate) => {
-    if (oldDate && newDate && !isSameDay(newDate, oldDate)) {
-      viewMode.value = 'selected_day';
-    }
-  });
-}
+watch(selectedDate, (newDate, oldDate) => {
+  if (oldDate && newDate && !isSameDay(newDate, oldDate)) {
+    viewMode.value = 'selected_day';
+  }
+});
 
 useHead({
   title: 'Coach Dashboard',

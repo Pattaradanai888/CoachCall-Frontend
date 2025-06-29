@@ -33,6 +33,7 @@
             @open-create-modal="openCreateModal"
             @open-edit-modal="openEditModal"
             @remove-template="handleRemoveTemplate"
+            @start-quick-session="handleStartQuickSession"
           />
         </div>
 
@@ -103,6 +104,7 @@ import NotificationModal from '~/components/NotificationModal.vue';
 import { useCourses } from '~/composables/useCourses';
 import { useSubmit } from '~/composables/useSubmit';
 
+const router = useRouter();
 const showModal = ref(false);
 const editingTemplate = ref<Session | null>(null);
 const showConfirmModal = ref(false);
@@ -144,6 +146,7 @@ const {
   fetchSessionTemplates,
   fetchSkills,
   createSession,
+  createSessionFromTemplate,
   updateSessionTemplate,
   deleteSessionTemplate,
   deleteCourse,
@@ -324,4 +327,20 @@ const coursesWithProgress = computed(() => {
       };
     });
 });
+
+async function handleStartQuickSession(template: SessionTemplate) {
+  try {
+    const newSession = await createSessionFromTemplate(template as Session);
+    if (newSession && newSession.id) {
+      router.push(`/course-detail/quick/session/${newSession.id}`);
+    }
+    else {
+      showNotification('Error', 'Failed to create quick session instance.', 'error');
+    }
+  }
+  catch (error: any) {
+    const errorMessage = error?.data?.detail || 'An unknown error occurred.';
+    showNotification('Error', `Could not start quick session: ${errorMessage}`, 'error');
+  }
+}
 </script>

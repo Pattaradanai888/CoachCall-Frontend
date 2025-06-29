@@ -191,7 +191,7 @@
     </div>
 
     <!-- Add Athlete Modal -->
-    <AddAthleteToCourse
+    <AthleteSelectionModal
       :show="showAddAthleteModal"
       :course="course || null"
       :all-athletes="allCoachAthletes || []"
@@ -206,7 +206,7 @@
 import type { Attendee, Session } from '~/types/course';
 
 const route = useRoute();
-const { fetchCourseById, fetchSessionTemplates } = useCourses();
+const { fetchCourseById, fetchSessionById } = useCourses();
 const { fetchAllAthleteSelectionInfo } = useAthleteData();
 
 const mode = computed<'course' | 'quick'>(() => (route.params.id === 'quick' ? 'quick' : 'course'));
@@ -219,25 +219,31 @@ const { data: course, pending: coursePending, error: courseError } = await useAs
   { watch: [mode, courseId] },
 );
 
-const { data: allSessionTemplates, pending: templatesPending, error: templatesError } = await fetchSessionTemplates();
+const { data: session, pending: sessionPending, error: sessionError } = await useAsyncData<Session | null>(
+  `session-details-${sessionId.value}`,
+  () => {
+    if (Number.isNaN(sessionId.value))
+      return Promise.resolve(null);
+
+    if (mode.value === 'quick') {
+      return fetchSessionById(sessionId.value).then(r => r.data.value);
+    }
+
+    if (course.value?.sessions) {
+      return Promise.resolve(course.value.sessions.find(s => s.id === sessionId.value) || null);
+    }
+
+    return Promise.resolve(null);
+  },
+  {
+    watch: [course],
+  },
+);
 
 const { data: allCoachAthletes } = await fetchAllAthleteSelectionInfo();
 
-const pending = computed(() => coursePending.value || templatesPending.value);
-const error = computed(() => courseError.value || templatesError.value);
-
-const session = computed<Session | undefined>(() => {
-  if (Number.isNaN(sessionId.value))
-    return undefined;
-
-  if (mode.value === 'course' && course.value?.sessions) {
-    return course.value.sessions.find(s => s.id === sessionId.value);
-  }
-  if (mode.value === 'quick' && allSessionTemplates.value) {
-    return allSessionTemplates.value.find(t => t.id === sessionId.value);
-  }
-  return undefined;
-});
+const pending = computed(() => coursePending.value || sessionPending.value);
+const error = computed(() => courseError.value || sessionError.value);
 
 const sessionAthletes = ref<Attendee[]>([]);
 const presentAthleteIds = ref<string[]>([]);

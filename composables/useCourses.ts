@@ -120,6 +120,40 @@ export function useCourses() {
     });
   };
 
+  const fetchSessionById = (sessionId: number | string) => {
+    const id = typeof sessionId === 'string' ? Number.parseInt(sessionId, 10) : sessionId;
+    return useAsyncData<Session>(
+      `session-${id}`,
+      () => $api(`/course/sessions/${id}`),
+      {
+        default: () => null,
+        transform: (data: Session) => data || null,
+      },
+    );
+  };
+
+  const createSessionFromTemplate = (template: Session) => {
+    if (import.meta.server) {
+      throw new Error('createSessionFromTemplate should not be called on the server.');
+    }
+    const payload: SessionCreatePayload = {
+      name: template.name,
+      description: template.description,
+      scheduled_date: new Date().toISOString(),
+      is_template: false,
+      tasks: template.tasks.map(sessionTask => ({
+        name: sessionTask.task.name,
+        description: sessionTask.task.description,
+        duration_minutes: sessionTask.task.duration_minutes,
+        skill_weights: sessionTask.task.skill_weights.map(sw => ({
+          skill_id: sw.skill_id,
+          weight: Number(sw.weight),
+        })),
+      })),
+    };
+    return createSession(payload);
+  };
+
   const updateSessionTemplate = async (sessionId: number, payload: SessionCreatePayload) => {
     if (import.meta.server) {
       throw new Error('updateSessionTemplate should not be called during SSR');
@@ -236,10 +270,12 @@ export function useCourses() {
     fetchSessionTemplates,
     fetchSkills,
     fetchSessionReport,
+    fetchSessionById,
 
     // Client-side mutations
     updateCourseAthletes,
     createSession,
+    createSessionFromTemplate,
     updateSessionTemplate,
     deleteSessionTemplate,
     createCourse,

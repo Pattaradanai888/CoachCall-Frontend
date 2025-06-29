@@ -311,45 +311,65 @@ interface EvaluationData {
 
 const route = useRoute();
 const router = useRouter();
-const { fetchCourseById, updateSessionStatus, saveSessionCompletions, fetchSessionTemplates } = useCourses();
+// MODIFIED: Import fetchSessionById
+const { fetchCourseById, updateSessionStatus, saveSessionCompletions, fetchSessionById } = useCourses();
 const { fetchAllAthleteSelectionInfo } = useAthleteData();
 
 const mode = computed<'course' | 'quick'>(() => (route.params.id === 'quick' ? 'quick' : 'course'));
-const courseId = computed(() => Number(route.params.id));
+const courseId = computed(() => (mode.value === 'course' ? Number(route.params.id) : null));
 const sessionId = computed(() => Number(route.params.sessionId));
 
-const { data: course } = await useAsyncData(`course-${courseId.value || 'quick'}`, () =>
-  mode.value === 'course' && courseId.value ? fetchCourseById(courseId.value).then(r => r.data.value) : Promise.resolve(null));
-const { data: allSessionTemplates } = await fetchSessionTemplates();
-const { data: allCoachAthletes } = await fetchAllAthleteSelectionInfo();
+// This part for fetching course data remains the same for 'course' mode
+const { data: course, pending: coursePending, error: courseError } = await useAsyncData(
+  `course-for-start-${courseId.value || 'quick'}`,
+  () => (mode.value === 'course' && courseId.value ? fetchCourseById(courseId.value).then(r => r.data.value) : Promise.resolve(null)),
+);
 
-const session = computed<Session | undefined>(() => {
-  if (Number.isNaN(sessionId.value))
-    return undefined;
-  if (mode.value === 'course' && course.value?.sessions) {
-    return course.value.sessions.find(s => s.id === sessionId.value);
-  }
-  if (mode.value === 'quick' && allSessionTemplates.value) {
-    return allSessionTemplates.value.find(t => t.id === sessionId.value);
-  }
-  return undefined;
-});
+// NEW: Fetch the session data separately, using the appropriate method based on the mode.
+const { data: session, pending: sessionPending, error: sessionError } = await useAsyncData<Session | null>(
+  `session-start-details-${sessionId.value}`,
+  () => {
+    if (Number.isNaN(sessionId.value))
+      return Promise.resolve(null);
+
+    // If it's a quick session, fetch the specific session instance directly.
+    if (mode.value === 'quick') {
+      return fetchSessionById(sessionId.value).then(r => r.data.value);
+    }
+
+    // For a course session, we can find it within the already-fetched course data.
+    if (course.value?.sessions) {
+      return Promise.resolve(course.value.sessions.find(s => s.id === sessionId.value) || null);
+    }
+
+    return Promise.resolve(null);
+  },
+  {
+    watch: [course], // Re-run if course data changes
+  },
+);
+
+const { data: allCoachAthletes, pending: athletesPending } = await fetchAllAthleteSelectionInfo();
+
+// REMOVED: The old `session` computed property and `allSessionTemplates` fetch are gone.
 
 const participatingAthletes = computed<Attendee[]>(() => {
   const athleteQuery = route.query.athletes;
   if (typeof athleteQuery !== 'string' || !athleteQuery || !allCoachAthletes.value) {
     return [];
   }
-
   const participatingUuids = athleteQuery.split(',');
-
   return allCoachAthletes.value.filter(athlete =>
     participatingUuids.includes(athlete.uuid),
   );
 });
 
-const pending = computed(() => !session.value || !allCoachAthletes.value);
-const error = computed(() => !session.value ? 'Session not found' : null);
+// MODIFIED: Updated pending and error states
+const pending = computed(() => sessionPending.value || athletesPending.value || (mode.value === 'course' && coursePending.value));
+const error = computed(() => sessionError.value || (mode.value === 'course' && courseError.value));
+
+// ... THE REST OF THE SCRIPT REMAINS EXACTLY THE SAME ...
+// (evaluations ref, computed properties like currentTask, overallProgress, etc. are all fine)
 
 const evaluations = ref<Record<string, EvaluationData>>({});
 const completedEvalKeys = ref<string[]>([]);

@@ -31,7 +31,8 @@
         </div>
         <div class="flex items-center space-x-3">
           <NuxtLink :to="backPath" class="px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
-            Back to Course
+            <span v-if="mode === 'course'">Back to Course</span>
+            <span v-else>Back to Dashboard</span>
           </NuxtLink>
           <button class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition">
             Export
@@ -240,15 +241,10 @@ const backPath = computed(() => {
   if (mode.value === 'course' && sessionReport.value?.course?.id) {
     return `/course-detail/${sessionReport.value.course.id}`;
   }
-  return '/dashboard';
+  return '/course-management';
 });
 
-const backPathOnError = computed(() => {
-  if (mode.value === 'course' && courseId.value) {
-    return `/course-detail/${courseId.value}`;
-  }
-  return '/dashboard';
-});
+const backPathOnError = computed(() => backPath.value);
 
 const enrolledAthleteUuids = computed(() => {
   if (mode.value !== 'course' || !sessionReport.value?.course?.attendees) {

@@ -148,7 +148,7 @@ export interface FinalEvaluationData {
 }
 
 export interface SessionReportData {
-  course: CourseDetail;
+  course: CourseDetail | null;
   session: Session;
   participatingAthletes: Attendee[];
   evaluations: Record<string, FinalEvaluationData>;
