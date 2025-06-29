@@ -1,5 +1,6 @@
+<!-- components/athlete/AthleteDetailView.vue -->
 <template>
-  <div class="bg-white rounded-2xl shadow p-6">
+  <div class="p-6">
     <div class="flex flex-col lg:flex-row">
       <div class="flex-1">
         <div class="flex justify-between items-start mb-4">
@@ -32,7 +33,6 @@
         </div>
 
         <div class="flex justify-center mb-4">
-          <!-- ANNOTATION: Changed class to reflect normalization -->
           <div class="w-24 h-24 md:w-28 md:h-28 overflow-hidden border-2 border-gray-200 rounded-full">
             <NuxtImg v-if="athlete.profileImageUrl" :src="athlete.profileImageUrl" alt="Profile" class="object-cover object-center w-full h-full" placeholder="/default-profile.jpg" />
             <div v-else class="bg-gray-200 w-full h-full flex items-center justify-center text-gray-500">
@@ -41,7 +41,6 @@
           </div>
         </div>
 
-        <!-- ANNOTATION: All data bindings are now based on the normalized AthleteDetail type -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-gray-600 text-sm mb-6">
           <div class="flex items-center">
             <Icon name="mdi:calendar-account" size="1.25rem" class="mr-2" /><span>Age: {{ athlete.age }} years</span>
@@ -68,19 +67,28 @@
       </div>
 
       <div class="flex-1 mt-6 lg:mt-0 lg:ml-8">
-        <!-- ANNOTATION: The skill assessment is now a read-only component -->
         <SkillAssessment v-if="skillScores" :skill-scores="skillScores" />
       </div>
     </div>
+
+    <ConfirmModal
+      :show="showConfirmDeleteModal"
+      title="Delete Athlete"
+      :message="`Are you sure you want to permanently delete ${athlete.name}? This action cannot be undone and will remove all associated data, including skill assessments.`"
+      confirm-text="Yes, Delete"
+      variant="danger"
+      @close="showConfirmDeleteModal = false"
+      @confirm="handleConfirmDelete"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
 import type { AthleteDetail, SkillScore } from '~/types/athlete';
+import { computed, ref } from 'vue';
 import { formatDateWithFallback } from '~/utils/dateUtils';
 import SkillAssessment from './SkillAssessment.vue';
 
-// ANNOTATION: Props and emits are now strongly typed using imported interfaces.
 const props = defineProps<{
   athlete: AthleteDetail;
   skillScores: SkillScore[];
@@ -91,18 +99,19 @@ const emit = defineEmits<{
   (e: 'editAthlete'): void;
 }>();
 
-// ANNOTATION: Computed properties handle data formatting, keeping the template clean.
+const showConfirmDeleteModal = ref(false);
+
 const formattedDateOfBirth = computed(() => formatDateWithFallback(props.athlete.dateOfBirth, 'Not specified'));
 const positionsText = computed(() => props.athlete.positions.length > 0 ? props.athlete.positions.map(p => p.name).join(', ') : 'Not specified');
 const groupsText = computed(() => props.athlete.groups.length > 0 ? props.athlete.groups.map(g => g.name).join(', ') : 'No group assigned');
 
 function onDeleteClick() {
-  const confirmed = confirm(
-    `⚠️ Delete Athlete\n\nAre you sure you want to permanently delete ${props.athlete.name}?\n\nThis action cannot be undone and will remove all associated data.`,
-  );
-  if (confirmed) {
-    emit('deleteAthlete');
-  }
+  showConfirmDeleteModal.value = true;
+}
+
+function handleConfirmDelete() {
+  emit('deleteAthlete');
+  showConfirmDeleteModal.value = false;
 }
 
 function openEditModal() {

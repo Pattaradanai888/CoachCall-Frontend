@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl shadow overflow-hidden" :class="{ 'opacity-50 pointer-events-none': loading }">
+  <div :class="{ 'opacity-50 pointer-events-none': loading }">
     <div class="px-6 py-4 border-b">
       <h2 class="text-lg font-semibold">
         Athletes

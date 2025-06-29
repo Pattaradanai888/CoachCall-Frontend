@@ -1,84 +1,122 @@
 <!-- pages/athlete-management.vue -->
+
 <template>
-  <div>
+  <div class="min-h-screen bg-gray-50">
     <SubNavbar />
-    <div class="max-w-[1140px] mx-auto my-10 px-4 lg:px-0">
+    <div class="max-w-[1140px] mx-auto py-8 px-4 lg:px-0">
       <!-- Header -->
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
         <div>
-          <h1 class="text-3xl font-bold">
+          <h1 class="text-3xl md:text-4xl font-bold text-gray-800">
             Athlete Management
           </h1>
-          <p class="text-gray-600">
+          <p class="text-gray-600 mt-1">
             Manage your athletes and track their progress
           </p>
         </div>
-        <button class="bg-red-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-red-800 transition" @click="openCreateModal">
-          <Icon name="mdi:plus" /> Create Athlete Profile
+        <button
+          class="mt-4 lg:mt-0 bg-red-700 text-white font-semibold py-3 px-5 rounded-xl flex items-center gap-2 hover:bg-red-800 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg shadow-red-700/30"
+          @click="openCreateModal"
+        >
+          <Icon name="mdi:plus" class="text-xl" />
+          Create Athlete Profile
         </button>
       </div>
 
       <!-- Loading / Error States -->
-      <div v-if="isLoading" class="text-center py-20 text-gray-500">
-        <Icon name="svg-spinners:clock" class="w-8 h-8 mx-auto" />
-        <p class="mt-2">
-          Loading data...
-        </p>
+      <div v-if="isLoading" class="text-center py-16 md:py-24 text-gray-500">
+        <div class="inline-block animate-pulse">
+          <Icon name="svg-spinners:clock" class="w-12 h-12 mx-auto text-red-700" />
+          <p class="mt-3 text-lg">
+            Loading data...
+          </p>
+        </div>
       </div>
-      <div v-else-if="error && !isDetailsLoading" class="text-center py-20 text-red-500 bg-red-50 rounded-lg">
-        <Icon name="mdi:alert-circle-outline" class="w-8 h-8 mx-auto" />
-        <p class="mt-2">
-          {{ error }}
-        </p>
-        <button class="mt-4 text-blue-600 hover:underline" @click="fetchAllData">
-          Retry
-        </button>
+
+      <div v-else-if="error && !isDetailsLoading" class="text-center py-16 md:py-24 bg-white rounded-2xl shadow-md">
+        <div class="max-w-md mx-auto">
+          <Icon name="mdi:alert-circle-outline" class="w-16 h-16 mx-auto text-red-500" />
+          <p class="mt-4 text-gray-700 text-lg font-medium">
+            {{ error }}
+          </p>
+          <button
+            class="mt-6 bg-red-700 text-white font-medium py-2.5 px-6 rounded-lg hover:bg-red-800 transition"
+            @click="fetchAllData"
+          >
+            Retry
+          </button>
+        </div>
       </div>
 
       <!-- Main Content -->
       <template v-else>
+        <!-- Stats Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div class="lg:col-span-2">
-            <StatOverview v-if="stats" :stats="stats" />
-            <div v-else class="h-full bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500">
-              Statistics are unavailable.
+            <div class="bg-white rounded-2xl shadow-md p-5 md:p-6 h-full">
+              <StatOverview v-if="stats" :stats="stats" />
+              <div v-else class="h-full flex flex-col items-center justify-center text-gray-500 py-12">
+                <Icon name="mdi:chart-line" class="w-12 h-12 opacity-50 mb-4" />
+                <p>Statistics are unavailable</p>
+              </div>
             </div>
           </div>
+
           <div class="lg:col-span-1">
-            <LatestAthleteCard v-if="latestAthlete" :athlete="latestAthlete" />
-            <div v-else class="h-full bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500">
-              No recent athletes.
+            <div class="bg-white rounded-2xl shadow-md p-5 md:p-6 h-full">
+              <LatestAthleteCard v-if="latestAthlete" :athlete="latestAthlete" />
+              <div v-else class="h-full flex flex-col items-center justify-center text-gray-500 py-12">
+                <Icon name="mdi:run" class="w-12 h-12 opacity-50 mb-4" />
+                <p>No recent athletes</p>
+              </div>
             </div>
           </div>
         </div>
 
+        <!-- Athlete List & Details -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Athlete List -->
           <div class="lg:col-span-1">
-            <AthleteList
-              :athletes="athletes"
-              :selected-uuid="selectedAthlete?.uuid ?? null"
-              :has-prev="page > 1"
-              :has-next="hasNextPage"
-              :loading="isListLoading"
-              @select-athlete="selectAthlete"
-              @prev-page="prevPage"
-              @next-page="nextPage"
-            />
-          </div>
-          <div class="lg:col-span-2">
-            <div v-if="isDetailsLoading" class="min-h-[400px] flex items-center justify-center bg-white rounded-2xl shadow">
-              <Icon name="svg-spinners:clock" class="w-8 h-8" />
-              <span class="ml-2">Loading details...</span>
+            <div class="bg-white rounded-2xl shadow-md p-5 md:p-6 h-full">
+              <AthleteList
+                :athletes="athletes"
+                :selected-uuid="selectedAthlete?.uuid ?? null"
+                :has-prev="page > 1"
+                :has-next="hasNextPage"
+                :loading="isListLoading"
+                @select-athlete="selectAthlete"
+                @prev-page="prevPage"
+                @next-page="nextPage"
+              />
             </div>
-            <AthleteDetail
-              v-else-if="selectedAthlete"
-              :athlete="selectedAthlete"
-              :skill-scores="selectedAthlete.skillScores || []"
-              @delete-athlete="handleDeleteAthlete"
-              @edit-athlete="openEditModal(selectedAthlete)"
-            />
-            <div v-else class="min-h-[400px] flex items-center justify-center bg-white rounded-2xl shadow text-gray-500">
-              Select an athlete to view their details.
+          </div>
+
+          <!-- Athlete Details -->
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-md p-5 md:p-6 min-h-[500px]">
+              <div v-if="isDetailsLoading" class="min-h-[400px] flex flex-col items-center justify-center">
+                <Icon name="svg-spinners:clock" class="w-12 h-12 text-red-700" />
+                <span class="mt-3 text-gray-600">Loading details...</span>
+              </div>
+
+              <AthleteDetail
+                v-else-if="selectedAthlete"
+                :key="`${selectedAthlete.uuid}-${athleteDetailKey}`"
+                :athlete="selectedAthlete"
+                :skill-scores="selectedAthlete.skillScores || []"
+                @delete-athlete="handleDeleteAthlete"
+                @edit-athlete="openEditModal(selectedAthlete)"
+              />
+
+              <div v-else class="min-h-[400px] flex flex-col items-center justify-center text-gray-500 py-12">
+                <Icon name="mdi:account-search" class="w-16 h-16 opacity-30 mb-4" />
+                <p class="text-lg text-center px-4">
+                  Select an athlete to view detailed information
+                </p>
+                <p class="mt-2 text-sm text-gray-400">
+                  Choose from the list on the left
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -114,7 +152,7 @@ const {
   isListLoading,
   isDetailsLoading,
   error,
-  selectAthlete, // This now accepts UUID
+  selectAthlete,
   prevPage,
   nextPage,
   fetchAllData,
@@ -124,6 +162,7 @@ const {
 // Modal State Management
 const isModalOpen = ref(false);
 const athleteToEdit = ref<AthleteDetail | null>(null);
+const athleteDetailKey = ref(0);
 
 function openCreateModal() {
   athleteToEdit.value = null;
@@ -135,16 +174,26 @@ function openEditModal(athlete: AthleteDetail) {
   isModalOpen.value = true;
 }
 
-// When the form is successfully submitted, just refetch everything for consistency
+// When the form is successfully submitted, refresh data and force component update
 async function onFormSubmitted() {
   isModalOpen.value = false;
   const previouslySelectedUuid = selectedAthlete.value?.uuid;
 
+  // Clear the selected athlete first to force a clean state
+  if (selectedAthlete.value) {
+    // Temporarily clear the selection
+    selectedAthlete.value = null;
+  }
+
+  // Refresh all data
   await fetchAllData();
 
-  // Try to re-select the athlete that was being edited
   if (previouslySelectedUuid) {
+    await nextTick();
+
     await selectAthlete(previouslySelectedUuid);
+
+    athleteDetailKey.value += 1;
   }
 }
 
@@ -155,3 +204,18 @@ async function handleDeleteAthlete() {
 
 await fetchAllData();
 </script>
+
+<style scoped>
+/* Smooth transitions for all interactive elements */
+button,
+.card {
+  transition: all 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .grid > div {
+    min-height: auto !important;
+  }
+}
+</style>

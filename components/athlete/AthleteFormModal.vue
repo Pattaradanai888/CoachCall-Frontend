@@ -48,7 +48,6 @@
                 </template>
               </AppFormSection>
 
-              <!-- ANNOTATION: The full collapsible section from your original code is preserved. -->
               <div class="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
                 <button type="button" class="w-full flex items-center justify-between text-left hover:bg-white/50 p-3 rounded-lg transition-all duration-200" :aria-expanded="showAdvancedInfo" aria-controls="advanced-info-section" @click="toggleAdvancedSection">
                   <div class="flex items-center">
@@ -83,7 +82,7 @@
                   </AppFormSection>
 
                   <AppFormSection title="Basketball Information" subtitle="(For players with experience)" icon="mdi:basketball" icon-color="text-orange-600" variant="orange" :columns="3">
-                    <div class="flex items-end space-x-2">
+                    <div class="flex items-start space-x-2">
                       <AppMultiSelect
                         name="positionIds"
                         label="Positions"
@@ -94,7 +93,7 @@
                         focus-color="orange"
                         class="flex-1"
                       />
-                      <button type="button" class="h-11 w-11 flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors" title="Manage all positions" @click="showManagePositionsModal = true">
+                      <button type="button" class="h-11 w-11 flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors mt-7" title="Manage all positions" @click="showManagePositionsModal = true">
                         <Icon name="mdi:cog" size="1.3rem" />
                       </button>
                     </div>
@@ -103,7 +102,7 @@
                   </AppFormSection>
 
                   <AppFormSection title="Team Assignment" subtitle="(Can be assigned later if unsure)" icon="mdi:account-group" icon-color="text-purple-600" variant="purple">
-                    <div class="flex items-end space-x-2">
+                    <div class="flex items-start space-x-2">
                       <AppMultiSelect
                         name="groupIds"
                         label="Team/Group"
@@ -114,7 +113,7 @@
                         focus-color="purple"
                         class="flex-1"
                       />
-                      <button type="button" class="h-11 w-11 flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors" title="Manage all groups" @click="showManageGroupsModal = true">
+                      <button type="button" class="h-11 w-11 flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors mt-7" title="Manage all groups" @click="showManageGroupsModal = true">
                         <Icon name="mdi:cog" size="1.3rem" />
                       </button>
                     </div>
@@ -153,7 +152,6 @@
   </transition>
 
   <ClientOnly>
-    <!-- Keep using the reusable modal -->
     <ManageTagsModal
       v-model:show="showManageGroupsModal"
       title="Manage Groups"
@@ -189,7 +187,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:show', val: boolean): void;
-  (e: 'submitted'): void;
+  (e: 'submitted'): void; // The only event needed for the parent
 }>();
 
 const athleteRef = computed(() => props.athlete ?? null);
@@ -209,7 +207,6 @@ const {
 
 const { $api } = useNuxtApp();
 
-// State for modals and dynamic options
 const showManageGroupsModal = ref(false);
 const showManagePositionsModal = ref(false);
 const showAdvancedInfo = ref(false);
@@ -286,6 +283,7 @@ function onRemovePhoto() {
 async function submitForm() {
   const success = await submit();
   if (success) {
+    // Announce success to the parent. The parent will refresh the data.
     emit('submitted');
     close();
   }
@@ -302,8 +300,6 @@ function resetFormToOriginal() {
 
 watch(() => props.show, async (isVisible) => {
   if (isVisible) {
-    // ** THE FIX IS HERE **
-    // 1. Set the correct state for the collapsible section.
     if (isEditMode.value) {
       showAdvancedInfo.value = true;
     }
@@ -311,16 +307,11 @@ watch(() => props.show, async (isVisible) => {
       showAdvancedInfo.value = false;
     }
 
-    // 2. Await the loading of all necessary dropdown options.
     await Promise.all([
       loadGroups(),
       loadPositions(),
     ]);
 
-    // 3. NOW that the options are loaded, explicitly reset the form.
-    // This forces VeeValidate to populate the fields with the athlete's data,
-    // and the AppMultiSelect components will now have the options they need to
-    // display the tags correctly.
     resetForm();
   }
 }, { immediate: true });

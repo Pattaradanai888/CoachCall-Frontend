@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
+  <div class="p-6 flex flex-col items-center">
     <h2 class="text-xl font-semibold mb-4">
       Latest Athlete
     </h2>
