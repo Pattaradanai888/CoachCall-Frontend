@@ -26,7 +26,7 @@
                 Add Athletes
               </h2>
               <p class="text-red-100 text-sm mt-1">
-                Add athletes to {{ course?.name || 'this course' }}
+                Select athletes for {{ course?.name || 'this quick session' }}
               </p>
             </div>
             <button
@@ -150,9 +150,9 @@
           <button
             class="px-4 py-2 text-sm font-medium text-white bg-red-700 border border-transparent rounded-md shadow-sm hover:bg-red-800 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none"
             :disabled="selectedAthletes.length === 0"
-            @click="addSelectedAthletes"
+            @click="saveChanges"
           >
-            Add {{ selectedAthletes.length }} Athlete{{ selectedAthletes.length !== 1 ? 's' : '' }}
+            Update Selection ({{ selectedAthletes.length }})
           </button>
         </div>
       </div>
@@ -163,12 +163,15 @@
 <script setup lang="ts">
 import type { AthleteSelectionInfo } from '~/types/athlete';
 import type { CourseDetail } from '~/types/course';
-import { computed, ref } from 'vue';
 
 const props = defineProps<{
   show: boolean;
   course: CourseDetail | null;
   allAthletes: AthleteSelectionInfo[];
+  initialSelectedUuids: {
+    type: PropType<string[]>;
+    default: () => [];
+  };
 }>();
 
 const emit = defineEmits<{
@@ -184,11 +187,8 @@ const selectedGroups = ref<string[]>([]);
 const selectedAthletes = ref<string[]>([]);
 
 watch(() => props.show, (isShowing) => {
-  if (isShowing && props.course) {
-    selectedAthletes.value = props.course.attendees.map(a => a.uuid);
-  }
-  else {
-    selectedAthletes.value = [];
+  if (isShowing) {
+    selectedAthletes.value = [...props.initialSelectedUuids];
   }
 });
 
@@ -221,7 +221,6 @@ const availableGroups = computed(() => {
 });
 
 function emitClose() {
-  selectedAthletes.value = [];
   searchQuery.value = '';
   selectedPositions.value = [];
   selectedGroups.value = [];
@@ -249,7 +248,7 @@ function toggleAthlete(athleteUuid: string) {
   }
 }
 
-function addSelectedAthletes() {
+function saveChanges() {
   emit('update-attendees', selectedAthletes.value);
   emitClose();
 }

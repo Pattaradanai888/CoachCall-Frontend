@@ -5,9 +5,9 @@ import type {
   Session,
   SessionCompletionPayload,
   SessionCreatePayload,
+  SessionReportData,
   Skill,
 } from '~/types/course';
-import { useAsyncData, useNuxtApp } from '#app';
 
 export function useCourses() {
   const { $api } = useNuxtApp();
@@ -134,9 +134,7 @@ export function useCourses() {
   };
 
   const fetchSessionReport = (sessionId: number) => {
-    // Note: The frontend uses SessionReportData from the useSessionReport composable
-    // which should be compatible. We tell useAsyncData to expect that shape.
-    return useAsyncData<any>( // Using `any` for simplicity, but you can define a matching interface
+    return useAsyncData<SessionReportData>(
       `session-report-${sessionId}`,
       () => $api(`/course/session/${sessionId}/report`),
     );

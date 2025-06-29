@@ -73,9 +73,12 @@
           </div>
         </div>
         <div class="flex justify-center my-3">
-          <button class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto">
+          <NuxtLink
+            :to="`/course-detail/quick/session/${template.id}`"
+            class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto"
+          >
             <p>Quick Session</p>
-          </button>
+          </NuxtLink>
         </div>
       </div>
     </div>
@@ -95,14 +98,12 @@
 
 <script lang="ts" setup>
 import type { SessionTemplate } from '~/types/course';
-import { PaginationBar } from '#components';
-import { computed, ref, watchEffect } from 'vue';
 
 const props = defineProps<{
   templates: SessionTemplate[] | null;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'open-create-modal'): void;
   (e: 'open-edit-modal', template: SessionTemplate): void;
   (e: 'remove-template', templateId: number): void;

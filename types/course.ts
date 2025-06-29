@@ -146,3 +146,11 @@ export interface FinalEvaluationData {
   notes: string;
   time: number;
 }
+
+export interface SessionReportData {
+  course: CourseDetail;
+  session: Session;
+  participatingAthletes: Attendee[];
+  evaluations: Record<string, FinalEvaluationData>;
+  totalSessionTime: number;
+}

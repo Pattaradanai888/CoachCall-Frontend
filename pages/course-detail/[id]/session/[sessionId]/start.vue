@@ -1,14 +1,22 @@
 <template>
   <div class="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8 mt-[4.5rem]">
-    <div v-if="!session || !course" class="text-center text-red-500 font-bold">
-      Loading session data or session not found...
+    <div v-if="pending || error || !session" class="flex flex-col items-center justify-center h-[70vh]">
+      <h1 v-if="pending" class="text-2xl font-bold text-gray-700">
+        Loading Session...
+      </h1>
+      <h1 v-else class="text-2xl font-bold text-gray-700">
+        Session Data Not Found
+      </h1>
+      <p class="text-gray-500 mt-2">
+        Please ensure the session exists and you have access.
+      </p>
     </div>
 
     <div v-else class="max-w-7xl mx-auto">
       <header class="bg-white p-6 rounded-xl shadow-md mb-6">
         <div class="flex justify-between items-start mb-6">
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-800">
-            {{ course.name }}
+            {{ course?.name || 'Quick Session' }}
           </h1>
           <div class="flex items-center space-x-4 flex-shrink-0">
             <span class="px-3 py-1 text-sm font-semibold text-gray-700 bg-gray-200 rounded-full flex items-center">
@@ -290,12 +298,6 @@
 
 <script lang="ts" setup>
 import type { Attendee, Session, SessionCompletionPayload, Task, TaskCompletionPayload } from '~/types/course';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import ConfirmModal from '~/components/ConfirmModal.vue';
-import NotificationModal from '~/components/NotificationModal.vue';
-import { useCourses } from '~/composables/useCourses';
-import { useSubmit } from '~/composables/useSubmit';
 
 type TimerState = 'ALL_RUNNING' | 'ALL_PAUSED' | 'MIXED';
 
@@ -309,24 +311,45 @@ interface EvaluationData {
 
 const route = useRoute();
 const router = useRouter();
-const { fetchCourseById, updateSessionStatus, saveSessionCompletions } = useCourses();
+const { fetchCourseById, updateSessionStatus, saveSessionCompletions, fetchSessionTemplates } = useCourses();
+const { fetchAllAthleteSelectionInfo } = useAthleteData();
 
+const mode = computed<'course' | 'quick'>(() => (route.params.id === 'quick' ? 'quick' : 'course'));
 const courseId = computed(() => Number(route.params.id));
 const sessionId = computed(() => Number(route.params.sessionId));
 
-const { data: course } = await fetchCourseById(courseId.value);
-const session = computed<Session | undefined>(() => course.value?.sessions.find(s => s.id === sessionId.value));
+const { data: course } = await useAsyncData(`course-${courseId.value || 'quick'}`, () =>
+  mode.value === 'course' && courseId.value ? fetchCourseById(courseId.value).then(r => r.data.value) : Promise.resolve(null));
+const { data: allSessionTemplates } = await fetchSessionTemplates();
+const { data: allCoachAthletes } = await fetchAllAthleteSelectionInfo();
+
+const session = computed<Session | undefined>(() => {
+  if (Number.isNaN(sessionId.value))
+    return undefined;
+  if (mode.value === 'course' && course.value?.sessions) {
+    return course.value.sessions.find(s => s.id === sessionId.value);
+  }
+  if (mode.value === 'quick' && allSessionTemplates.value) {
+    return allSessionTemplates.value.find(t => t.id === sessionId.value);
+  }
+  return undefined;
+});
 
 const participatingAthletes = computed<Attendee[]>(() => {
-  if (!course.value?.attendees)
-    return [];
   const athleteQuery = route.query.athletes;
-  if (typeof athleteQuery !== 'string' || !athleteQuery) {
-    return course.value.attendees;
+  if (typeof athleteQuery !== 'string' || !athleteQuery || !allCoachAthletes.value) {
+    return [];
   }
+
   const participatingUuids = athleteQuery.split(',');
-  return course.value.attendees.filter(athlete => participatingUuids.includes(athlete.uuid));
+
+  return allCoachAthletes.value.filter(athlete =>
+    participatingUuids.includes(athlete.uuid),
+  );
 });
+
+const pending = computed(() => !session.value || !allCoachAthletes.value);
+const error = computed(() => !session.value ? 'Session not found' : null);
 
 const evaluations = ref<Record<string, EvaluationData>>({});
 const completedEvalKeys = ref<string[]>([]);
@@ -698,12 +721,6 @@ function isAthleteFinished(athleteUuid: string): boolean {
   return evaluations.value[key]?.isFinished || false;
 }
 
-function isEvalOfficiallyCompleted(athleteUuid: string): boolean {
-  if (!currentTask.value)
-    return false;
-  return completedEvalKeys.value.includes(`${athleteUuid}-${currentTask.value.id}`);
-}
-
 function formatTime(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -711,7 +728,8 @@ function formatTime(totalSeconds: number): string {
 }
 
 function executeCancellation() {
-  router.push(`/course-detail/${courseId.value}/session/${sessionId.value}`);
+  const destination = mode.value === 'course' ? `/course-detail/${courseId.value}` : '/course-management';
+  router.push(destination);
 }
 
 function findTaskSequence(taskId: number): number {
@@ -732,7 +750,10 @@ function applyQuickScore(label: string) {
 function handleNotificationClose() {
   showNotificationModal.value = false;
   if (notificationType.value === 'success') {
-    router.push(`/course-detail/${courseId.value}/session/${sessionId.value}/report`);
+    const reportPath = mode.value === 'course'
+      ? `/course-detail/${courseId.value}/session/${sessionId.value}/report`
+      : `/course-detail/quick/session/${sessionId.value}/report`;
+    router.push(reportPath);
   }
 }
 
@@ -752,7 +773,7 @@ async function finishSession() {
       continue;
     const totalWeightedScore = task.skill_weights.reduce((sum, metric) => {
       const scoreForSkill = evalData.scores[metric.skill_id] || 0;
-      const weight = Number.parseFloat(metric.weight);
+      const weight = Number.parseFloat(String(metric.weight));
       return sum + (scoreForSkill * weight);
     }, 0);
     completions.push({
@@ -777,7 +798,13 @@ function handleCancel() {
 
 watch(currentEvalKey, () => {
   loadCurrentEvaluationForm();
-});
+}, { immediate: true });
+
+watch(participatingAthletes, (newAthletes) => {
+  if (newAthletes && newAthletes.length > 0) {
+    initializeEvaluations();
+  }
+}, { immediate: true });
 
 onMounted(() => {
   initializeEvaluations();

@@ -141,10 +141,11 @@
     </div>
 
     <!-- Add Athlete Modal -->
-    <AddAthleteToCourse
+    <AthleteSelectionModal
       :show="showAddModal"
       :course="course"
       :all-athletes="allAthletes || []"
+      :initial-selected-uuids="course?.attendees.map(a => a.uuid) || []"
       @close="closeAddAthleteModal"
       @update-attendees="handleUpdateAttendees"
     />
@@ -152,12 +153,6 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import AddAthleteToCourse from '~/components/course/course-overview/AddAthleteToCourse.vue';
-import { useAthleteData } from '~/composables/useAthleteData';
-import { useCourses } from '~/composables/useCourses';
-
 const route = useRoute();
 const { fetchCourseById, updateCourseAthletes } = useCourses();
 const { fetchAllAthleteSelectionInfo } = useAthleteData();
@@ -166,7 +161,8 @@ const courseId = Number(route.params.id);
 const { data: course, pending, error, refresh } = await fetchCourseById(courseId);
 const { data: allAthletes } = await fetchAllAthleteSelectionInfo();
 
-// --- Session Tab Logic (Restored from original) ---
+const showAddModal = ref(false);
+const showAthleteSearch = ref(false);
 const activeTab = ref<string>('To-do');
 const tabRefs = ref<HTMLElement[]>([]);
 const tabContainer = ref<HTMLElement | null>(null);
@@ -189,6 +185,18 @@ const filteredSessions = computed(() => {
   return course.value.sessions.filter(session => session.status === currentStatus);
 });
 
+function openAddAthleteModal() {
+  showAddModal.value = true;
+}
+
+function closeAddAthleteModal() {
+  showAddModal.value = false;
+}
+
+function toggleAthleteSearch() {
+  showAthleteSearch.value = !showAthleteSearch.value;
+}
+
 function setActiveTab(label: string) {
   activeTab.value = label;
 }
@@ -206,6 +214,21 @@ function updateIndicator() {
   });
 }
 
+async function handleUpdateAttendees(athleteUuids: string[]) {
+  if (!course.value)
+    return;
+
+  try {
+    await updateCourseAthletes(courseId, athleteUuids);
+    await refresh();
+  }
+  catch (e) {
+    console.error('Failed to update athletes:', e);
+    // Future enhancement: Use a toast notification for user feedback.
+  }
+}
+
+// --- 5. LIFECYCLE HOOKS & WATCHERS ---
 onMounted(() => {
   updateIndicator();
   if (tabContainer.value) {
@@ -215,36 +238,7 @@ onMounted(() => {
 
 watch(activeTab, updateIndicator, { flush: 'post' });
 
-// --- Modal State ---
-const showAddModal = ref(false);
-const showAthleteSearch = ref(false);
-
-function openAddAthleteModal() {
-  showAddModal.value = true;
-}
-
-function closeAddAthleteModal() {
-  showAddModal.value = false;
-}
-
-function toggleAthleteSearch() {
-  showAthleteSearch.value = !showAthleteSearch.value;
-}
-
-async function handleUpdateAttendees(athleteUuids: string[]) {
-  if (!course.value)
-    return;
-
-  try {
-    await updateCourseAthletes(courseId, athleteUuids);
-    await refresh(); // Re-fetch the course data to show the updated list
-  }
-  catch (e) {
-    console.error('Failed to update athletes:', e);
-    // You could add a user-facing error notification here
-  }
-}
-
+// NUXT-PRACTICE: useHead is the idiomatic way to manage the document head per-page.
 useHead({
   title: () => (course.value ? `Details: ${course.value.name}` : 'Course Details'),
 });
