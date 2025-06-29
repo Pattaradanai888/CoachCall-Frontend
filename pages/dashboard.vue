@@ -7,7 +7,7 @@
       </div>
       <div v-else class="w-full mx-7 lg:mx-0">
         <!-- Overview Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
           <div v-for="(card, index) in cards" :key="index" class="bg-white shadow-md p-4 rounded-md">
             <div class="flex items-center">
               <Icon :name="card.icon" size="1.25rem" class="mr-2" />
@@ -18,7 +18,7 @@
             <div class="text-2xl sm:text-3xl font-bold">
               {{ card.value }}
             </div>
-            <div class="flex items-center">
+            <div v-if="card.changeDirection && card.changePercentage" class="flex items-center">
               <Icon :name="card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'" size="1.25rem" :style="{ color: card.changeDirection === 'up' ? 'green' : 'red' }" />
               <div :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'" class="text-sm">
                 {{ card.changePercentage }}%
@@ -206,22 +206,11 @@ const cards = computed(() => [
     icon: 'mynaui:academic-hat-solid',
     label: 'Active Courses',
     value: activeCourses.value?.length ?? 0,
-    changeDirection: 'up',
-    changePercentage: 8,
   },
   {
     icon: 'mdi:calendar-account',
     label: 'Upcoming Sessions',
     value: events.value?.filter(e => getStatusInfo(e).label === 'Upcoming').length ?? 0,
-    changeDirection: 'down',
-    changePercentage: 5,
-  },
-  {
-    icon: 'material-symbols:flag',
-    label: 'Flagged Athletes',
-    value: 7,
-    changeDirection: 'up',
-    changePercentage: 10,
   },
 ]);
 

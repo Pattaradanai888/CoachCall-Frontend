@@ -1,5 +1,5 @@
 <template>
-  <div v-if="profile" class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+  <div v-if="profile" class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 min-h-64">
     <!-- Profile Info -->
     <div v-motion-slide-visible-once-left class="lg:col-span-1 w-full">
       <div class="text-center">
@@ -18,17 +18,6 @@
         <p class="text-gray-600 break-all text-sm sm:text-base">
           {{ profile.email }}
         </p>
-
-        <div class="mt-6 space-y-2">
-          <div class="flex items-center justify-center text-gray-700 text-sm sm:text-base">
-            <Icon name="mdi:book-outline" class="w-5 h-5 mr-2 flex-shrink-0" />
-            <span>Total Course: {{ totalCourses }}</span>
-          </div>
-          <div class="flex items-center justify-center text-gray-700 text-sm sm:text-base">
-            <Icon name="mdi:account-group" class="w-5 h-5 mr-2 flex-shrink-0" />
-            <span>Total Athlete: {{ totalAthletes }}</span>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -90,7 +79,5 @@ interface Achievement {
 defineProps<{
   profile: User | null;
   achievements: Achievement[];
-  totalCourses: number;
-  totalAthletes: number;
 }>();
 </script>
