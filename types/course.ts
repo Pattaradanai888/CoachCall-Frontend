@@ -80,6 +80,7 @@ export interface Session {
   name: string;
   description: string | null;
   scheduled_date: string;
+  completed_at: string | null;
   is_template: boolean;
   status: 'To Do' | 'Complete' | 'In Progress';
   tasks: SessionTask[];

@@ -12,15 +12,26 @@
 
     <!-- Session Details -->
     <div v-else class="bg-white rounded-lg p-6 lg:p-8 shadow-xl w-full">
-      <!-- Back Link -->
-      <NuxtLink v-if="mode === 'course'" :to="`/course-detail/${courseId}`" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors">
-        <Icon name="mdi:arrow-left" size="1.25rem" />
-        <span>Back to Course Details</span>
-      </NuxtLink>
-      <NuxtLink v-else to="/course-management" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors">
-        <Icon name="mdi:arrow-left" size="1.25rem" />
-        <span>Back to Course Management</span>
-      </NuxtLink>
+      <!-- Back Link and Cancel Button -->
+      <div class="flex justify-between items-center mb-6">
+        <NuxtLink v-if="mode === 'course'" :to="`/course-detail/${courseId}`" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold transition-colors">
+          <Icon name="mdi:arrow-left" size="1.25rem" />
+          <span>Back to Course Details</span>
+        </NuxtLink>
+        <NuxtLink v-else to="/course-management" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold transition-colors">
+          <Icon name="mdi:arrow-left" size="1.25rem" />
+          <span>Back to Course Management</span>
+        </NuxtLink>
+
+        <button
+          v-if="mode === 'quick' && session.status !== 'Complete'"
+          class="flex items-center space-x-2 text-red-600 hover:text-red-800 font-semibold transition-colors text-sm px-3 py-1.5 rounded-lg border border-red-300 hover:bg-red-50"
+          @click="handleCancelSession"
+        >
+          <Icon name="mdi:cancel" size="1rem" />
+          <span>Cancel & Delete Session</span>
+        </button>
+      </div>
 
       <!-- Session Header -->
       <div class="border-b pb-4 mb-6">
@@ -174,9 +185,11 @@
             v-if="totalPresent > 0"
             :to="startSessionUrl"
             class="px-8 py-4 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition shadow-lg text-lg flex items-center"
+            :disabled="isStarting"
+            @click="handleStartSession"
           >
             <Icon name="mdi:play-circle-outline" class="mr-2" size="1.5rem" />
-            Start Session ({{ totalPresent }})
+            {{ isStarting ? 'Starting...' : `Start Session (${totalPresent})` }}
           </NuxtLink>
           <div
             v-else
@@ -206,8 +219,10 @@
 import type { Attendee, Session } from '~/types/course';
 
 const route = useRoute();
-const { fetchCourseById, fetchSessionById } = useCourses();
+const router = useRouter();
+const { fetchCourseById, fetchSessionById, deleteSession, confirmSession } = useCourses();
 const { fetchAllAthleteSelectionInfo } = useAthleteData();
+const isStarting = ref(false);
 
 const mode = computed<'course' | 'quick'>(() => (route.params.id === 'quick' ? 'quick' : 'course'));
 const courseId = computed(() => (mode.value === 'course' ? Number(route.params.id) : null));
@@ -255,6 +270,7 @@ watch(session, (newSession) => {
       sessionAthletes.value = [...course.value.attendees];
     }
     else {
+      // For quick sessions, we start with an empty list which the user can populate.
       sessionAthletes.value = [];
     }
     presentAthleteIds.value = [];
@@ -296,6 +312,63 @@ function handleUpdateAttendees(updatedUuids: string[]) {
   sessionAthletes.value = allCoachAthletes.value.filter(athlete => updatedUuids.includes(athlete.uuid));
   presentAthleteIds.value = presentAthleteIds.value.filter(id => updatedUuids.includes(id));
   showAddAthleteModal.value = false;
+}
+
+async function handleStartSession() {
+  if (!session.value || isStarting.value)
+    return;
+
+  isStarting.value = true;
+  try {
+    // For quick sessions, we must first confirm them
+    if (mode.value === 'quick') {
+      await confirmSession(session.value.id);
+    }
+
+    // Now navigate to the start page
+    const athleteQuery = presentAthleteIds.value.join(',');
+    let basePath = '';
+    if (mode.value === 'course') {
+      basePath = `/course-detail/${courseId.value}/session/${sessionId.value}/start`;
+    }
+    else {
+      basePath = `/course-detail/quick/session/${sessionId.value}/start`;
+    }
+
+    const finalUrl = presentAthleteIds.value.length > 0
+      ? `${basePath}?athletes=${athleteQuery}`
+      : basePath;
+
+    await router.push(finalUrl);
+  }
+  catch (error) {
+    console.error('Failed to start session:', error);
+    // Add user-facing error notification
+  }
+  finally {
+    isStarting.value = false;
+  }
+}
+
+async function handleCancelSession() {
+  if (!session.value)
+    return;
+  // In a real app, you would use a more robust confirmation modal component
+  const confirmed = confirm(
+    'Are you sure you want to cancel and delete this quick session? This action cannot be undone.',
+  );
+  if (confirmed) {
+    try {
+      await deleteSession(session.value.id);
+      await router.push('/course-management');
+      // You could also show a success notification here
+    }
+    catch (e) {
+      console.error('Failed to delete session:', e);
+      // You could show an error notification here
+      alert('Failed to delete the session. Please try again.');
+    }
+  }
 }
 
 const startSessionUrl = computed(() => {

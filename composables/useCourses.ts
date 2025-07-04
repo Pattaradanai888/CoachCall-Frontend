@@ -165,9 +165,9 @@ export function useCourses() {
     });
   };
 
-  const deleteSessionTemplate = async (sessionId: number) => {
+  const deleteSession = async (sessionId: number) => {
     if (import.meta.server) {
-      throw new Error('deleteSessionTemplate should not be called during SSR');
+      throw new Error('deleteSession should not be called during SSR');
     }
 
     return $api<void>(`/course/sessions/${sessionId}`, {
@@ -254,6 +254,16 @@ export function useCourses() {
     });
   };
 
+  const confirmSession = async (sessionId: number) => {
+    if (import.meta.server) {
+      throw new Error('confirmSession should not be called during SSR');
+    }
+
+    return $api<Session>(`/course/session/${sessionId}/confirm`, {
+      method: 'POST',
+    });
+  };
+
   // Pure utility functions (SSR-safe)
   const findSessionById = (course: CourseDetail | null | undefined, sessionId: number): Session | null => {
     if (!course || !course.sessions) {
@@ -277,7 +287,8 @@ export function useCourses() {
     createSession,
     createSessionFromTemplate,
     updateSessionTemplate,
-    deleteSessionTemplate,
+    confirmSession,
+    deleteSession,
     createCourse,
     updateCourse,
     updateCourseArchiveStatus,

@@ -148,7 +148,7 @@ const {
   createSession,
   createSessionFromTemplate,
   updateSessionTemplate,
-  deleteSessionTemplate,
+  deleteSession,
   deleteCourse,
   updateCourseArchiveStatus,
 } = useCourses();
@@ -158,7 +158,7 @@ const { data: sessionTemplates, pending: templatesPending, refresh: refreshTempl
 const { data: availableSkills } = await fetchSkills();
 
 // Define performDeleteTemplate early so it can be used in functions below
-const { submit: performDeleteTemplate } = useSubmit(deleteSessionTemplate, {
+const { submit: performDeleteTemplate } = useSubmit(deleteSession, {
   onSuccess: () => {
     showNotification('Success', 'Template deleted successfully!', 'success');
     refreshTemplates();

@@ -26,7 +26,7 @@
             Session Report: {{ sessionReport.session?.name }}
           </h1>
           <p class="text-gray-500 mt-1 ml-10">
-            Completed on {{ sessionReport.session?.scheduled_date ? new Date(sessionReport.session.scheduled_date).toLocaleString() : 'N/A' }}
+            Completed on {{ completionDate }}
           </p>
         </div>
         <div class="flex items-center space-x-3">
@@ -233,6 +233,13 @@ const courseId = computed(() => (mode.value === 'course' ? Number(route.params.i
 const sessionId = computed(() => Number(route.params.sessionId));
 
 const { data: sessionReport, pending, error } = await fetchSessionReport(sessionId.value);
+
+const completionDate = computed(() => {
+  if (!sessionReport.value?.session)
+    return 'N/A';
+  const dateToFormat = sessionReport.value.session.completed_at || sessionReport.value.session.scheduled_date;
+  return new Date(dateToFormat).toLocaleString();
+});
 
 const selectedAthleteUuid = ref<string | null>(null);
 const detailedFilter = ref<string>('All');
