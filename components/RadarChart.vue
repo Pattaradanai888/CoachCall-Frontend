@@ -18,7 +18,10 @@
 import type { SkillPoint } from '~/types/athlete';
 
 interface Props {
-  skillData: SkillPoint[];
+  skillData: {
+    dayOne: SkillPoint[];
+    current: SkillPoint[];
+  };
   maxScore?: number;
   showAnimation?: boolean;
   theme?: 'light' | 'dark';
@@ -36,13 +39,15 @@ const Chart = await import('chart.js/auto').then(module => module.default);
 const chartCanvas = ref<HTMLCanvasElement>();
 let chartInstance: InstanceType<typeof Chart> | null = null;
 
-const hasData = computed(() => props.skillData && props.skillData.length > 0);
+const hasData = computed(() => props.skillData && props.skillData.current && props.skillData.current.length > 0);
 
 const themeColors = computed(() => {
   if (props.theme === 'dark') {
     return {
       primary: '#ef4444', // red-500
       primaryAlpha: 'rgba(239, 68, 68, 0.15)',
+      secondary: '#9ca3af', // gray-400
+      secondaryAlpha: 'rgba(156, 163, 175, 0.15)',
       grid: 'rgba(255, 255, 255, 0.1)',
       text: '#f3f4f6', // gray-100
       textSecondary: '#9ca3af', // gray-400
@@ -51,6 +56,8 @@ const themeColors = computed(() => {
   return {
     primary: '#dc2626', // red-600
     primaryAlpha: 'rgba(220, 38, 38, 0.15)',
+    secondary: '#9ca3af', // gray-400
+    secondaryAlpha: 'rgba(156, 163, 175, 0.2)',
     grid: 'rgba(0, 0, 0, 0.1)',
     text: '#374151', // gray-700
     textSecondary: '#6b7280', // gray-500
@@ -61,15 +68,34 @@ const chartData = computed(() => {
   if (!hasData.value)
     return null;
 
-  const labels = props.skillData.map(skill => skill.skillName);
-  const data = props.skillData.map(skill => skill.averageScore);
+  // Use 'current' skills as the source of truth for labels to ensure order
+  const labels = props.skillData.current.map(skill => skill.skillName);
+
+  // Create a map of Day One scores for reliable matching
+  const dayOneScoreMap = new Map(props.skillData.dayOne.map(s => [s.skillName, s.averageScore]));
+  const dayOneData = labels.map(label => dayOneScoreMap.get(label) ?? 0);
+  const currentData = props.skillData.current.map(skill => skill.averageScore);
 
   return {
     labels,
     datasets: [
       {
-        label: 'Skills',
-        data,
+        label: 'Day One',
+        data: dayOneData,
+        backgroundColor: themeColors.value.secondaryAlpha,
+        borderColor: themeColors.value.secondary,
+        borderWidth: 2,
+        pointBackgroundColor: themeColors.value.secondary,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 1.5,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.1,
+      },
+      {
+        label: 'Current',
+        data: currentData,
         backgroundColor: themeColors.value.primaryAlpha,
         borderColor: themeColors.value.primary,
         borderWidth: 2.5,
@@ -101,23 +127,34 @@ const chartOptions = computed(() => ({
   },
   plugins: {
     legend: {
-      display: false,
+      display: true,
+      position: 'top' as const,
+      labels: {
+        color: themeColors.value.text,
+        font: {
+          size: 12,
+          family: 'Inter, system-ui, sans-serif',
+        },
+        boxWidth: 12,
+        padding: 20,
+      },
     },
     tooltip: {
       enabled: true,
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       titleColor: '#ffffff',
       bodyColor: '#ffffff',
-      borderColor: themeColors.value.primary,
       borderWidth: 1,
       cornerRadius: 8,
-      displayColors: false,
+      displayColors: true,
       callbacks: {
         title: (context: any) => {
           return context[0].label;
         },
         label: (context: any) => {
-          return `Score: ${context.parsed.r.toFixed(1)}`;
+          const label = context.dataset.label || '';
+          const value = context.parsed.r.toFixed(1);
+          return `${label}: ${value}`;
         },
       },
     },
@@ -155,7 +192,6 @@ const chartOptions = computed(() => ({
         color: themeColors.value.text,
         padding: 0,
         callback(label: string) {
-          // Smart truncation for long labels
           if (label.length > 15) {
             return `${label.substring(0, 12)}...`;
           }
@@ -183,7 +219,6 @@ function createChart() {
   if (!chartCanvas.value || !hasData.value || !chartData.value)
     return;
 
-  // Destroy existing chart
   if (chartInstance) {
     chartInstance.destroy();
     chartInstance = null;
@@ -215,7 +250,7 @@ function updateChart() {
   }
 }
 
-// Watchers
+// Watchers and lifecycle hooks remain the same
 watch(
   () => [props.skillData, props.maxScore, props.theme],
   () => {
@@ -231,7 +266,6 @@ watch(
   { deep: true },
 );
 
-// Lifecycle
 onMounted(() => {
   if (hasData.value) {
     nextTick(() => createChart());
@@ -245,6 +279,3 @@ onBeforeUnmount(() => {
   }
 });
 </script>
-
-<style scoped>
-</style>

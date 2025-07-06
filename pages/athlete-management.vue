@@ -106,7 +106,7 @@
                   v-else-if="selectedAthlete"
                   :key="`${selectedAthlete.uuid}-${athleteDetailKey}`"
                   :athlete="selectedAthlete"
-                  :skill-scores="skillProgression?.current || []"
+                  :skill-progression="skillProgression"
                   @delete-athlete="handleDeleteAthlete"
                   @edit-athlete="openEditModal(selectedAthlete)"
                 />

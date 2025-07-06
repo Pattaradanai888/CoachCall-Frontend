@@ -2,15 +2,14 @@
   <div>
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-lg font-semibold">
-        Skill Assessment
+        Skill Progression
       </h3>
       <p class="text-sm text-gray-500">
         Read-only view
       </p>
     </div>
 
-    <div v-if="validSkills.length > 0">
-      <!-- SSR-Safe Radar Chart using our dedicated component -->
+    <div v-if="combinedSkills.length > 0">
       <ClientOnly>
         <div class="h-56 sm:h-64 w-full mb-6 flex items-center justify-center overflow-hidden">
           <div class="w-full h-full max-w-sm max-h-sm">
@@ -27,22 +26,34 @@
         </template>
       </ClientOnly>
 
-      <!-- Skill bars -->
       <div class="space-y-4">
-        <div v-for="skill in validSkills" :key="skill.skillName" class="flex items-center justify-between">
-          <span class="text-sm font-medium flex-none w-32">
+        <div v-for="skill in combinedSkills" :key="skill.skillId" class="flex items-center justify-between">
+          <span class="text-sm font-medium flex-none w-32 truncate" :title="skill.skillName">
             {{ skill.skillName }}
           </span>
           <div class="flex-1 flex items-center">
-            <div class="w-full h-2 bg-gray-200 rounded-lg overflow-hidden">
+            <div class="w-full h-2 bg-gray-200 rounded-lg overflow-hidden relative">
               <div
                 class="h-full bg-red-600 transition-all duration-300"
                 :style="{ width: `${(skill.currentScore / 100) * 100}%` }"
               />
+              <div
+                v-if="skill.dayOneScore > 0"
+                class="absolute top-[-2px] bottom-[-2px] w-0.5 bg-gray-700 opacity-60"
+                :style="{ left: `${(skill.dayOneScore / 100) * 100}%` }"
+                :title="`Day One Score: ${formatScore(skill.dayOneScore)}`"
+              />
             </div>
-            <span class="w-12 text-right text-sm ml-2 font-mono">
-              {{ formatScore(skill.currentScore) }}
-            </span>
+            <div class="w-28 text-right text-sm ml-2 font-mono flex flex-col items-end leading-tight">
+              <span>{{ formatScore(skill.currentScore) }}</span>
+              <span
+                v-if="skill.dayOneScore > 0"
+                class="text-xs"
+                :class="getChangeClass(skill.currentScore - skill.dayOneScore)"
+              >
+                {{ formatChange(skill.currentScore - skill.dayOneScore) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -57,29 +68,59 @@
 </template>
 
 <script lang="ts" setup>
-import type { SkillScore } from '~/types/athlete';
-import RadarChart from '~/components/RadarChart.vue'; // Import the component
+import type { AthleteSkillProgression, SkillScore } from '~/types/athlete';
+import RadarChart from '~/components/RadarChart.vue';
 
 const props = defineProps<{
-  skillScores: SkillScore[];
+  skillProgression: AthleteSkillProgression;
 }>();
 
-// Filter out invalid skill scores (this is still useful)
-const validSkills = computed(() => {
-  return props.skillScores.filter((skill) => {
-    return skill
+const combinedSkills = computed(() => {
+  const dayOneMap = new Map(
+    (props.skillProgression?.dayOne || []).map(s => [s.skillId, s.currentScore]),
+  );
+
+  return (props.skillProgression?.current || [])
+    .filter(skill =>
+      skill
       && skill.skillName
       && typeof skill.currentScore === 'number'
-      && !Number.isNaN(skill.currentScore);
-  });
+      && !Number.isNaN(skill.currentScore),
+    )
+    .map(currentSkill => ({
+      skillId: currentSkill.skillId,
+      skillName: currentSkill.skillName,
+      currentScore: currentSkill.currentScore,
+      dayOneScore: dayOneMap.get(currentSkill.skillId) ?? 0,
+    }));
 });
 
 const chartData = computed(() => {
-  return validSkills.value.map(skill => ({
+  const toSkillPoint = (skill: SkillScore) => ({
     skillName: skill.skillName,
     averageScore: skill.currentScore,
-  }));
+  });
+
+  return {
+    dayOne: (props.skillProgression?.dayOne || []).map(toSkillPoint),
+    current: (props.skillProgression?.current || []).map(toSkillPoint),
+  };
 });
+
+function formatChange(change: number): string {
+  if (change === 0)
+    return '±0.0';
+  const sign = change > 0 ? '+' : '';
+  return `${sign}${change.toFixed(1)}`;
+}
+
+function getChangeClass(change: number): string {
+  if (change > 0)
+    return 'text-green-600';
+  if (change < 0)
+    return 'text-orange-600';
+  return 'text-gray-500';
+}
 
 function formatScore(score: number): string {
   if (typeof score !== 'number' || Number.isNaN(score)) {
@@ -88,40 +129,3 @@ function formatScore(score: number): string {
   return score.toFixed(1);
 }
 </script>
-
-<style scoped>
-/* Custom slider styling */
-input[type='range']::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #9c1313;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-input[type='range']::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #9c1313;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-input[type='range']::-webkit-slider-track {
-  background: #e5e7eb;
-  height: 8px;
-  border-radius: 4px;
-}
-
-input[type='range']::-moz-range-track {
-  background: #e5e7eb;
-  height: 8px;
-  border-radius: 4px;
-  border: none;
-}
-</style>

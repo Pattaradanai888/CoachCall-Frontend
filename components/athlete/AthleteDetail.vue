@@ -70,7 +70,7 @@
       <div class="flex-1">
         <!-- Apply the container styling here in the parent -->
         <div class="bg-gray-50 rounded-2xl p-6 h-full">
-          <SkillAssessment v-if="skillScores" :skill-scores="skillScores" />
+          <SkillAssessment v-if="skillProgression" :skill-progression="skillProgression" />
         </div>
       </div>
     </div>
@@ -89,14 +89,14 @@
 
 <script lang="ts" setup>
 // The script tag is unchanged
-import type { AthleteDetail, SkillScore } from '~/types/athlete';
+import type { AthleteDetail, AthleteSkillProgression } from '~/types/athlete';
 import { computed, ref } from 'vue';
 import { formatDateWithFallback } from '~/utils/dateUtils';
 import SkillAssessment from './SkillAssessment.vue';
 
 const props = defineProps<{
   athlete: AthleteDetail;
-  skillScores: SkillScore[];
+  skillProgression: AthleteSkillProgression;
 }>();
 
 const emit = defineEmits<{
