@@ -184,3 +184,24 @@ export const EXPERIENCE_LEVELS = [
   { value: '3', label: 'Advanced' },
   { value: '4', label: 'Expert' },
 ];
+
+export interface SkillPoint {
+  skillName: string;
+  averageScore: number;
+}
+
+export interface AthleteSkillProgression {
+  dayOne: SkillScore[];
+  current: SkillScore[];
+}
+
+export interface SkillProgressionResponsePoint {
+  skill_id: number;
+  skill_name: string;
+  average_score: string;
+}
+
+export interface AthleteSkillProgressionResponse {
+  day_one: SkillProgressionResponsePoint[];
+  current: SkillProgressionResponsePoint[];
+}

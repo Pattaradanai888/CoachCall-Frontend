@@ -116,37 +116,52 @@
 
         <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
           <h2 class="text-xl font-bold text-gray-800 mb-4">
-            Skill Assessment
+            Skill Impact Assessment
           </h2>
           <div v-if="!selectedAthlete" class="flex items-center justify-center h-full text-gray-500">
             <p>Select an athlete to see their skill breakdown.</p>
           </div>
           <div v-else>
             <div class="mb-8 p-4 bg-gray-50 rounded-lg">
-              <p class="text-center font-semibold text-gray-600">
-                Radar Chart Visualization
-              </p>
-              <p class="text-center text-sm text-gray-400 mt-2">
-                (A library like Chart.js + vue-chartjs would be used here)
-              </p>
-              <div class="h-48 flex items-center justify-center">
-                <Icon name="mdi:chart-radar" size="4rem" class="text-gray-300" />
+              <div class="h-80 flex items-center justify-center">
+                <RadarChart
+                  v-if="skillChartData.length > 0"
+                  :skill-data="skillChartData"
+                  :height="300"
+                  class="w-full"
+                />
+                <div v-else class="text-gray-400 text-center">
+                  <Icon name="mdi:chart-radar" size="4rem" class="mx-auto mb-2" />
+                  <p>No skill data available for this athlete</p>
+                </div>
               </div>
-            </div>
 
-            <div class="space-y-4">
-              <div v-for="skill in skillAssessment" :key="skill.name" class="grid grid-cols-6 gap-4 items-center">
-                <p class="col-span-1 font-semibold text-gray-700 text-sm">
-                  {{ skill.name }}
-                </p>
-                <div class="col-span-4">
-                  <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-red-600 h-2.5 rounded-full" :style="{ width: `${skill.averageScore}%` }" />
+              <div class="space-y-4 mt-6">
+                <div v-for="(skill, index) in skillComparison.after" :key="skill.skill_id" class="grid grid-cols-6 gap-4 items-center">
+                  <p class="col-span-2 font-semibold text-gray-700 text-sm">
+                    {{ skill.skill_name }}
+                  </p>
+                  <div class="col-span-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                      <div class="bg-red-600 h-2.5 rounded-full" :style="{ width: `${skill.average_score}%` }" />
+                    </div>
+                  </div>
+                  <div class="col-span-1 text-right font-mono text-gray-800 flex items-baseline justify-end">
+                    <p class="font-bold">
+                      {{ skill.average_score.toFixed(1) }}
+                    </p>
+                    <span
+                      class="text-xs ml-1"
+                      :class="{
+                        'text-green-600': getSkillChange(index) > 0,
+                        'text-red-600': getSkillChange(index) < 0,
+                        'text-gray-500': getSkillChange(index) === 0,
+                      }"
+                    >
+                      ({{ getSkillChange(index) >= 0 ? '+' : '' }}{{ getSkillChange(index).toFixed(1) }})
+                    </span>
                   </div>
                 </div>
-                <p class="col-span-1 text-right font-mono font-bold text-gray-800">
-                  {{ skill.averageScore.toFixed(1) }}
-                </p>
               </div>
             </div>
           </div>
@@ -226,10 +241,12 @@
 </template>
 
 <script lang="ts" setup>
+import type { SessionSkillComparison } from '~/types/analytics';
+import type { SkillPoint } from '~/types/athlete';
+
 const { fetchSessionReport } = useCourses();
 const route = useRoute();
 const mode = computed<'course' | 'quick'>(() => (route.params.id === 'quick' ? 'quick' : 'course'));
-const courseId = computed(() => (mode.value === 'course' ? Number(route.params.id) : null));
 const sessionId = computed(() => Number(route.params.sessionId));
 
 const { data: sessionReport, pending, error } = await fetchSessionReport(sessionId.value);
@@ -350,34 +367,33 @@ const selectedAthlete = computed(() => {
   return sessionReport.value.participatingAthletes.find(a => a.uuid === selectedAthleteUuid.value);
 });
 
-const skillAssessment = computed(() => {
-  if (!selectedAthleteUuid.value || !sessionReport.value)
+const skillComparison = computed<SessionSkillComparison>(() => {
+  if (!selectedAthleteUuid.value || !sessionReport.value?.skillComparisonData) {
+    return { before: [], after: [] };
+  }
+  return sessionReport.value.skillComparisonData[selectedAthleteUuid.value] || { before: [], after: [] };
+});
+
+const skillChartData = computed<SkillPoint[]>(() => {
+  const comparison = skillComparison.value;
+  if (!comparison.after.length) {
     return [];
-
-  const athleteEvals = Object.entries(sessionReport.value.evaluations)
-    .filter(([key]) => key.startsWith(`${selectedAthleteUuid.value}-`))
-    .map(([, evaluation]) => evaluation);
-
-  const skillTotals: Record<string, { total: number; count: number; name: string }> = {};
-
-  athleteEvals.forEach((evalItem) => {
-    Object.entries(evalItem.scores).forEach(([skillIdStr, score]) => {
-      const skillId = Number(skillIdStr);
-      const skillName = getSkillName(skillId);
-
-      if (!skillTotals[skillId]) {
-        skillTotals[skillId] = { total: 0, count: 0, name: skillName };
-      }
-      skillTotals[skillId].total += score;
-      skillTotals[skillId].count++;
-    });
-  });
-
-  return Object.values(skillTotals).map(data => ({
-    name: data.name,
-    averageScore: data.count > 0 ? data.total / data.count : 0,
+  }
+  return comparison.after.map(skill => ({
+    skillName: skill.skill_name,
+    averageScore: skill.average_score,
   }));
 });
+
+function getSkillChange(index: number): number {
+  const comparison = skillComparison.value;
+  if (index < 0 || index >= comparison.after.length)
+    return 0;
+
+  const afterScore = comparison.after[index].average_score;
+  const beforeScore = comparison.before[index].average_score;
+  return afterScore - beforeScore;
+}
 
 const filteredDetailedEvaluations = computed(() => {
   if (!sessionReport.value)

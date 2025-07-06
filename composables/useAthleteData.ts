@@ -1,5 +1,5 @@
 // composables/useAthleteData.ts
-import type { AthleteCreationStatus, AthleteDetail, AthleteListEntry, AthleteListResponse, AthleteResponse, AthleteSelectionInfo } from '~/types/athlete';
+import type { AthleteCreationStatus, AthleteDetail, AthleteListEntry, AthleteListResponse, AthleteResponse, AthleteSelectionInfo, AthleteSkillProgression, AthleteSkillProgressionResponse, SkillProgressionResponsePoint, SkillScore } from '~/types/athlete';
 
 function mapBackendAthleteToFrontend(backendAthlete: AthleteResponse): AthleteDetail {
   return {
@@ -58,7 +58,7 @@ export function useAthleteData() {
   // --- API Functions ---
   async function fetchStats() {
     try {
-      stats.value = await $api<AthleteCreationStatus>('/athlete/stats');
+      stats.value = await $api<AthleteCreationStatus>('/analytics/athletes/stats');
     }
     catch (e) {
       console.error('Failed to fetch stats:', e);
@@ -181,6 +181,42 @@ export function useAthleteData() {
     );
   };
 
+  const fetchAthleteSkillProgression = (athleteUuid: globalThis.Ref<string | null | undefined>) => {
+    const key = computed(() =>
+      athleteUuid.value ? `athlete-skill-progression-${athleteUuid.value}` : 'athlete-skill-progression-empty',
+    );
+
+    return useAsyncData<AthleteSkillProgression, AthleteSkillProgressionResponse>(
+      key,
+      () => {
+        if (!athleteUuid.value) {
+          return Promise.resolve({ dayOne: [], current: [] } as AthleteSkillProgression);
+        }
+        return $api<AthleteSkillProgressionResponse>(`/athlete/${athleteUuid.value}/skill-progression`);
+      },
+      {
+        default: () => ({ dayOne: [], current: [] }),
+        transform(data: AthleteSkillProgressionResponse): AthleteSkillProgression {
+          if (!data || !data.day_one || !data.current)
+            return { dayOne: [], current: [] };
+
+          const toSkillScore = (point: SkillProgressionResponsePoint): SkillScore => ({
+            skillId: point.skill_id,
+            skillName: point.skill_name || 'Unnamed Skill',
+            // The key must be 'currentScore' to match the SkillScore interface.
+            currentScore: Number.parseFloat(String(point.average_score || '0')),
+          });
+
+          return {
+            dayOne: data.day_one.map(toSkillScore),
+            current: data.current.map(toSkillScore),
+          };
+        },
+        watch: [athleteUuid],
+      },
+    );
+  };
+
   return {
     athletes,
     stats,
@@ -198,5 +234,6 @@ export function useAthleteData() {
     nextPage,
     deleteSelectedAthlete,
     fetchAllAthleteSelectionInfo,
+    fetchAthleteSkillProgression,
   };
 }

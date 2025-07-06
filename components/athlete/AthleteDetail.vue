@@ -1,7 +1,8 @@
-<!-- components/athlete/AthleteDetailView.vue -->
+<!-- components/athlete/AthleteDetail.vue -->
 <template>
-  <div class="p-6">
-    <div class="flex flex-col lg:flex-row">
+  <div>
+    <!-- A simple root wrapper for the component's template -->
+    <div class="flex flex-col lg:flex-row gap-6 lg:gap-x-8">
       <div class="flex-1">
         <div class="flex justify-between items-start mb-4">
           <h2 class="text-2xl font-semibold">
@@ -66,8 +67,11 @@
         </div>
       </div>
 
-      <div class="flex-1 mt-6 lg:mt-0 lg:ml-8">
-        <SkillAssessment v-if="skillScores" :skill-scores="skillScores" />
+      <div class="flex-1">
+        <!-- Apply the container styling here in the parent -->
+        <div class="bg-gray-50 rounded-2xl p-6 h-full">
+          <SkillAssessment v-if="skillScores" :skill-scores="skillScores" />
+        </div>
       </div>
     </div>
 
@@ -84,6 +88,7 @@
 </template>
 
 <script lang="ts" setup>
+// The script tag is unchanged
 import type { AthleteDetail, SkillScore } from '~/types/athlete';
 import { computed, ref } from 'vue';
 import { formatDateWithFallback } from '~/utils/dateUtils';

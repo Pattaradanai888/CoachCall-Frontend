@@ -1,4 +1,5 @@
 // types/course.ts
+import type { SessionSkillComparison } from './analytics';
 
 export interface Skill {
   id: number;
@@ -152,6 +153,7 @@ export interface SessionReportData {
   course: CourseDetail | null;
   session: Session;
   participatingAthletes: Attendee[];
+  skillComparisonData: Record<string, SessionSkillComparison>;
   evaluations: Record<string, FinalEvaluationData>;
   totalSessionTime: number;
 }

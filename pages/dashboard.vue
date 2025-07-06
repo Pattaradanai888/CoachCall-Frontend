@@ -250,20 +250,17 @@ const agendaSessions = computed(() => {
   if (!events.value)
     return [];
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-
-  const sevenDaysFromNow = new Date(tomorrow);
-  sevenDaysFromNow.setDate(tomorrow.getDate() + 6);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return events.value
     .filter((event) => {
+      const isUpcoming = getStatusInfo(event).label === 'Upcoming';
       const eventDate = createSafeDate(event.date);
-      return getStatusInfo(event).label === 'Upcoming'
-        && eventDate >= tomorrow
-        && eventDate <= sevenDaysFromNow;
+      const isOnOrAfterToday = eventDate >= today;
+      return isUpcoming && isOnOrAfterToday;
     })
+    // Sort all upcoming events by date, soonest first.
     .sort((a, b) => createSafeDate(a.date).getTime() - createSafeDate(b.date).getTime());
 });
 

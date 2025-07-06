@@ -26,8 +26,8 @@
       <!-- Loading / Error States -->
       <div v-if="isLoading" class="text-center py-16 md:py-24 text-gray-500">
         <div class="inline-block animate-pulse">
-          <Icon name="svg-spinners:clock" class="w-12 h-12 mx-auto text-red-700" />
-          <p class="mt-3 text-lg">
+          <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+          <p class="text-lg">
             Loading data...
           </p>
         </div>
@@ -35,7 +35,9 @@
 
       <div v-else-if="error && !isDetailsLoading" class="text-center py-16 md:py-24 bg-white rounded-2xl shadow-md">
         <div class="max-w-md mx-auto">
-          <Icon name="mdi:alert-circle-outline" class="w-16 h-16 mx-auto text-red-500" />
+          <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+            <Icon name="mdi:alert-circle-outline" class="w-8 h-8 text-red-500" />
+          </div>
           <p class="mt-4 text-gray-700 text-lg font-medium">
             {{ error }}
           </p>
@@ -94,29 +96,38 @@
           <!-- Athlete Details -->
           <div class="lg:col-span-2">
             <div class="bg-white rounded-2xl shadow-md p-5 md:p-6 min-h-[500px]">
-              <div v-if="isDetailsLoading" class="min-h-[400px] flex flex-col items-center justify-center">
-                <Icon name="svg-spinners:clock" class="w-12 h-12 text-red-700" />
-                <span class="mt-3 text-gray-600">Loading details...</span>
-              </div>
+              <ClientOnly>
+                <div v-if="isDetailsLoading || isSkillsLoading" class="min-h-[400px] flex flex-col items-center justify-center">
+                  <div class="w-12 h-12 mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+                  <span class="text-gray-600">Loading details...</span>
+                </div>
 
-              <AthleteDetail
-                v-else-if="selectedAthlete"
-                :key="`${selectedAthlete.uuid}-${athleteDetailKey}`"
-                :athlete="selectedAthlete"
-                :skill-scores="selectedAthlete.skillScores || []"
-                @delete-athlete="handleDeleteAthlete"
-                @edit-athlete="openEditModal(selectedAthlete)"
-              />
+                <AthleteDetail
+                  v-else-if="selectedAthlete"
+                  :key="`${selectedAthlete.uuid}-${athleteDetailKey}`"
+                  :athlete="selectedAthlete"
+                  :skill-scores="skillProgression?.current || []"
+                  @delete-athlete="handleDeleteAthlete"
+                  @edit-athlete="openEditModal(selectedAthlete)"
+                />
 
-              <div v-else class="min-h-[400px] flex flex-col items-center justify-center text-gray-500 py-12">
-                <Icon name="mdi:account-search" class="w-16 h-16 opacity-30 mb-4" />
-                <p class="text-lg text-center px-4">
-                  Select an athlete to view detailed information
-                </p>
-                <p class="mt-2 text-sm text-gray-400">
-                  Choose from the list on the left
-                </p>
-              </div>
+                <div v-else class="min-h-[400px] flex flex-col items-center justify-center text-gray-500 py-12">
+                  <Icon name="mdi:account-search" class="w-16 h-16 opacity-30 mb-4" />
+                  <p class="text-lg text-center px-4">
+                    Select an athlete to view detailed information
+                  </p>
+                  <p class="mt-2 text-sm text-gray-400">
+                    Choose from the list on the left
+                  </p>
+                </div>
+
+                <template #fallback>
+                  <div class="min-h-[400px] flex flex-col items-center justify-center">
+                    <div class="w-12 h-12 mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+                    <span class="text-gray-600">Loading...</span>
+                  </div>
+                </template>
+              </ClientOnly>
             </div>
           </div>
         </div>
@@ -157,6 +168,7 @@ const {
   nextPage,
   fetchAllData,
   deleteSelectedAthlete,
+  fetchAthleteSkillProgression,
 } = useAthleteData();
 
 // Modal State Management
@@ -173,6 +185,9 @@ function openEditModal(athlete: AthleteDetail) {
   athleteToEdit.value = athlete;
   isModalOpen.value = true;
 }
+
+const selectedAthleteUuid = computed(() => selectedAthlete.value?.uuid);
+const { data: skillProgression, pending: isSkillsLoading } = fetchAthleteSkillProgression(selectedAthleteUuid);
 
 // When the form is successfully submitted, refresh data and force component update
 async function onFormSubmitted() {
@@ -202,7 +217,10 @@ async function handleDeleteAthlete() {
   await deleteSelectedAthlete();
 }
 
-await fetchAllData();
+// Only fetch data on client-side to avoid hydration issues
+onMounted(async () => {
+  await fetchAllData();
+});
 </script>
 
 <style scoped>
