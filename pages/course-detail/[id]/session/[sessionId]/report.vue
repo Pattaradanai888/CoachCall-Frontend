@@ -25,9 +25,16 @@
             <Icon name="mdi:chart-box-outline" class="mr-3 text-gray-700" />
             Session Report: {{ sessionReport.session?.name }}
           </h1>
-          <p class="text-gray-500 mt-1 ml-10">
-            Completed on {{ completionDate }}
-          </p>
+          <ClientOnly>
+            <p class="text-gray-500 mt-1 ml-10">
+              Completed on {{ completionDate }}
+            </p>
+            <template #fallback>
+              <p class="text-gray-500 mt-1 ml-10 animate-pulse">
+                Loading date...
+              </p>
+            </template>
+          </ClientOnly>
         </div>
         <div class="flex items-center space-x-3">
           <NuxtLink :to="backPath" class="px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
@@ -125,9 +132,9 @@
             <div class="mb-8 p-4 bg-gray-50 rounded-lg">
               <div class="h-80 flex items-center justify-center">
                 <RadarChart
-                  v-if="skillChartData.length > 0"
-                  :skill-data="skillChartData"
-                  :height="300"
+                  v-if="chartComparisonData.after.length > 0"
+                  :skill-data="chartComparisonData"
+                  :max-score="100"
                   class="w-full"
                 />
                 <div v-else class="text-gray-400 text-center">
@@ -374,15 +381,12 @@ const skillComparison = computed<SessionSkillComparison>(() => {
   return sessionReport.value.skillComparisonData[selectedAthleteUuid.value] || { before: [], after: [] };
 });
 
-const skillChartData = computed<SkillPoint[]>(() => {
-  const comparison = skillComparison.value;
-  if (!comparison.after.length) {
-    return [];
-  }
-  return comparison.after.map(skill => ({
-    skillName: skill.skill_name,
-    averageScore: skill.average_score,
-  }));
+const chartComparisonData = computed(() => {
+  const data: { [key: string]: SkillPoint[] } = {
+    before: skillComparison.value.before.map(s => ({ skillName: s.skill_name, averageScore: s.average_score })),
+    after: skillComparison.value.after.map(s => ({ skillName: s.skill_name, averageScore: s.average_score })),
+  };
+  return data;
 });
 
 function getSkillChange(index: number): number {
