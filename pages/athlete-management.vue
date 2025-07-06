@@ -15,7 +15,7 @@
           </p>
         </div>
         <button
-          class="mt-4 lg:mt-0 bg-red-700 text-white font-semibold py-3 px-5 rounded-xl flex items-center gap-2 hover:bg-red-800 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg shadow-red-700/30"
+          class="mt-4 lg:mt-0 bg-[#9C1313] text-white font-semibold py-3 px-5 rounded-xl flex items-center gap-2 hover:bg-[#7A0F0F] transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg shadow-red-700/30"
           @click="openCreateModal"
         >
           <Icon name="mdi:plus" class="text-xl" />

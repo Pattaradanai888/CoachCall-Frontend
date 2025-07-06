@@ -138,7 +138,7 @@
                 <button v-if="isEditMode" type="button" class="px-6 py-3 border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-medium" @click="resetFormToOriginal">
                   Reset
                 </button>
-                <button type="submit" class="bg-red-700 text-white px-8 py-3 rounded-lg hover:bg-red-800 transition-colors font-semibold shadow-lg disabled:opacity-50" :disabled="isSubmitting">
+                <button type="submit" class="bg-[#9C1313] text-white px-8 py-3 rounded-lg hover:bg-[#7A0F0F transition-colors font-semibold shadow-lg disabled:opacity-50" :disabled="isSubmitting">
                   <Icon v-if="isSubmitting" name="svg-spinners:ring-resize" class="inline mr-2" />
                   <Icon v-else :name="isEditMode ? 'mdi:content-save' : 'mdi:account-plus'" class="inline mr-2" />
                   {{ submitButtonText }}

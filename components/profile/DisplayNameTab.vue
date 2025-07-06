@@ -31,7 +31,7 @@
             v-model="newFullname"
             type="text"
             placeholder="Enter new display name"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#9C1313] focus:border-transparent outline-none"
             @input="validateFullname"
           >
           <p v-if="fullnameError" class="text-red-500 text-sm mt-1">

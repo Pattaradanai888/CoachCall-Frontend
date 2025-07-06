@@ -22,7 +22,7 @@
         :step="step"
         :accept="accept"
         :class="inputClasses(errorMessage)"
-        class="w-full border-2 h-11 px-4 rounded-lg shadow-sm transition-colors"
+        class="w-full border-2 h-11 px-4 rounded-lg shadow-sm transition-colors outline-none"
         @change="handleChange"
       >
 
@@ -31,7 +31,7 @@
         v-else-if="type === 'select'"
         v-bind="field"
         :class="inputClasses(errorMessage)"
-        class="w-full border-2 h-11 px-4 rounded-lg shadow-sm transition-colors"
+        class="w-full border-2 h-11 px-4 rounded-lg shadow-sm transition-colors outline-none"
       >
         <option v-for="option in options" :key="option.value" :value="option.value">
           {{ option.label }}
@@ -45,7 +45,7 @@
         :placeholder="placeholder"
         :rows="rows || 3"
         :class="inputClasses(errorMessage)"
-        class="w-full border-2 px-4 py-3 rounded-lg shadow-sm transition-colors resize-none"
+        class="w-full border-2 h-11 px-4 rounded-lg shadow-sm transition-colors outline-none"
       />
 
       <!-- Error message -->
@@ -90,7 +90,6 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   type: 'text',
-  focusColor: 'red',
 });
 
 const emit = defineEmits<{
@@ -100,7 +99,7 @@ const emit = defineEmits<{
 function inputClasses(errorMessage?: string) {
   const base = errorMessage
     ? `border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500`
-    : `border-gray-300 focus:ring-2 focus:ring-${props.focusColor}-500 focus:border-${props.focusColor}-500`;
+    : `border-gray-300 focus:ring-2 focus:ring-[#9C1313] focus:border-[#9C1313]`;
 
   return props.readonly
     ? `${base} bg-gray-50 text-gray-600 cursor-not-allowed`

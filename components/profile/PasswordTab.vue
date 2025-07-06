@@ -20,7 +20,7 @@
               :type="showPasswords.current ? 'text' : 'password'"
               placeholder="Enter current password"
               autocomplete="current-password"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#9C1313] focus:border-transparent pr-10 outline-none"
             >
             <button
               type="button"
@@ -41,7 +41,7 @@
               :type="showPasswords.new ? 'text' : 'password'"
               placeholder="Enter new password"
               autocomplete="new-password"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#9C1313] focus:border-transparent pr-10 outline-none"
             >
             <button
               type="button"
@@ -62,7 +62,7 @@
               :type="showPasswords.confirm ? 'text' : 'password'"
               placeholder="Confirm New Password"
               autocomplete="new-password"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#9C1313] focus:border-transparent pr-10 outline-none"
             >
             <button
               type="button"

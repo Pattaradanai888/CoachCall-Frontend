@@ -26,7 +26,7 @@
         >
         <button
           type="button"
-          class="bg-red-700 text-white px-6 py-3 rounded-lg hover:bg-red-800 transition-colors font-medium"
+          class="bg-[#9C1313] text-white px-6 py-3 rounded-lg hover:bg-[#7A0F0F] transition-colors font-medium"
           @click="triggerFileInput"
         >
           Choose Photo

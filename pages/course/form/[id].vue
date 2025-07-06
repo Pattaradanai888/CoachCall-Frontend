@@ -68,6 +68,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Notification Modal -->
+    <NotificationModal
+      :show="showNotification"
+      :title="notificationTitle"
+      :message="notificationMessage"
+      :type="notificationType"
+      @close="closeNotification"
+    />
   </div>
 </template>
 
@@ -81,8 +90,33 @@ import AddAthlete from '~/components/course/course-create/AddAthlete.vue';
 import AddSession from '~/components/course/course-create/AddSession.vue';
 import CourseInformation from '~/components/course/course-create/CourseInformation.vue';
 import PublishCourse from '~/components/course/course-create/PublishCourse.vue';
+// --- MODAL IMPORT ---
+import NotificationModal from '~/components/NotificationModal.vue'; // Assuming this is the correct path
 import { useCourses } from '~/composables/useCourses';
 import { useSubmit } from '~/composables/useSubmit';
+
+// --- NOTIFICATION MODAL STATE ---
+const showNotification = ref(false);
+const notificationTitle = ref('');
+const notificationMessage = ref('');
+const notificationType = ref<'success' | 'error'>('success');
+const onNotificationClose = ref<(() => void) | null>(null);
+
+function triggerNotification(title: string, message: string, type: 'success' | 'error' = 'success', postCloseAction: (() => void) | null = null) {
+  notificationTitle.value = title;
+  notificationMessage.value = message;
+  notificationType.value = type;
+  onNotificationClose.value = postCloseAction;
+  showNotification.value = true;
+}
+
+function closeNotification() {
+  showNotification.value = false;
+  if (onNotificationClose.value) {
+    onNotificationClose.value();
+    onNotificationClose.value = null; // Reset after execution
+  }
+}
 
 // --- ROUTE HANDLING & MODE ---
 const route = useRoute();
@@ -141,8 +175,12 @@ onMounted(async () => {
     isLoading.value = false;
 
     if (error.value || !fetchedCourse.value) {
-      alert('Failed to load course data. Redirecting...');
-      router.push('/course-management');
+      triggerNotification(
+        'Load Failed',
+        'Failed to load course data. You will be redirected back to the course management page.',
+        'error',
+        () => router.push('/course-management'),
+      );
       return;
     }
 
@@ -248,19 +286,28 @@ const { submit: performSubmit, loading: isPublishing } = useSubmit(
   },
   {
     onSuccess: () => {
-      alert(`Course ${isEditMode.value ? 'updated' : 'published'} successfully!`);
-      router.push('/course-management');
+      const actionText = isEditMode.value ? 'updated' : 'published';
+      triggerNotification(
+        `Course ${actionText}`,
+        `Your course has been ${actionText} successfully!`,
+        'success',
+        () => router.push('/course-management'),
+      );
     },
     onError: (error) => {
-      const message = (error as any)?.message || 'An unknown error occurred.';
-      alert(`An error occurred: ${message}`);
+      const message = (error as any)?.message || 'An unknown error occurred while saving the course.';
+      triggerNotification('An Error Occurred', message, 'error');
     },
   },
 );
 
 async function publishOrUpdateCourse() {
   if (!canPublish.value) {
-    alert('Please complete all required fields before proceeding.');
+    triggerNotification(
+      'Missing Information',
+      'Please complete all required fields (like course title, dates, and at least one session) before proceeding.',
+      'error',
+    );
     return;
   }
 

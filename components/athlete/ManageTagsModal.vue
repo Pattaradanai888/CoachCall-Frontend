@@ -75,7 +75,7 @@
                 <button
                   type="submit"
                   :class="`bg-${color}-600 hover:bg-${color}-700 focus:ring-${color}-500`"
-                  class="flex-shrink-0 inline-flex items-center justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex-shrink-0 inline-flex items-center justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#9C1313] hover:bg-[#7A0F0F] focus:ring-[#9C1313]"
                   :disabled="!meta.valid || isSubmitting"
                 >
                   <Icon v-if="isSubmitting" name="svg-spinners:ring-resize" size="1.2rem" />
