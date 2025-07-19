@@ -15,14 +15,6 @@
               All-in-one platform for creating, managing, and tracking basketball training programs
               with gamification and analytics.
             </p>
-            <nuxt-link to="/dashboard">
-              <button
-                class="bg-white font-bold text-[#9C1313] border-4 border-[#9C1313] border-solid px-4 py-2 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto"
-              >
-                <!-- Added mx-auto to center button -->
-                See all plan
-              </button>
-            </nuxt-link>
           </div>
         </div>
       </div>

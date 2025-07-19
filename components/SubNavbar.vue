@@ -50,7 +50,7 @@ const navItems = [
     icon: 'mdi:chart-line',
     route: '#',
   },
-  { id: 'coach-stat', label: 'Coach stat', icon: 'mdi:chart-box', route: '#' },
+  { id: 'coach-stat', label: 'Coach stat', icon: 'mdi:chart-box', route: 'coach-stat' },
 ];
 
 const activeTab = ref('');
