@@ -15,7 +15,7 @@ Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 const chartRef = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 
-const chartColors = ['#9C1313', '#4b5563', '#1d4ed8', '#d97706', '#059669'];
+const chartColors = ['#9C1313', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
 
 function createChart() {
   if (!chartRef.value)

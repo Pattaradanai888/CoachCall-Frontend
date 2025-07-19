@@ -6,10 +6,10 @@
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
         <div>
           <h1 class="text-3xl md:text-4xl font-bold text-gray-800">
-            Coach Efficiency
+            Coach Efficiency Dashboard
           </h1>
           <p class="text-gray-600 mt-1">
-            An overview of your coaching activity and athlete impact.
+            Track your productivity and impact on athlete development
           </p>
         </div>
         <button
@@ -79,6 +79,12 @@ onMounted(() => {
 });
 
 useHead({
-  title: 'Coach Efficiency Dashboard',
+  title: 'Coach Efficiency Dashboard - Track Your Impact & Productivity',
+  meta: [
+    {
+      name: 'description',
+      content: 'Monitor your coaching efficiency, track athlete development, and measure the impact of data-driven coaching methods.',
+    },
+  ],
 });
 </script>

@@ -1,16 +1,25 @@
 <template>
-  <div class="bg-white rounded-2xl shadow-md p-6 border-l-4" :class="borderColor">
-    <div class="flex items-center">
-      <div class="mr-4 text-3xl" :class="textColor">
-        <Icon :name="highlight.icon" />
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+          <Icon :name="highlight.icon" size="1.5rem" class="text-[#9C1313]" />
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-800">
+            {{ getGreeting() }}, Coach!
+          </h2>
+          <p class="text-gray-600 text-sm">
+            {{ highlight.message }}
+          </p>
+        </div>
       </div>
-      <div>
-        <h2 class="text-xl font-bold text-gray-800">
-          Good Afternoon, Coach Alex
-        </h2>
-        <p class="text-gray-600">
-          {{ highlight.message }}
-        </p>
+
+      <!-- Simple Milestone Badge -->
+      <div v-if="showMilestone" class="text-center">
+        <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-medium">
+          {{ getMilestoneText() }}
+        </div>
       </div>
     </div>
   </div>
@@ -21,23 +30,26 @@ import type { MotivationalHighlight } from '~/types/coach-stat';
 
 const props = defineProps<{ highlight: MotivationalHighlight }>();
 
-const borderColor = computed(() => {
-  const colors = {
-    SKILL_BOOST: 'border-blue-500',
-    PERSONAL_BEST: 'border-green-500',
-    NEW_ATHLETES: 'border-purple-500',
-    DEFAULT: 'border-red-700',
-  };
-  return colors[props.highlight.type] || colors.DEFAULT;
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12)
+    return 'Good Morning';
+  if (hour < 17)
+    return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+const showMilestone = computed(() => {
+  return props.highlight.type !== 'DEFAULT';
 });
 
-const textColor = computed(() => {
-  const colors = {
-    SKILL_BOOST: 'text-blue-500',
-    PERSONAL_BEST: 'text-green-500',
-    NEW_ATHLETES: 'text-purple-500',
-    DEFAULT: 'text-red-700',
+function getMilestoneText(): string {
+  const milestones = {
+    SKILL_BOOST: 'Skill Boost!',
+    PERSONAL_BEST: 'Personal Best!',
+    NEW_ATHLETES: 'Team Growth!',
+    DEFAULT: '',
   };
-  return colors[props.highlight.type] || colors.DEFAULT;
-});
+  return milestones[props.highlight.type] || '';
+}
 </script>

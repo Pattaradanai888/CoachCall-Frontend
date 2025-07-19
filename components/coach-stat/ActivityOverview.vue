@@ -1,69 +1,74 @@
 <template>
   <div class="space-y-6">
-    <!-- Coaching Volume Card -->
-    <div class="bg-white rounded-2xl shadow-md p-6">
-      <h3 class="text-lg font-bold text-gray-800">
-        Your Activity
+    <!-- Productivity Metrics -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        Productivity Metrics
       </h3>
-      <p class="text-sm text-gray-500 mb-6">
-        Recent coaching and planning efforts.
-      </p>
 
-      <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <p class="text-sm font-medium text-gray-600">
-            Sessions Conducted
-          </p>
-          <p class="text-3xl font-bold text-[#9C1313]">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="text-center">
+          <p class="text-2xl font-bold text-[#9C1313]">
             {{ activity.sessionsConducted }}
           </p>
-          <p class="text-xs text-gray-500">
+          <p class="text-sm text-gray-600">
+            Sessions Conducted
+          </p>
+          <p class="text-xs text-gray-500 mt-1">
             This Month
           </p>
         </div>
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <p class="text-sm font-medium text-gray-600">
-            Courses Planned
-          </p>
-          <p class="text-3xl font-bold text-[#9C1313]">
+        <div class="text-center">
+          <p class="text-2xl font-bold text-[#9C1313]">
             {{ activity.coursesPlanned }}
           </p>
-          <p class="text-xs text-gray-500">
+          <p class="text-sm text-gray-600">
+            Courses Created
+          </p>
+          <p class="text-xs text-gray-500 mt-1">
             This Month
           </p>
         </div>
       </div>
 
-      <div class="h-48">
-        <ClientOnly>
-          <LineChart :labels="activity.weeklySessionTrend.map(t => t.week)" :data="activity.weeklySessionTrend.map(t => t.count)" />
-          <template #fallback>
-            <div class="h-full flex items-center justify-center text-gray-400">
-              Loading chart...
-            </div>
-          </template>
-        </ClientOnly>
+      <!-- Simple Weekly Summary -->
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="text-sm font-medium text-gray-700 mb-2">
+          Weekly Activity
+        </h4>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600">Average sessions per week</span>
+          <span class="font-semibold text-gray-800">
+            {{ averageWeeklySession }}
+          </span>
+        </div>
       </div>
     </div>
 
-    <!-- Workflow Efficiency Card -->
-    <div class="bg-white rounded-2xl shadow-md p-6">
-      <h3 class="text-lg font-bold text-gray-800">
-        Workflow Efficiency
+    <!-- Template Efficiency -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        Template Efficiency
       </h3>
-      <div class="flex items-center justify-between mt-4">
-        <div>
-          <p class="text-4xl font-bold text-green-600">
-            {{ efficiency.templateReuseRate }}%
-          </p>
-          <p class="text-sm text-gray-600">
-            Template Reuse Rate
-          </p>
-        </div>
-        <div class="text-right text-sm text-gray-500">
-          <p>{{ efficiency.sessionsFromTemplate }} of {{ efficiency.totalSessions }} sessions</p>
-          <p>from templates this month.</p>
-        </div>
+
+      <div class="text-center mb-4">
+        <p class="text-3xl font-bold text-green-600">
+          {{ efficiency.templateReuseRate }}%
+        </p>
+        <p class="text-sm text-gray-600">
+          Template Reuse Rate
+        </p>
+        <p class="text-xs text-gray-500 mt-1">
+          {{ efficiency.sessionsFromTemplate }}/{{ efficiency.totalSessions }} sessions from templates
+        </p>
+      </div>
+
+      <!-- Simple Progress Bar -->
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div
+          class="h-2 bg-green-500 rounded-full transition-all duration-300"
+          :style="{ width: `${efficiency.templateReuseRate}%` }"
+        />
       </div>
     </div>
   </div>
@@ -71,10 +76,14 @@
 
 <script setup lang="ts">
 import type { ActivityStats, EfficiencyStats } from '~/types/coach-stat';
-import LineChart from './charts/LineChart.vue';
 
-defineProps<{
+const props = defineProps<{
   activity: ActivityStats;
   efficiency: EfficiencyStats;
 }>();
+
+const averageWeeklySession = computed(() => {
+  const total = props.activity.weeklySessionTrend.reduce((sum: number, week: any) => sum + week.count, 0);
+  return Math.round(total / props.activity.weeklySessionTrend.length);
+});
 </script>
