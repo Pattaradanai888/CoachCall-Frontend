@@ -4,6 +4,7 @@
       Course Information
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Left Column: Title, Description, Duration -->
       <div v-motion-slide-visible-once-left :delay="200">
         <div class="mb-4">
           <h1 class="font-bold mb-2 text-gray-700">
@@ -122,6 +123,7 @@
         </div>
       </div>
 
+      <!-- Right Column: Image Upload -->
       <div v-motion-slide-visible-once-right :delay="200" class="w-full min-w-0">
         <div class="flex items-center mb-3">
           <Icon name="mdi:image-area" class="w-6 h-6 text-gray-700 mr-2 flex-shrink-0" />
@@ -228,6 +230,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Notification Modal for file upload errors -->
+  <NotificationModal
+    :show="modalState.show"
+    :title="modalState.title"
+    :message="modalState.message"
+    :type="modalState.type"
+    @close="modalState.show = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -252,8 +263,8 @@ const props = withDefaults(defineProps<{
   courseData: () => ({}),
 });
 
+// Removed the 'error' event as the modal will handle it now
 const emit = defineEmits<{
-  (e: 'error', message: string): void;
   (e: 'editStep', step: number): void;
 }>();
 
@@ -268,6 +279,22 @@ const form = reactive<CourseFormState>({
   imageFile: null,
   imagePreview: null,
 });
+
+// State for the notification modal
+const modalState = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'error' as 'success' | 'error',
+});
+
+// Helper function to show the error modal
+function showErrorModal(title: string, message: string) {
+  modalState.title = title;
+  modalState.message = message;
+  modalState.type = 'error';
+  modalState.show = true;
+}
 
 // Create a computed property for the date range that v-calendar can work with
 const dateRange = computed({
@@ -295,7 +322,6 @@ watch(() => props.courseData, (newData) => {
   form.title = newData.title || '';
   form.description = newData.description || '';
 
-  // Handle date range more safely
   if (newData.dateRange) {
     form.dateRange = {
       start: newData.dateRange.start ? new Date(newData.dateRange.start) : null,
@@ -386,19 +412,36 @@ function handleFileUpload(event: Event) {
 
 function processFile(file: File) {
   const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const maxFileSize = 5 * 1024 * 1024; // 5MB
+
+  // Helper to reset the file input so the user can re-select the same file after an error
+  const resetFileInput = () => {
+    if (fileInput.value) {
+      fileInput.value.value = '';
+    }
+  };
+
   if (!validTypes.includes(file.type)) {
-    emit('error', 'Please select a valid image file (JPEG, PNG, WEBP, GIF)');
+    showErrorModal('Invalid File Type', 'Please select a valid image file (JPG, PNG, WEBP, GIF).');
+    resetFileInput();
     return;
   }
-  if (file.size > 5 * 1024 * 1024) {
-    emit('error', 'File size exceeds 5MB limit');
+
+  if (file.size > maxFileSize) {
+    showErrorModal('File Too Large', 'The uploaded file exceeds the 5MB size limit. Please choose a smaller file.');
+    resetFileInput();
     return;
   }
+
   form.imageFile = file;
   form.imagePreview = URL.createObjectURL(file);
 }
 
 function removeImage() {
+  // Revoke the object URL to free up memory
+  if (form.imagePreview) {
+    URL.revokeObjectURL(form.imagePreview);
+  }
   form.imageFile = null;
   form.imagePreview = null;
   if (fileInput.value)
