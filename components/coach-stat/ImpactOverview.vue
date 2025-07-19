@@ -2,9 +2,12 @@
   <div class="space-y-6">
     <!-- Team Growth Stats -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">
-        Team Growth
-      </h3>
+      <div class="flex items-center mb-4">
+        <Icon name="mdi:account-multiple" class="text-2xl text-blue-700" />
+        <h3 class="text-lg font-semibold text-gray-800 ">
+          Team Growth
+        </h3>
+      </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="text-center">
@@ -34,9 +37,12 @@
 
     <!-- Skill Development -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">
-        Skill Development
-      </h3>
+      <div class="flex items-center mb-4">
+        <Icon name="mdi:fire" class="text-3xl text-orange-400" />
+        <h3 class="text-lg font-semibold text-gray-800">
+          Skill Development
+        </h3>
+      </div>
 
       <div class="text-center mb-4">
         <p class="text-3xl font-bold text-blue-600">
@@ -64,9 +70,12 @@
 
     <!-- Athlete Performance Lists -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-6">
-        Athlete Performance
-      </h3>
+      <div class="flex items-center mb-6">
+        <Icon name="mdi:star-outline" class="text-3xl text-yellow-500" />
+        <h3 class="text-lg font-semibold text-gray-800">
+          Athlete Performance
+        </h3>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>

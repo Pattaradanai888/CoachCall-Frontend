@@ -2,9 +2,12 @@
   <div class="space-y-6">
     <!-- Productivity Metrics -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">
-        Productivity Metrics
-      </h3>
+      <div class="flex items-center mb-4">
+        <Icon name="mdi:flash" class="text-3xl text-yellow-500" />
+        <h3 class="text-lg font-semibold text-gray-800">
+          Productivity Metrics
+        </h3>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div class="text-center">
@@ -47,9 +50,12 @@
 
     <!-- Template Efficiency -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">
-        Template Efficiency
-      </h3>
+      <div class="flex items-center mb-4">
+        <Icon name="mdi:file-document-multiple-outline" class="text-2xl" />
+        <h3 class="text-lg font-semibold text-gray-800">
+          Template Efficiency
+        </h3>
+      </div>
 
       <div class="text-center mb-4">
         <p class="text-3xl font-bold text-green-600">
