@@ -4,32 +4,72 @@
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <div class="flex items-center mb-4">
         <Icon name="mdi:flash" class="text-3xl text-yellow-500" />
-        <h3 class="text-lg font-semibold text-gray-800">
+        <h3 class="text-lg font-semibold text-gray-800 ml-2">
           Productivity Metrics
         </h3>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <!-- Sessions Metric -->
         <div class="text-center">
           <p class="text-2xl font-bold text-[#9C1313]">
-            {{ activity.sessions_conducted_month }}
+            {{ activity.sessions_conducted_month.current }}
           </p>
           <p class="text-sm text-gray-600">
             Sessions Conducted
           </p>
-          <p class="text-xs text-gray-500 mt-1">
-            This Month
-          </p>
+          <div class="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
+            <template v-if="activity.sessions_conducted_month.change_percent !== null">
+              <Icon
+                :name="activity.sessions_conducted_month.change_percent >= 0 ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'"
+                :class="{
+                  'text-green-500': activity.sessions_conducted_month.change_percent >= 0,
+                  'text-red-500': activity.sessions_conducted_month.change_percent < 0,
+                }"
+              />
+              <span
+                :class="{
+                  'text-green-600': activity.sessions_conducted_month.change_percent >= 0,
+                  'text-red-600': activity.sessions_conducted_month.change_percent < 0,
+                }"
+              >
+                {{ Math.abs(activity.sessions_conducted_month.change_percent) }}% vs last month
+              </span>
+            </template>
+            <template v-else>
+              <span>vs last month</span>
+            </template>
+          </div>
         </div>
+        <!-- Courses Metric -->
         <div class="text-center">
           <p class="text-2xl font-bold text-[#9C1313]">
-            {{ activity.courses_created_month }}
+            {{ activity.courses_created_month.current }}
           </p>
           <p class="text-sm text-gray-600">
             Courses Created
           </p>
-          <p class="text-xs text-gray-500 mt-1">
-            This Month
-          </p>
+          <div class="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
+            <template v-if="activity.courses_created_month.change_percent !== null">
+              <Icon
+                :name="activity.courses_created_month.change_percent >= 0 ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'"
+                :class="{
+                  'text-green-500': activity.courses_created_month.change_percent >= 0,
+                  'text-red-500': activity.courses_created_month.change_percent < 0,
+                }"
+              />
+              <span
+                :class="{
+                  'text-green-600': activity.courses_created_month.change_percent >= 0,
+                  'text-red-600': activity.courses_created_month.change_percent < 0,
+                }"
+              >
+                {{ Math.abs(activity.courses_created_month.change_percent) }}% vs last month
+              </span>
+            </template>
+            <template v-else>
+              <span>vs last month</span>
+            </template>
+          </div>
         </div>
       </div>
       <div class="bg-gray-50 rounded-lg p-4">
@@ -49,7 +89,7 @@
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <div class="flex items-center mb-4">
         <Icon name="mdi:file-document-multiple-outline" class="text-2xl" />
-        <h3 class="text-lg font-semibold text-gray-800">
+        <h3 class="text-lg font-semibold text-gray-800 ml-2">
           Template Efficiency
         </h3>
       </div>

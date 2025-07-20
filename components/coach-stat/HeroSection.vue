@@ -15,7 +15,7 @@
         </div>
       </div>
 
-      <!-- Simple Milestone Badge -->
+      <!-- Milestone Badge for all types -->
       <div v-if="showMilestone" class="text-center">
         <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-medium">
           {{ getMilestoneText() }}
@@ -39,12 +39,11 @@ function getGreeting(): string {
   return 'Good Evening';
 }
 
-const showMilestone = computed(() => {
-  return props.highlight.type !== 'DEFAULT';
-});
+const showMilestone = computed(() => props.highlight.type !== 'DEFAULT');
 
 function getMilestoneText(): string {
-  const milestones = {
+  const milestones: Record<string, string> = {
+    HIGH_IMPACT: 'High Impact!',
     SKILL_BOOST: 'Skill Boost!',
     PERSONAL_BEST: 'Personal Best!',
     NEW_ATHLETES: 'Team Growth!',

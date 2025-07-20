@@ -6,9 +6,15 @@ export interface MotivationalHighlight {
   icon: string;
 }
 
+export interface ComparativeStat {
+  current: number;
+  previous: number | null;
+  change_percent: number | null;
+}
+
 export interface ActivityStats {
-  sessions_conducted_month: number;
-  courses_created_month: number;
+  sessions_conducted_month: ComparativeStat;
+  courses_created_month: ComparativeStat;
   avg_sessions_per_week: number;
 }
 
@@ -18,10 +24,16 @@ export interface EfficiencyStats {
   total_sessions_month: number;
 }
 
+export interface GrowthInsight {
+  trend_type: string;
+  narrative: string;
+}
+
 export interface EngagementStats {
   active_roster_count: number;
-  new_athletes_month: number;
+  new_athletes_month: ComparativeStat;
   team_attendance_rate: number | null;
+  growth_insight: GrowthInsight;
 }
 
 export interface TopSkill {
