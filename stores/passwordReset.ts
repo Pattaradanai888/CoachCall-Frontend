@@ -127,12 +127,13 @@ export const usePasswordResetStore = defineStore('passwordReset', () => {
 
       return { success: true };
     }
-    catch (e: any) {
-      if (e.status === 429) {
+    catch (e: unknown) {
+      const apiError = e as { data?: { detail?: string }; status?: number };
+      if (apiError.status === 429) {
         error.value = 'Too many requests. Please wait before trying again.';
       }
       else {
-        error.value = e.data?.detail || 'An unexpected error occurred.';
+        error.value = apiError.data?.detail || 'An unexpected error occurred.';
       }
       return { success: false };
     }
@@ -159,18 +160,19 @@ export const usePasswordResetStore = defineStore('passwordReset', () => {
       verifiedOtp.value = otp;
       return true;
     }
-    catch (e: any) {
-      if (e.status === 404) {
+    catch (e: unknown) {
+      const apiError = e as { data?: { detail?: string }; status?: number };
+      if (apiError.status === 404) {
         error.value = 'Email not found. Please request a new OTP.';
       }
-      else if (e.status === 400) {
+      else if (apiError.status === 400) {
         error.value = 'Invalid or expired OTP. Please try again or request a new code.';
       }
-      else if (e.status === 429) {
+      else if (apiError.status === 429) {
         error.value = 'Too many verification attempts. Please wait before trying again.';
       }
       else {
-        error.value = e.data?.detail || 'Invalid OTP. Please try again.';
+        error.value = apiError.data?.detail || 'Invalid OTP. Please try again.';
       }
       return false;
     }
@@ -201,12 +203,13 @@ export const usePasswordResetStore = defineStore('passwordReset', () => {
       clearResetState();
       return true;
     }
-    catch (e: any) {
-      if (e.status === 400) {
+    catch (e: unknown) {
+      const apiError = e as { data?: { detail?: string }; status?: number };
+      if (apiError.status === 400) {
         error.value = 'Invalid verification code. Please start over.';
       }
       else {
-        error.value = e.data?.detail || 'Failed to reset password.';
+        error.value = apiError.data?.detail || 'Failed to reset password.';
       }
       return false;
     }
@@ -226,6 +229,13 @@ export const usePasswordResetStore = defineStore('passwordReset', () => {
       Object.values(STORAGE_KEYS).forEach((key) => {
         localStorage.removeItem(key);
       });
+    }
+  }
+
+  function setEmailForReset(email: string) {
+    emailForReset.value = email;
+    if (import.meta.client) {
+      localStorage.setItem(STORAGE_KEYS.EMAIL, email);
     }
   }
 
@@ -252,5 +262,6 @@ export const usePasswordResetStore = defineStore('passwordReset', () => {
     resetPassword,
     clearResetState,
     initializeFromStorage,
+    setEmailForReset,
   };
 });

@@ -104,13 +104,8 @@ const onSubmit = handleSubmit(async (values) => {
   isError.value = false;
   isSubmitting.value = true;
 
-  // Store email immediately and redirect to OTP page
-  resetStore.emailForReset = values.email;
-
-  // Store in localStorage immediately
-  if (import.meta.client) {
-    localStorage.setItem('reset-email', values.email);
-  }
+  // Store email immediately using the setter function
+  resetStore.setEmailForReset(values.email);
 
   // Send OTP request in background (don't wait for response)
   resetStore.requestReset(values.email).catch(() => {
