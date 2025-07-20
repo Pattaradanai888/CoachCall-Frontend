@@ -1,7 +1,30 @@
 {
   "recommendations": [
+    // Essential for Vue/Nuxt development
+    "Vue.volar", // Vue 3 TypeScript support (replaces Vetur)
+    "Vue.vscode-typescript-vue-plugin", // Vue TypeScript plugin
+    
+    // Code quality
     "dbaeumer.vscode-eslint", // ESLint integration
-    "esbenp.prettier-vscode", // Prettier formatter
-    "johnsoncodehk.volar" // Vue / TypeScript support
+    "antfu.eslint-config-inspector", // ESLint config inspector by Anthony Fu
+    
+    // Nuxt specific
+    "Nuxtr.nuxtr-vscode", // Nuxt extension
+    
+    // Utility extensions
+    "bradlc.vscode-tailwindcss", // TailwindCSS IntelliSense
+    "usernamehw.errorlens", // Show errors inline
+    "christian-kohler.path-intellisense", // Path autocomplete
+    "ms-vscode.vscode-typescript-next", // Latest TypeScript features
+    
+    // Optional but helpful
+    "formulahendry.auto-rename-tag", // Auto rename paired HTML tags
+    "streetsidesoftware.code-spell-checker", // Spell checker
+    "ms-vscode.vscode-json" // JSON language support
+  ],
+  "unwantedRecommendations": [
+    "johnsoncodehk.volar", // Old Volar extension (deprecated)
+    "octref.vetur", // Vue 2 extension (conflicts with Volar)
+    "esbenp.prettier-vscode" // Using ESLint for formatting instead
   ]
 }

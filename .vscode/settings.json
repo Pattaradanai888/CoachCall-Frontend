@@ -9,6 +9,14 @@
     "source.organizeImports": "never"
   },
 
+  // Nuxt specific settings
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  
+  // Vue/Volar settings
+  "vue.updateImportsOnFileMove.enabled": true,
+  "vue.codeActions.enabled": true,
+
   // Silent the stylistic rules in you IDE, but still auto fix them
   "eslint.rules.customizations": [
     { "rule": "style/*", "severity": "off", "fixable": true },
@@ -46,5 +54,22 @@
     "scss",
     "pcss",
     "postcss"
-  ]
+  ],
+
+  // File associations
+  "files.associations": {
+    "*.vue": "vue"
+  },
+
+  // Explorer file nesting
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "*.vue": "${capture}.vue.ts,${capture}.vue.js",
+    "*.ts": "${capture}.js",
+    "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",
+    "package.json": "package-lock.json,yarn.lock,pnpm-lock.yaml",
+    "tailwind.config.js": "tailwind.config.ts",
+    "nuxt.config.ts": "nuxt.config.js"
+  }
 }

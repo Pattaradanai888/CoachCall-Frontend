@@ -9,7 +9,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "typecheck": "nuxt typecheck",
+    "clean": "rm -rf .nuxt .output dist node_modules/.cache"
   },
   "dependencies": {
     "@iconify/utils": "^2.3.0",
