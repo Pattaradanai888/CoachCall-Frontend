@@ -48,7 +48,7 @@ const navItems = [
     id: 'leaderboard',
     label: 'Leaderboard',
     icon: 'mdi:chart-line',
-    route: '#',
+    route: 'leaderboard',
   },
   { id: 'coach-stat', label: 'Coach stat', icon: 'mdi:chart-box', route: 'coach-stat' },
 ];
