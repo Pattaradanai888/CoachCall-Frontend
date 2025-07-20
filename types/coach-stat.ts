@@ -1,51 +1,51 @@
 // types/coach-stat.ts
 
 export interface MotivationalHighlight {
-  type: 'NEW_ATHLETES' | 'SKILL_BOOST' | 'PERSONAL_BEST' | 'DEFAULT';
+  type: string;
   message: string;
   icon: string;
 }
 
 export interface ActivityStats {
-  sessionsConducted: number;
-  coursesPlanned: number;
-  weeklySessionTrend: {
-    week: string; // e.g., "07/21"
-    count: number;
-  }[];
+  sessions_conducted_month: number;
+  courses_created_month: number;
+  avg_sessions_per_week: number;
 }
 
 export interface EfficiencyStats {
-  templateReuseRate: number; // e.g., 60 for 60%
-  sessionsFromTemplate: number;
-  totalSessions: number;
+  template_reuse_rate: number;
+  sessions_from_template_month: number;
+  total_sessions_month: number;
 }
 
 export interface EngagementStats {
-  activeRosterCount: number;
-  newThisMonth: number;
-  teamAttendanceRate: number; // e.g., 92 for 92%
+  active_roster_count: number;
+  new_athletes_month: number;
+  team_attendance_rate: number | null;
+}
+
+export interface TopSkill {
+  name: string;
+}
+
+export interface SkillFocusItem {
+  skill_name: string;
+  weight: number;
 }
 
 export interface TeamSkillStats {
-  athletesImprovedPercent: number; // e.g., 82 for 82%
-  topTrendingSkill: {
-    name: string;
-    changePercent: number; // e.g., 8.5 for +8.5%
-  } | null;
-  skillFocus: {
-    skillName: string;
-    weight: number;
-  }[];
+  athletes_improved_percent: number;
+  top_trending_skill: TopSkill | null;
+  skill_focus_distribution: SkillFocusItem[];
 }
 
 export interface PlayerInsight {
   uuid: string;
   name: string;
-  profileImageUrl: string | null;
-  reason: string; // e.g., "+0.8 Overall" or "Missed 2 sessions"
-  changeValue: number; // e.g., 0.8 or -2
-  changeType: 'positive' | 'negative' | 'neutral';
+  profile_image_url: string | null;
+  reason: string;
+  change_value: number;
+  change_type: 'positive' | 'negative' | 'neutral';
 }
 
 export interface CoachStatData {
@@ -54,6 +54,6 @@ export interface CoachStatData {
   efficiency: EfficiencyStats;
   engagement: EngagementStats;
   skill: TeamSkillStats;
-  topImprovers: PlayerInsight[];
-  needsAttention: PlayerInsight[];
+  top_improvers: PlayerInsight[];
+  needs_attention: PlayerInsight[];
 }

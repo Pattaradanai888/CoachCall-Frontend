@@ -14,15 +14,15 @@
         </div>
         <button
           class="mt-4 lg:mt-0 bg-[#9C1313] text-white font-semibold py-3 px-5 rounded-xl flex items-center gap-2 hover:bg-[#7A0F0F] transition-all duration-300"
-          @click="fetchData"
+          :disabled="pending"
+          @click="() => refresh()"
         >
-          <Icon name="mdi:refresh" class="text-xl" :class="{ 'animate-spin': isLoading }" />
+          <Icon name="mdi:refresh" class="text-xl" :class="{ 'animate-spin': pending }" />
           Refresh Data
         </button>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="isLoading" class="text-center py-24 text-gray-500">
+      <div v-if="pending" class="text-center py-24 text-gray-500">
         <div class="inline-block">
           <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
           <p class="text-lg">
@@ -31,34 +31,37 @@
         </div>
       </div>
 
-      <!-- Error State -->
       <div v-else-if="error || !data" class="text-center py-24 bg-white rounded-2xl shadow-md">
         <div class="max-w-md mx-auto">
           <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
             <Icon name="mdi:alert-circle-outline" class="w-8 h-8 text-red-500" />
           </div>
           <p class="mt-4 text-gray-700 text-lg font-medium">
-            {{ error || 'Could not display statistics.' }}
+            {{ error?.message || 'Could not display statistics.' }}
           </p>
           <button
             class="mt-6 bg-red-700 text-white font-medium py-2.5 px-6 rounded-lg hover:bg-red-800 transition"
-            @click="fetchData"
+            @click="() => refresh()"
           >
             Retry
           </button>
         </div>
       </div>
 
-      <!-- Main Content -->
       <div v-else class="space-y-6">
         <HeroSection :highlight="data.highlight" />
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ActivityOverview :activity="data.activity" :efficiency="data.efficiency" />
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ActivityOverview
+            :activity="data.activity"
+            :efficiency="data.efficiency"
+            class="lg:col-span-1"
+          />
           <ImpactOverview
             :engagement="data.engagement"
             :skill="data.skill"
-            :top-improvers="data.topImprovers"
-            :needs-attention="data.needsAttention"
+            :top-improvers="data.top_improvers"
+            :needs-attention="data.needs_attention"
+            class="lg:col-span-2"
           />
         </div>
       </div>
@@ -72,12 +75,7 @@ import HeroSection from '~/components/coach-stat/HeroSection.vue';
 import ImpactOverview from '~/components/coach-stat/ImpactOverview.vue';
 import { useCoachStatData } from '~/composables/useCoachStatData';
 
-const { data, isLoading, error, fetchData } = useCoachStatData();
-
-onMounted(() => {
-  fetchData();
-});
-
+const { data, pending, error, refresh } = useCoachStatData().fetchCoachStats();
 useHead({
   title: 'Coach Efficiency Dashboard - Track Your Impact & Productivity',
   meta: [

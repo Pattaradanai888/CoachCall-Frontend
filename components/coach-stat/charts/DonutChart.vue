@@ -18,14 +18,18 @@ let chartInstance: Chart | null = null;
 const chartColors = ['#9C1313', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
 
 function createChart() {
-  if (!chartRef.value)
+  if (!chartRef.value || !props.data.length || !props.labels.length) {
     return;
-  const ctx = chartRef.value.getContext('2d');
-  if (!ctx)
-    return;
+  }
 
-  if (chartInstance)
+  const ctx = chartRef.value.getContext('2d');
+  if (!ctx) {
+    return;
+  }
+
+  if (chartInstance) {
     chartInstance.destroy();
+  }
 
   chartInstance = new Chart(ctx, {
     type: 'doughnut',
@@ -33,7 +37,7 @@ function createChart() {
       labels: props.labels,
       datasets: [{
         data: props.data,
-        backgroundColor: chartColors,
+        backgroundColor: chartColors.slice(0, props.data.length),
         borderColor: '#fff',
         borderWidth: 2,
       }],
@@ -46,11 +50,36 @@ function createChart() {
         legend: {
           display: true,
           position: 'right',
-          labels: { boxWidth: 12, font: { size: 12 }, padding: 15 },
+          labels: {
+            boxWidth: 12,
+            font: { size: 12 },
+            padding: 15,
+            generateLabels: (chart) => {
+              const data = chart.data;
+              if (data.labels?.length && data.datasets.length) {
+                return data.labels.map((label, i) => {
+                  const value = data.datasets[0].data[i] as number;
+                  return {
+                    text: `${label}: ${value.toFixed(1)}%`,
+                    fillStyle: data.datasets[0].backgroundColor?.[i] as string,
+                    strokeStyle: data.datasets[0].borderColor as string,
+                    lineWidth: data.datasets[0].borderWidth as number,
+                    hidden: false,
+                    index: i,
+                  };
+                });
+              }
+              return [];
+            },
+          },
         },
         tooltip: {
           callbacks: {
-            label: context => `${context.label}: ${context.formattedValue}%`,
+            label: (context) => {
+              const label = context.label || '';
+              const value = context.parsed;
+              return `${label}: ${value.toFixed(1)}%`;
+            },
           },
         },
       },
@@ -59,10 +88,11 @@ function createChart() {
 }
 
 onMounted(createChart);
-watch(props, createChart, { deep: true });
+watch(() => [props.data, props.labels], createChart, { deep: true });
 
 onBeforeUnmount(() => {
-  if (chartInstance)
+  if (chartInstance) {
     chartInstance.destroy();
+  }
 });
 </script>
