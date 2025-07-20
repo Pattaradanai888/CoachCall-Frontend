@@ -22,7 +22,7 @@
           <p class="text-gray-600">{{ athlete.position }}</p>
           <div class="mt-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
             <span class="text-sm text-gray-600">Current Score: </span>
-            <span class="font-semibold text-gray-800">{{ athlete.currentScore.toFixed(1) }}</span>
+            <span class="font-semibold text-gray-800">{{ (athlete.currentScore || 0).toFixed(1) }}</span>
           </div>
         </div>
       </div>
@@ -42,14 +42,14 @@
             <div>
               <p class="text-gray-600 text-sm font-medium mb-1">Total Growth</p>
               <p class="text-xl font-semibold text-gray-800">
-                {{ athlete.improvementSinceDayOne >= 0 ? '+' : '' }}{{ athlete.improvementSinceDayOne.toFixed(1) }} pts
+                {{ (athlete.improvementSinceDayOne || 0) >= 0 ? '+' : '' }}{{ (athlete.improvementSinceDayOne || 0).toFixed(1) }} pts
               </p>
               <p class="text-xs text-gray-500">Since day one</p>
             </div>
             <Icon 
               name="mdi:arrow-up" 
               class="w-6 h-6"
-              :class="athlete.improvementSinceDayOne >= 0 ? 'text-green-600' : 'text-red-600'"
+              :class="(athlete.improvementSinceDayOne || 0) >= 0 ? 'text-green-600' : 'text-red-600'"
             />
           </div>
         </div>

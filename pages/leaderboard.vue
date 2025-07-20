@@ -31,7 +31,7 @@
         <div class="mt-4 lg:mt-0 flex items-center gap-3">
           <div class="bg-white px-4 py-2 rounded-xl shadow-sm border">
             <span class="text-sm text-gray-500">Total Athletes:</span>
-            <span class="font-bold text-[#9C1313] ml-1">{{ athletes.length }}</span>
+            <span class="font-bold text-[#9C1313] ml-1">{{ athletes?.length || 0 }}</span>
           </div>
           <button
             class="bg-[#9C1313] text-white font-semibold py-3 px-5 rounded-xl flex items-center gap-2 hover:bg-[#7A0F0F] transition-all duration-300"
@@ -43,7 +43,7 @@
         </div>
       </div>
 
-            <!-- Leaderboard Content -->
+      <!-- Leaderboard Content -->
       <div class="grid grid-cols-1 gap-8 xl:grid-cols-4">
         <!-- Main Leaderboard -->
         <div class="xl:col-span-3">
@@ -80,7 +80,7 @@
                   <p class="text-gray-600 text-sm mb-3">{{ athlete.position }}</p>
                   <div class="bg-gray-50 border rounded-lg p-3">
                     <p class="text-gray-600 text-xs mb-1">Score</p>
-                    <p class="text-gray-800 font-bold text-2xl">{{ athlete.currentScore.toFixed(1) }}</p>
+                    <p class="text-gray-800 font-bold text-2xl">{{ (athlete.currentScore || 0).toFixed(1) }}</p>
                   </div>
                 </div>
               </div>
@@ -163,7 +163,7 @@
                 <!-- Score -->
                 <div class="col-span-2 flex items-center justify-center">
                   <div class="text-center">
-                    <p class="font-bold text-lg text-gray-800">{{ athlete.currentScore.toFixed(1) }}</p>
+                    <p class="font-bold text-lg text-gray-800">{{ (athlete.currentScore || 0).toFixed(1) }}</p>
                   </div>
                 </div>
 
@@ -171,13 +171,13 @@
                 <div class="col-span-2 flex items-center justify-center">
                   <div 
                     class="flex items-center text-sm font-medium"
-                    :class="athlete.improvementSinceDayOne >= 0 ? 'text-green-600' : 'text-red-600'"
+                    :class="(athlete.improvementSinceDayOne || 0) >= 0 ? 'text-green-600' : 'text-red-600'"
                   >
                     <Icon 
-                      :name="athlete.improvementSinceDayOne >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'" 
+                      :name="(athlete.improvementSinceDayOne || 0) >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'" 
                       class="w-4 h-4 mr-1" 
                     />
-                    {{ Math.abs(athlete.improvementSinceDayOne).toFixed(1) }}
+                    {{ Math.abs(athlete.improvementSinceDayOne || 0).toFixed(1) }}
                   </div>
                 </div>
 
@@ -185,13 +185,13 @@
                 <div class="col-span-2 flex items-center justify-center">
                   <div 
                     class="flex items-center text-sm font-medium"
-                    :class="athlete.improvementSlope >= 0 ? 'text-blue-600' : 'text-orange-600'"
+                    :class="(athlete.improvementSlope || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'"
                   >
                     <Icon 
-                      :name="athlete.improvementSlope >= 0 ? 'mdi:trending-up' : 'mdi:trending-down'" 
+                      :name="(athlete.improvementSlope || 0) >= 0 ? 'mdi:trending-up' : 'mdi:trending-down'" 
                       class="w-4 h-4 mr-1" 
                     />
-                    {{ Math.abs(athlete.improvementSlope).toFixed(1) }}
+                    {{ Math.abs(athlete.improvementSlope || 0).toFixed(1) }}
                   </div>
                 </div>
               </div>
@@ -226,22 +226,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useMockLeaderboardData } from '~/composables/useMockLeaderboardData';
-import type { LeaderboardAthlete, AthleteDetail } from '~/types/leaderboard';
+import { ref, computed, watch } from 'vue';
+import { useLeaderboard } from '~/composables/useLeaderboard';
+import type { AthleteDetail } from '~/types/leaderboard';
 import AthleteDetailCard from '~/components/leaderboard/AthleteDetailCard.vue';
 
-const { getLeaderboardAthletes, fetchAthleteDetail } = useMockLeaderboardData();
+const { fetchLeaderboard, fetchAthleteDetail } = useLeaderboard();
 
-const athletes = ref<LeaderboardAthlete[]>([]);
+// Fetch leaderboard data with SSR support
+const { data: athletes, pending: _isLoadingAthletes, refresh: refreshAthletesData } = await fetchLeaderboard();
+
 const selectedAthleteUuid = ref<string | null>(null);
-const detailedAthlete = ref<AthleteDetail | null>(null);
-const isLoadingDetail = ref(false);
 const sortBy = ref<'rank' | 'score' | 'growth' | 'momentum'>('rank');
 const sortOrder = ref<'asc' | 'desc'>('asc');
 
+// Lazy athlete detail fetching - only when selectedAthleteUuid changes
+const detailedAthlete = ref<AthleteDetail | null>(null);
+const isLoadingDetail = ref(false);
+
+// Watch for selected athlete changes and fetch details
+watch(selectedAthleteUuid, async (uuid) => {
+  if (!uuid) {
+    detailedAthlete.value = null;
+    return;
+  }
+
+  isLoadingDetail.value = true;
+  try {
+    const { data } = await fetchAthleteDetail(uuid);
+    detailedAthlete.value = data.value;
+  } catch (error) {
+    console.error('Failed to fetch athlete details:', error);
+    detailedAthlete.value = null;
+  } finally {
+    isLoadingDetail.value = false;
+  }
+}, { immediate: false });
+
 // Computed sorted athletes
 const sortedAthletes = computed(() => {
+  if (!athletes.value) return [];
+  
   const athletesCopy = [...athletes.value];
   
   return athletesCopy.sort((a, b) => {
@@ -250,21 +275,21 @@ const sortedAthletes = computed(() => {
     
     switch (sortBy.value) {
       case 'score':
-        aValue = a.currentScore;
-        bValue = b.currentScore;
+        aValue = a.currentScore || 0;
+        bValue = b.currentScore || 0;
         break;
       case 'growth':
-        aValue = a.improvementSinceDayOne;
-        bValue = b.improvementSinceDayOne;
+        aValue = a.improvementSinceDayOne || 0;
+        bValue = b.improvementSinceDayOne || 0;
         break;
       case 'momentum':
-        aValue = a.improvementSlope;
-        bValue = b.improvementSlope;
+        aValue = a.improvementSlope || 0;
+        bValue = b.improvementSlope || 0;
         break;
       case 'rank':
       default:
-        aValue = a.rank;
-        bValue = b.rank;
+        aValue = a.rank || 0;
+        bValue = b.rank || 0;
         break;
     }
     
@@ -276,27 +301,18 @@ const sortedAthletes = computed(() => {
   });
 });
 
-onMounted(() => {
-  athletes.value = getLeaderboardAthletes();
-  // Select the top athlete by default
-  if (athletes.value.length > 0) {
-    selectAthlete(athletes.value[0].uuid);
+// Watch for athletes data and auto-select first athlete
+watch(athletes, (newAthletes) => {
+  if (newAthletes && newAthletes.length > 0 && !selectedAthleteUuid.value) {
+    selectedAthleteUuid.value = newAthletes[0].uuid;
   }
-});
+}, { immediate: true });
 
-const selectAthlete = async (uuid: string) => {
+const selectAthlete = (uuid: string) => {
   selectedAthleteUuid.value = uuid;
-  isLoadingDetail.value = true;
-  detailedAthlete.value = null; // Clear previous data
-  
-  try {
-    detailedAthlete.value = await fetchAthleteDetail(uuid);
-  } finally {
-    isLoadingDetail.value = false;
-  }
   
   // On mobile, scroll to detail card smoothly
-  if (window.innerWidth < 1280) { // xl breakpoint
+  if (import.meta.client && window.innerWidth < 1280) { // xl breakpoint
     setTimeout(() => {
       const detailCard = document.getElementById('athlete-detail-card');
       if (detailCard) {
@@ -310,10 +326,13 @@ const selectAthlete = async (uuid: string) => {
   }
 };
 
-const refreshLeaderboard = () => {
-  athletes.value = getLeaderboardAthletes();
-  if (athletes.value.length > 0 && !selectedAthleteUuid.value) {
-    selectAthlete(athletes.value[0].uuid);
+const refreshLeaderboard = async () => {
+  await refreshAthletesData();
+  // If there's a selected athlete, refresh their detail too
+  if (selectedAthleteUuid.value) {
+    const uuid = selectedAthleteUuid.value;
+    selectedAthleteUuid.value = null; // Reset to trigger re-fetch
+    selectedAthleteUuid.value = uuid;
   }
 };
 
