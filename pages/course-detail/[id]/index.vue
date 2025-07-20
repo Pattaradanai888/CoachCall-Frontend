@@ -44,7 +44,16 @@
               </div>
             </div>
 
-            <NuxtImg :src="course.cover_image_url || '/placeholder.jpg'" :alt="course.name" class="w-full h-64 object-cover rounded-lg mb-5" />
+            <NuxtImg
+              :src="course.cover_image_url || '/placeholder.jpg'"
+              :alt="course.name"
+              format="webp"
+              width="800"
+              height="256"
+              loading="eager"
+              priority
+              class="w-full h-64 object-cover rounded-lg mb-5"
+            />
 
             <div class="flex justify-between items-center mb-4 mt-6">
               <h2 class="text-xl font-bold text-gray-800">
@@ -124,7 +133,15 @@
                 No athletes enrolled.
               </p>
               <div v-for="athlete in course.attendees" :key="athlete.uuid" class="flex items-center">
-                <img :src="athlete.profile_image_url || '/default-profile.jpg'" :alt="athlete.name" class="w-12 h-12 rounded-full object-cover shadow-md mr-3">
+                <NuxtImg
+                  :src="athlete.profile_image_url || '/default-profile.jpg'"
+                  :alt="athlete.name"
+                  format="webp"
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                  class="w-12 h-12 rounded-full object-cover shadow-md mr-3"
+                />
                 <div>
                   <p class="text-gray-700 font-medium">
                     {{ athlete.name }}

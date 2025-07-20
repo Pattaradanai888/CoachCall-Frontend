@@ -35,7 +35,7 @@
 
         <div class="flex justify-center mb-4">
           <div class="w-24 h-24 md:w-28 md:h-28 overflow-hidden border-2 border-gray-200 rounded-full">
-            <NuxtImg v-if="athlete.profileImageUrl" :src="athlete.profileImageUrl" alt="Profile" class="object-cover object-center w-full h-full" placeholder="/default-profile.jpg" />
+            <NuxtImg v-if="athlete.profileImageUrl" :src="athlete.profileImageUrl" alt="Profile" class="object-cover object-center w-full h-full" placeholder="/default-profile.jpg" width="112" height="112" />
             <div v-else class="bg-gray-200 w-full h-full flex items-center justify-center text-gray-500">
               <Icon name="mdi:account" size="2rem" />
             </div>

@@ -128,7 +128,15 @@
                 ]"
                 @click="() => navigateToAthlete(index)"
               >
-                <NuxtImg :src="athlete.profile_image_url || '/default-profile.jpg'" :alt="athlete.name" class="w-9 h-9 rounded-full mr-3" />
+                <NuxtImg
+                  :src="athlete.profile_image_url || '/default-profile.jpg'"
+                  :alt="athlete.name"
+                  format="webp"
+                  width="36"
+                  height="36"
+                  loading="lazy"
+                  class="w-9 h-9 rounded-full mr-3"
+                />
                 <span class="flex-grow">{{ athlete.name }}</span>
                 <div class="relative group flex-shrink-0">
                   <button
@@ -167,7 +175,15 @@
         <section v-if="participatingAthletes.length > 0 && currentTask && currentAthlete" class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
           <div class="flex justify-between items-center mb-6">
             <div class="flex items-center">
-              <img :src="currentAthlete.profile_image_url || '/default-profile.jpg'" :alt="currentAthlete.name" class="w-14 h-14 rounded-full mr-4">
+              <NuxtImg
+                :src="currentAthlete.profile_image_url || '/default-profile.jpg'"
+                :alt="currentAthlete.name"
+                format="webp"
+                width="56"
+                height="56"
+                :loading="currentAthleteIndex === 0 && currentTaskIndex === 0 ? 'eager' : 'lazy'"
+                class="w-14 h-14 rounded-full mr-4"
+              />
               <div>
                 <h2 class="text-xl font-bold text-gray-900">
                   <Icon name="mdi:star-outline" class="text-yellow-500 -mt-1 mr-1" />

@@ -98,7 +98,15 @@
               :class="[selectedAthleteUuid === athlete.uuid ? 'bg-blue-100' : 'hover:bg-gray-50']"
               @click="selectedAthleteUuid = athlete.uuid"
             >
-              <NuxtImg :src="athlete.profile_image_url" :alt="athlete.name" class="w-10 h-10 rounded-full mr-4" />
+              <NuxtImg
+                :src="athlete.profile_image_url"
+                :alt="athlete.name"
+                format="webp"
+                width="40"
+                height="40"
+                loading="lazy"
+                class="w-10 h-10 rounded-full mr-4"
+              />
               <div class="flex-grow">
                 <p class="font-semibold text-gray-800">
                   {{ athlete.name }}
@@ -218,7 +226,15 @@
               </tr>
               <tr v-for="(item, index) in filteredDetailedEvaluations" :key="index" class="border-b hover:bg-gray-50">
                 <td class="py-3 px-3 flex items-center">
-                  <img :src="item.athlete.profile_image_url || '/default-profile.jpg'" :alt="item.athlete.name" class="w-8 h-8 rounded-full mr-3">
+                  <NuxtImg
+                    :src="item.athlete.profile_image_url || '/default-profile.jpg'"
+                    :alt="item.athlete.name"
+                    format="webp"
+                    width="32"
+                    height="32"
+                    loading="lazy"
+                    class="w-8 h-8 rounded-full mr-3"
+                  />
                   <span class="font-medium">{{ item.athlete.name }}</span>
                   <span v-if="item.isGuest" class="ml-2 px-2 py-0.5 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Guest</span>
                 </td>

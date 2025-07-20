@@ -119,7 +119,15 @@
                   @change="toggleAthlete(athlete.uuid)"
                 >
                 <div class="w-12 h-12 rounded-full overflow-hidden mr-4 flex-shrink-0">
-                  <img :src="athlete.profile_image_url || '/default-profile.jpg'" :alt="athlete.name" class="w-full h-full object-cover">
+                  <NuxtImg
+                    :src="athlete.profile_image_url || '/default-profile.jpg'"
+                    :alt="athlete.name"
+                    format="webp"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
                 <div class="flex-grow">
                   <h3 class="font-semibold text-gray-900">

@@ -23,9 +23,11 @@
             <NuxtImg
               v-if="ath.profileImageUrl"
               :src="ath.profileImageUrl"
+              format="webp"
               width="40"
-              height="42"
+              height="40"
               alt="avatar"
+              loading="lazy"
               class="object-cover w-full h-full"
               placeholder="/default-profile.jpg"
             />

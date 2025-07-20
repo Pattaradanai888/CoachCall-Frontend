@@ -10,6 +10,10 @@
         v-if="athlete.profileImageUrl"
         :src="athlete.profileImageUrl"
         alt="Profile"
+        format="webp"
+        width="112"
+        height="112"
+        loading="lazy"
         class="object-cover w-full h-full"
       />
       <div

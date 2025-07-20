@@ -58,7 +58,15 @@
 
           <div v-if="displayCourseData.cover_image_url" class="flex-shrink-0">
             <div class="w-48 h-32 rounded-lg overflow-hidden shadow-md">
-              <img :src="displayCourseData.cover_image_url" :alt="displayCourseData.title" class="w-full h-full object-cover">
+              <NuxtImg
+                :src="displayCourseData.cover_image_url"
+                :alt="displayCourseData.title"
+                format="webp"
+                width="192"
+                height="128"
+                loading="lazy"
+                class="w-full h-full object-cover"
+              />
             </div>
           </div>
           <div v-else class="flex-shrink-0">
@@ -162,12 +170,16 @@
         <div v-for="athlete in athleteData" :key="athlete.uuid" class="bg-gray-50 border rounded-lg p-3">
           <div class="flex items-center">
             <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 mr-4">
-              <img
+              <NuxtImg
                 :src="athlete.profile_image_url || '/default-profile.jpg'"
                 :alt="athlete.name"
+                format="webp"
+                width="48"
+                height="48"
+                loading="lazy"
                 class="w-full h-full object-cover"
                 @error="handleImageError"
-              >
+              />
             </div>
             <div class="min-w-0 flex-1">
               <h4 class="font-semibold text-gray-900 truncate">

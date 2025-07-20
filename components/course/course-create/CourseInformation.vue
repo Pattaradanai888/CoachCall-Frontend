@@ -147,11 +147,15 @@
             </button>
           </div>
           <div class="border rounded-lg p-2 bg-gray-50 shadow-sm">
-            <img
+            <NuxtImg
               :src="form.imagePreview"
               alt="Course Image Preview"
+              format="webp"
+              width="400"
+              height="192"
+              loading="lazy"
               class="w-full h-auto object-contain rounded-md max-h-48 mx-auto"
-            >
+            />
             <div class="mt-2 text-xs text-gray-500 text-center">
               Click below to replace image
             </div>

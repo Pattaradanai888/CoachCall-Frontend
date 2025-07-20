@@ -29,14 +29,20 @@
     <!-- Courses Grid (paginated) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 px-6 py-4">
       <div
-        v-for="course in paginatedCourses"
+        v-for="(course, index) in paginatedCourses"
         :key="course.id"
         class="shadow-lg px-4 bg-white rounded-lg flex flex-col"
       >
         <div class="mb-3">
           <NuxtImg
             :src="course.cover_image_url || '/placeholder.jpg'"
-            :alt="course.name"
+            :alt="`${course.name} course cover`"
+            format="webp"
+            width="400"
+            height="192"
+            :loading="index < 2 ? 'eager' : 'lazy'"
+            :priority="index === 0"
+            :fetchpriority="index === 0 ? 'high' : 'auto'"
             class="w-full h-48 object-cover rounded-lg"
           />
         </div>
@@ -102,14 +108,18 @@
             <!-- Left side: Avatar Stack + Tooltip -->
             <div class="flex items-center group relative">
               <div v-if="course.attendees.length > 0" class="flex items-center">
-                <img
-                  v-for="(athlete, index) in course.attendees.slice(0, 3)"
+                <NuxtImg
+                  v-for="(athlete, avatarIndex) in course.attendees.slice(0, 3)"
                   :key="athlete.uuid"
                   :src="athlete.profile_image_url || '/default-profile.jpg'"
-                  :alt="athlete.name"
+                  :alt="`${athlete.name} profile`"
+                  format="webp"
+                  width="32"
+                  height="32"
+                  loading="lazy"
                   class="w-8 h-8 rounded-full border-2 border-white object-cover"
-                  :class="{ '-ml-3': index > 0 }"
-                >
+                  :class="{ '-ml-3': avatarIndex > 0 }"
+                />
                 <div
                   v-if="course.attendees.length > 3"
                   class="w-8 h-8 rounded-full border-2 border-white -ml-3 bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600"
