@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-center gap-2">
+  <div class="flex items-center justify-center gap-3">
     <input
       v-for="(digit, index) in otpDigits"
       :key="index"
@@ -8,8 +8,11 @@
       type="text"
       inputmode="numeric"
       maxlength="1"
-      class="w-12 h-14 rounded-lg border text-center text-2xl font-bold shadow-md focus:outline-none focus:ring-2 focus:ring-red-800"
-      :class="{ 'border-red-600': digit }"
+      class="w-12 h-12 rounded-lg border border-gray-300 text-center text-lg font-semibold bg-white transition-all duration-200 focus:outline-none focus:border-[#9C1313] focus:ring-2 focus:ring-red-100"
+      :class="{
+        'border-[#9C1313] bg-red-50': digit,
+        'hover:border-gray-400': !digit,
+      }"
       @input="handleInput(index)"
       @keydown="handleKeyDown(index, $event)"
       @paste="handlePaste(index, $event)"

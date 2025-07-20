@@ -24,15 +24,15 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="flex justify-end space-x-4">
+        <div class="flex justify-end space-x-3">
           <button
-            class="px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition"
+            class="px-6 py-2 rounded-lg font-medium text-white bg-[#9C1313] hover:bg-red-800 transition-colors"
             @click="$emit('confirm')"
           >
             {{ confirmText }}
           </button>
           <button
-            class="px-6 py-2 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
+            class="px-6 py-2 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-300"
             @click="$emit('close')"
           >
             {{ cancelText }}
