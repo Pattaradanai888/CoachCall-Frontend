@@ -109,6 +109,17 @@ export function useCourses() {
     });
   };
 
+  const updateSkill = async (skillId: number, payload: { name: string }) => {
+    if (import.meta.server) {
+      throw new Error('updateSkill should not be called during SSR');
+    }
+
+    return $api<Skill>(`/course/skills/${skillId}`, {
+      method: 'PUT',
+      body: payload,
+    });
+};
+
   const createSession = async (payload: SessionCreatePayload) => {
     if (import.meta.server) {
       throw new Error('createSession should not be called during SSR');
@@ -296,6 +307,7 @@ export function useCourses() {
     uploadCourseImage,
     saveSessionCompletions,
     updateSessionStatus,
+    updateSkill,
 
     // Utility functions
     findSessionById,

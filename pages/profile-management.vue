@@ -1,3 +1,4 @@
+<!-- pages/profile-management -->
 <template>
   <div class="min-h-screen bg-gray-50 overflow-x-hidden">
     <!-- Main Content -->
@@ -79,6 +80,10 @@
             @image-deleted="handleProfileImageDeleted"
             @error="handleProfileUpdateError"
           />
+
+           <MatricsTab
+            v-if="activeTab === 'matrics' && profileData"
+          />
         </div>
       </div>
     </div>
@@ -95,6 +100,7 @@ import PasswordTab from '~/components/profile/PasswordTab.vue';
 import ProfileOverviewTab from '~/components/profile/ProfileOverviewTab.vue';
 import ProfilePictureTab from '~/components/profile/ProfilePictureTab.vue';
 import { useAuthStore } from '~/stores/auth';
+import MatricsTab from '~/components/profile/MatricsTab.vue';
 
 interface Achievement {
   id: string;
@@ -130,6 +136,11 @@ const tabs = [
     id: 'profile-picture',
     name: 'Profile Picture',
     icon: 'mdi:camera-account',
+  },
+  {
+    id: 'matrics',
+    name: 'Performance Metric',
+    icon: 'mdi:poll',
   },
 ];
 
