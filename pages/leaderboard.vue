@@ -231,7 +231,7 @@ import { useLeaderboard } from '~/composables/useLeaderboard';
 import type { AthleteDetail } from '~/types/leaderboard';
 import AthleteDetailCard from '~/components/leaderboard/AthleteDetailCard.vue';
 
-const { fetchLeaderboard, fetchAthleteDetail } = useLeaderboard();
+const { fetchLeaderboard, fetchAthleteDetailOptimized } = useLeaderboard();
 
 // Fetch leaderboard data with SSR support
 const { data: athletes, pending: _isLoadingAthletes, refresh: refreshAthletesData } = await fetchLeaderboard();
@@ -253,8 +253,9 @@ watch(selectedAthleteUuid, async (uuid) => {
 
   isLoadingDetail.value = true;
   try {
-    const { data } = await fetchAthleteDetail(uuid);
-    detailedAthlete.value = data.value;
+    // Use the optimized method that doesn't make duplicate API calls
+    const result = await fetchAthleteDetailOptimized(uuid, athletes.value || []);
+    detailedAthlete.value = result;
   } catch (error) {
     console.error('Failed to fetch athlete details:', error);
     detailedAthlete.value = null;

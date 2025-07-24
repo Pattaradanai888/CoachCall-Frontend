@@ -106,13 +106,13 @@
           </div>
           <div>
             <p class="text-sm font-medium text-gray-800">
-              Athletes with Scores
+              Skill Data Coverage
             </p>
             <span class="text-sm text-blue-600 font-semibold">
               {{ skill.athletes_improved_percent }}%
             </span>
             <p class="text-xs text-gray-500">
-              Percentage of the team with recorded skill data.
+              This analysis is based on skill data from {{ Math.round(engagement.active_roster_count * skill.athletes_improved_percent / 100) }} of your {{ engagement.active_roster_count }} athletes.
             </p>
           </div>
         </div>

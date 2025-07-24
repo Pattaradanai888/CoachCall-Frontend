@@ -56,34 +56,41 @@ export function useLeaderboard() {
     );
   };
 
-  // SSR-friendly athlete detail fetching with individual cache keys
-  const fetchAthleteDetail = (athleteUuid: string | globalThis.Ref<string>) => {
-    const uuid = typeof athleteUuid === 'string' ? athleteUuid : unref(athleteUuid);
-    
+  // Optimized athlete detail fetching that reuses leaderboard data
+  const fetchAthleteDetail = (athleteUuid: string, leaderboardAthletes?: LeaderboardAthlete[]) => {
     return useAsyncData<AthleteDetail | null>(
-      `athlete-detail-${uuid}`,
+      `athlete-detail-${athleteUuid}`,
       async () => {
         // Skip if no UUID is provided
-        if (!uuid) {
+        if (!athleteUuid) {
           return null;
         }
 
         try {
-          // First get base athlete data from leaderboard
-          const leaderboardResponse = await $api<BackendLeaderboardResponse>('/analytics/leaderboard');
-          const backendAthleteData = leaderboardResponse.athletes?.find(athlete => athlete.uuid === uuid);
-          
-          if (!backendAthleteData) {
-            console.warn(`Athlete with UUID ${uuid} not found in leaderboard`);
-            return null;
+          let baseAthleteData: LeaderboardAthlete | undefined;
+
+          // First try to find the athlete in the provided leaderboard data
+          if (leaderboardAthletes) {
+            baseAthleteData = leaderboardAthletes.find(athlete => athlete.uuid === athleteUuid);
           }
 
-          // Transform to frontend format
-          const baseAthleteData = transformBackendAthlete(backendAthleteData);
+          // If not found in provided data, fetch from API (fallback)
+          if (!baseAthleteData) {
+            console.warn(`Athlete ${athleteUuid} not found in leaderboard data, fetching from API`);
+            const leaderboardResponse = await $api<BackendLeaderboardResponse>('/analytics/leaderboard');
+            const backendAthleteData = leaderboardResponse.athletes?.find(athlete => athlete.uuid === athleteUuid);
+            
+            if (!backendAthleteData) {
+              console.warn(`Athlete with UUID ${athleteUuid} not found in leaderboard`);
+              return null;
+            }
 
-          // Then fetch skill progression data
+            baseAthleteData = transformBackendAthlete(backendAthleteData);
+          }
+
+          // Fetch skill progression data (this is the only API call we actually need)
           const skillProgression = await $api<AthleteSkillProgressionResponse>(
-            `/athlete/${uuid}/skill-progression`,
+            `/athlete/${athleteUuid}/skill-progression`,
           );
 
           const mappedSkills: SkillProgressionDetail[] = skillProgression.current.map((currentSkill) => {
@@ -102,18 +109,54 @@ export function useLeaderboard() {
             skillProgression: mappedSkills,
           } as AthleteDetail;
         } catch (error) {
-          console.error(`Failed to fetch details for athlete ${uuid}:`, error);
+          console.error(`Failed to fetch details for athlete ${athleteUuid}:`, error);
           return null;
         }
       },
       {
         default: () => null,
-        server: true, // Enable SSR
-        // Only watch if it's a ref
-        ...(typeof athleteUuid !== 'string' && { watch: [athleteUuid] }),
-        transform: (data: AthleteDetail | null) => data,
+        server: false, // Don't fetch on SSR since we need the athleteUuid selection
       },
     );
+  };
+
+  // More efficient method for fetching athlete details when you already have leaderboard data
+  const fetchAthleteDetailOptimized = async (athleteUuid: string, leaderboardAthletes: LeaderboardAthlete[]) => {
+    if (!athleteUuid) return null;
+
+    try {
+      // Find athlete in already-fetched leaderboard data (no API call needed)
+      const baseAthleteData = leaderboardAthletes.find(athlete => athlete.uuid === athleteUuid);
+      
+      if (!baseAthleteData) {
+        console.warn(`Athlete ${athleteUuid} not found in provided leaderboard data`);
+        return null;
+      }
+
+      // Only fetch skill progression data (the only API call we need)
+      const skillProgression = await $api<AthleteSkillProgressionResponse>(
+        `/athlete/${athleteUuid}/skill-progression`,
+      );
+
+      const mappedSkills: SkillProgressionDetail[] = skillProgression.current.map((currentSkill) => {
+        const dayOneSkill = skillProgression.day_one.find(
+          s => s.skill_name === currentSkill.skill_name,
+        );
+        return {
+          skillName: currentSkill.skill_name,
+          currentScore: currentSkill.average_score,
+          dayOneScore: dayOneSkill ? dayOneSkill.average_score : 0,
+        };
+      });
+
+      return {
+        ...baseAthleteData,
+        skillProgression: mappedSkills,
+      } as AthleteDetail;
+    } catch (error) {
+      console.error(`Failed to fetch details for athlete ${athleteUuid}:`, error);
+      return null;
+    }
   };
 
   // Refresh leaderboard data - useful for manual refresh
@@ -129,6 +172,7 @@ export function useLeaderboard() {
   return {
     fetchLeaderboard,
     fetchAthleteDetail,
+    fetchAthleteDetailOptimized,
     refreshLeaderboard,
     refreshAthleteDetail,
   };
