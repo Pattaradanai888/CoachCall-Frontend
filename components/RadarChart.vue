@@ -106,7 +106,8 @@ const chartData = computed(() => {
   const labels = Array.from(allSkillNames);
 
   // Create datasets with proper ordering - secondary datasets first, then primary
-  const datasets = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const datasets: any[] = [];
 
   // First, add secondary datasets (before, dayOne) - these will be rendered first (behind)
   const secondaryKeys = keys.filter(key => key === 'before' || key === 'dayOne');
@@ -179,7 +180,7 @@ const chartOptions = computed(() => ({
   aspectRatio: 1,
   animation: {
     duration: props.showAnimation ? 1000 : 0,
-    easing: 'easeInOutQuart',
+    easing: 'easeInOutQuart' as const,
   },
   layout: {
     padding: 0,
@@ -197,6 +198,7 @@ const chartOptions = computed(() => ({
         boxWidth: 12,
         padding: 20,
         // Sort legend items to show primary datasets first
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         sort: (a: any, b: any) => {
           const primaryLabels = ['Current', 'After'];
           const aIsPrimary = primaryLabels.includes(a.text);
@@ -219,9 +221,11 @@ const chartOptions = computed(() => ({
       cornerRadius: 8,
       displayColors: true,
       callbacks: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         title: (context: any) => {
           return context[0].label;
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         label: (context: any) => {
           const label = context.dataset.label || '';
           const value = context.parsed.r.toFixed(1);
@@ -302,7 +306,8 @@ function createChart() {
     chartInstance = new Chart(chartCanvas.value, {
       type: 'radar',
       data: chartData.value,
-      options: chartOptions.value,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      options: chartOptions.value as any,
     });
   }
   catch (error) {
@@ -316,7 +321,8 @@ function updateChart() {
 
   try {
     chartInstance.data = chartData.value;
-    chartInstance.options = chartOptions.value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chartInstance.options = chartOptions.value as any;
     chartInstance.update(props.showAnimation ? 'active' : 'none');
   }
   catch (error) {

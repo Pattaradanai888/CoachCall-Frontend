@@ -158,7 +158,7 @@ function goToPreviousStep() {
     currentStep.value--;
 }
 
-function goToStep(step: 1 | 2 | 3 | 4) {
+function goToStep(step: number) {
   if (currentStep.value === 1)
     saveStep1Data();
   if (step >= 1 && step <= totalSteps)
@@ -219,6 +219,7 @@ onMounted(async () => {
       scheduled_date: s.scheduled_date,
       timelineId: `session-${s.id}-${index}`,
       date: new Date(s.scheduled_date),
+      tasks: s.tasks, // Required property for DroppedItem interface
       tasks_full: s.tasks.map(st => ({
         id: st.task.id,
         title: st.task.name,

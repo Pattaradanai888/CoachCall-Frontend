@@ -122,10 +122,7 @@ const props = defineProps<{
 }>();
 
 // Emits
-const emit = defineEmits<{
-  'update:show': (val: boolean) => void;
-  'tags-updated': () => void;
-}>();
+const emit = defineEmits(['update:show', 'tags-updated']);
 
 // State
 const { $api } = useNuxtApp();
@@ -133,7 +130,7 @@ const items = ref<Item[]>([]);
 const isLoading = ref(false);
 const isSubmitting = ref(false);
 const error = ref<string | null>(null);
-let hasChanges = false;
+const hasChanges = ref(false);
 
 // Dynamic validation schema
 const fieldName = `new${props.entityName}Name`;
@@ -174,7 +171,7 @@ const onAddItemSubmit = handleSubmit(async (values) => {
       body: { name: values[fieldName].trim() },
     });
     resetForm();
-    hasChanges = true;
+    hasChanges.value = true;
     await fetchItems();
   }
   catch (apiError: any) {
@@ -191,7 +188,7 @@ async function handleDelete(itemId: number, itemName: string) {
   error.value = null;
   try {
     await $api(`${props.apiEndpoint}/${itemId}`, { method: 'DELETE' });
-    hasChanges = true;
+    hasChanges.value = true;
     await fetchItems();
   }
   catch (apiError: any) {
@@ -200,13 +197,13 @@ async function handleDelete(itemId: number, itemName: string) {
 }
 
 function closeModal() {
-  if (hasChanges) {
+  if (hasChanges.value) {
     emit('tags-updated');
   }
   emit('update:show', false);
   resetForm();
   error.value = null;
-  hasChanges = false;
+  hasChanges.value = false;
 }
 
 watch(() => props.show, (isVisible) => {

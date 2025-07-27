@@ -271,9 +271,16 @@ function formatAthletePositions(positions?: { id: number; name: string }[]): str
   return positions.map(p => p.name).join(', ');
 }
 
-function handleImageError(event: Event) {
-  const img = event.target as HTMLImageElement;
-  img.src = '/default-profile.jpg';
+function handleImageError(payload: string | Event) {
+  // Handle both cases: string (URL) or Event (error event)
+  if (typeof payload === 'string') {
+    // If it's a string, it's the failed URL - we can't do much here
+    return;
+  }
+  const img = payload.target as HTMLImageElement;
+  if (img) {
+    img.src = '/default-profile.jpg';
+  }
 }
 </script>
 

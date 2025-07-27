@@ -59,9 +59,11 @@ function createChart() {
               if (data.labels?.length && data.datasets.length) {
                 return data.labels.map((label, i) => {
                   const value = data.datasets[0].data[i] as number;
+                  const backgroundColor = data.datasets[0].backgroundColor;
+                  const bgColor = Array.isArray(backgroundColor) ? backgroundColor[i] : backgroundColor;
                   return {
                     text: `${label}: ${value.toFixed(1)}%`,
-                    fillStyle: data.datasets[0].backgroundColor?.[i] as string,
+                    fillStyle: bgColor as string,
                     strokeStyle: data.datasets[0].borderColor as string,
                     lineWidth: data.datasets[0].borderWidth as number,
                     hidden: false,

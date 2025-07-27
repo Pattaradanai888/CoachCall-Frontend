@@ -2,7 +2,7 @@
   <div>
     <SubNavbar />
     <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px]">
-      <div v-if="pending" class="w-full text-center py-20 text-gray-500">
+      <div v-if="pending" class="flex justify-center items-center py-20 text-gray-500">
         <p>Loading Dashboard...</p>
       </div>
       <div v-else class="w-full mx-7 lg:mx-0">
@@ -18,7 +18,7 @@
             <div class="text-2xl sm:text-3xl font-bold">
               {{ card.value }}
             </div>
-            <div v-if="card.changeDirection && card.changePercentage" class="flex items-center">
+            <div v-if="'changeDirection' in card && 'changePercentage' in card && card.changeDirection && card.changePercentage" class="flex items-center">
               <Icon :name="card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'" size="1.25rem" :style="{ color: card.changeDirection === 'up' ? 'green' : 'red' }" />
               <div :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'" class="text-sm">
                 {{ card.changePercentage }}%
@@ -143,7 +143,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { EventItem } from '~/types/course';
+import type { EventItem, CourseListEntry } from '~/types/course';
 
 const { $api } = useNuxtApp();
 
@@ -155,7 +155,7 @@ const [
     default: () => [],
     server: true,
   }),
-  useAsyncData('active-courses', () => $api('/course', { params: { is_archived: false } }), {
+  useAsyncData<CourseListEntry[]>('active-courses', () => $api('/course', { params: { is_archived: false } }), {
     default: () => [],
     server: true,
   }),
@@ -205,7 +205,7 @@ const cards = computed(() => [
   {
     icon: 'mynaui:academic-hat-solid',
     label: 'Active Courses',
-    value: activeCourses.value?.length ?? 0,
+    value: Array.isArray(activeCourses.value) ? activeCourses.value.length : 0,
   },
   {
     icon: 'mdi:calendar-account',

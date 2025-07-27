@@ -302,13 +302,17 @@ function showErrorModal(title: string, message: string) {
 
 // Create a computed property for the date range that v-calendar can work with
 const dateRange = computed({
-  get(): DateRange {
+  get() {
+    // Return undefined if either date is null to satisfy v-calendar
+    if (!form.dateRange.start || !form.dateRange.end) {
+      return undefined;
+    }
     return {
       start: form.dateRange.start,
       end: form.dateRange.end,
     };
   },
-  set(value: DateRange | null) {
+  set(value: { start: Date; end: Date } | undefined) {
     if (value) {
       form.dateRange.start = value.start;
       form.dateRange.end = value.end;

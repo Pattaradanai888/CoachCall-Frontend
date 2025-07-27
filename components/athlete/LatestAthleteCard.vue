@@ -36,7 +36,7 @@
           size="1rem"
           class="mr-1"
         />
-        {{ athlete.positions }}
+        {{ athlete.position }}
       </p>
       <p class="text-gray-600 text-sm flex items-center justify-center">
         <Icon
@@ -44,24 +44,16 @@
           size="1rem"
           class="mr-1"
         />
-        Age: {{ athlete.age }}
-      </p>
-      <p class="text-gray-600 text-sm flex items-center justify-center">
-        <Icon name="mdi:ruler" size="1rem" class="mr-1" />
-        Height: {{ athlete.height || 'Undefined' }}{{ athlete.height ? ' cm' : '' }}
-      </p>
-      <p class="text-gray-600 text-sm flex items-center justify-center">
-        <Icon name="mdi:scale-bathroom" size="1rem" class="mr-1" />
-        Weight: {{ athlete.weight || 'Undefined' }}{{ athlete.weight ? ' kg' : '' }}
+        Age: {{ athlete.age || 'N/A' }}
       </p>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { AthleteDetail } from '~/types/athlete';
+import type { AthleteListEntry } from '~/types/athlete';
 
-defineProps<{ athlete: AthleteDetail }>();
+defineProps<{ athlete: AthleteListEntry }>();
 </script>
 
 <style>

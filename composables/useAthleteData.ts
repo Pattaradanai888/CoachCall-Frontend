@@ -186,11 +186,14 @@ export function useAthleteData() {
       athleteUuid.value ? `athlete-skill-progression-${athleteUuid.value}` : 'athlete-skill-progression-empty',
     );
 
-    return useAsyncData<AthleteSkillProgression, AthleteSkillProgressionResponse>(
+    return useAsyncData(
       key,
       () => {
         if (!athleteUuid.value) {
-          return Promise.resolve({ dayOne: [], current: [] } as AthleteSkillProgression);
+          return Promise.resolve({
+            day_one: [],
+            current: []
+          } as AthleteSkillProgressionResponse);
         }
         return $api<AthleteSkillProgressionResponse>(`/athlete/${athleteUuid.value}/skill-progression`);
       },

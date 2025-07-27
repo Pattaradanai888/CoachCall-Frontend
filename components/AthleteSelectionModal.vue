@@ -172,15 +172,14 @@
 import type { AthleteSelectionInfo } from '~/types/athlete';
 import type { CourseDetail } from '~/types/course';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   show: boolean;
   course: CourseDetail | null;
   allAthletes: AthleteSelectionInfo[];
-  initialSelectedUuids: {
-    type: PropType<string[]>;
-    default: () => [];
-  };
-}>();
+  initialSelectedUuids?: string[];
+}>(), {
+  initialSelectedUuids: () => [],
+});
 
 const emit = defineEmits<{
   (e: 'close'): void;

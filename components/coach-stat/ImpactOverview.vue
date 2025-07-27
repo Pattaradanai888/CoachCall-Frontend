@@ -26,13 +26,13 @@
           <p class="text-sm text-gray-600">
             New Athletes
           </p>
-          <div class="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
+          <div v-if="engagement.new_athletes_month.change_percent !== null" class="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
             <Icon
-              :name="engagement.new_athletes_month.change_percent >= 0 ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'"
-              :class="engagement.new_athletes_month.change_percent >= 0 ? 'text-green-500' : 'text-red-500'"
+              :name="(engagement.new_athletes_month.change_percent ?? 0) >= 0 ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'"
+              :class="(engagement.new_athletes_month.change_percent ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'"
             />
-            <span :class="engagement.new_athletes_month.change_percent >= 0 ? 'text-green-600' : 'text-red-600'">
-              {{ Math.abs(engagement.new_athletes_month.change_percent) }}%
+            <span :class="(engagement.new_athletes_month.change_percent ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'">
+              {{ Math.abs(engagement.new_athletes_month.change_percent ?? 0) }}%
             </span>
           </div>
         </div>

@@ -106,14 +106,14 @@
                   v-else-if="selectedAthlete"
                   :key="`${selectedAthlete.uuid}-${athleteDetailKey}`"
                   :athlete="selectedAthlete"
-                  :skill-progression="skillProgression"
+                  :skill-progression="safeSkillProgression"
                   @delete-athlete="handleDeleteAthlete"
                   @edit-athlete="openEditModal(selectedAthlete)"
                 />
 
                 <div v-else class="min-h-[400px] flex flex-col items-center justify-center text-gray-500 py-12">
                   <Icon name="mdi:account-search" class="w-16 h-16 opacity-30 mb-4" />
-                  <p class="text-lg text-center px-4">
+                  <p class="text-lg texta-center px-4">
                     Select an athlete to view detailed information
                   </p>
                   <p class="mt-2 text-sm text-gray-400">
@@ -146,7 +146,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AthleteDetail } from '~/types/athlete';
+import type { AthleteDetail, SkillScore } from '~/types/athlete';
 import LatestAthleteCard from '~/components/athlete/LatestAthleteCard.vue';
 import StatOverview from '~/components/athlete/StatOverview.vue';
 import { useAthleteData } from '~/composables/useAthleteData';
@@ -188,6 +188,14 @@ function openEditModal(athlete: AthleteDetail) {
 
 const selectedAthleteUuid = computed(() => selectedAthlete.value?.uuid);
 const { data: skillProgression, pending: isSkillsLoading } = fetchAthleteSkillProgression(selectedAthleteUuid);
+
+// Safe skillProgression with fallback
+const safeSkillProgression = computed(() => {
+  if (!skillProgression.value || !skillProgression.value.dayOne || !skillProgression.value.current) {
+    return { dayOne: [] as SkillScore[], current: [] as SkillScore[] };
+  }
+  return skillProgression.value;
+});
 
 // When the form is successfully submitted, refresh data and force component update
 async function onFormSubmitted() {

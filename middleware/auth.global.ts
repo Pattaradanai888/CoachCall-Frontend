@@ -122,7 +122,7 @@ async function performServerAuth(
     });
     auth.accessToken = refresh.access_token;
 
-    const profileData = await $fetch('/api/auth/me', {
+    const profileData = await $fetch<User>('/api/auth/me', {
       headers: { Authorization: `Bearer ${auth.accessToken}` },
     });
     auth.setUserData(profileData);
@@ -152,7 +152,7 @@ async function fetchProfileAndSetPayload(
   nuxtApp: ReturnType<typeof useNuxtApp>,
 ): Promise<void> {
   try {
-    const profileData = await $fetch('/api/auth/me', {
+    const profileData = await $fetch<User>('/api/auth/me', {
       headers: { Authorization: `Bearer ${auth.accessToken}` },
     });
     auth.setUserData(profileData);
