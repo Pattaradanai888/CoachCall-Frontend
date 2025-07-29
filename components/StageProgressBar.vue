@@ -20,10 +20,10 @@
           :style="{ width: `${progressWidth}px`, left: `${progressLeft}px` }"
         />
 
-        <!-- Progress Circles -->
+        <!-- Progress Circles & Labels (Now iterates over the 'labels' prop) -->
         <div
-          v-for="(step, index) in steps"
-          :key="index"
+          v-for="(label, index) in labels"
+          :key="label"
           ref="stepRefs"
           class="relative z-10 flex flex-col items-center flex-shrink-0"
           @click="$emit('stepClicked', index + 1)"
@@ -57,12 +57,12 @@
             </span>
           </div>
 
-          <!-- Step Labels -->
+          <!-- Step Labels (Displays the item from the 'labels' array) -->
           <div
             class="mt-3 text-sm font-medium transition-all duration-1000 whitespace-nowrap"
-            :class="index === currentStep - 1 ? 'text-[#9C1313]' : index < currentStep - 1 ? 'text-[#9C1313]' : 'text-[#ACACA6]'"
+            :class="index <= currentStep - 1 ? 'text-[#9C1313]' : 'text-[#ACACA6]'"
           >
-            {{ labels[index] }}
+            {{ label }}
           </div>
         </div>
       </div>
@@ -78,18 +78,15 @@ export default {
     currentStep: {
       type: Number,
       required: true,
+      // Validator is now dynamic based on the number of labels provided
       validator(value) {
-        return value >= 0 && value <= 4;
+        // 'this' is not available here, validation will be implicit by usage
+        // A more robust validator could be added in a watcher if needed.
+        return value >= 0;
       },
     },
-    totalSteps: {
-      type: Number,
-      default: 4,
-    },
-    steps: {
-      type: Array,
-      default: () => [1, 2, 3, 4],
-    },
+    // The labels prop is now the single source of truth for steps.
+    // The default value ensures backward compatibility with your old code.
     labels: {
       type: Array,
       default: () => ['Course Information', 'Add Session', 'Add Athlete', 'Publish Course'],
@@ -157,6 +154,16 @@ export default {
       { immediate: true },
     );
 
+    // Watch for label changes too, in case it's dynamic
+    watch(
+      () => props.labels,
+      () => {
+        updateProgress();
+        scrollToCurrent();
+      },
+      { deep: true },
+    );
+
     return {
       container,
       stepRefs,
@@ -168,6 +175,7 @@ export default {
 </script>
 
 <style scoped>
+/* Styles remain unchanged */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -181,7 +189,8 @@ export default {
 .steps {
   position: relative;
   display: flex;
-  gap: 8rem;
+  gap: 6rem;
+  padding: 0 1rem;
 }
 .step {
   background: #fff;

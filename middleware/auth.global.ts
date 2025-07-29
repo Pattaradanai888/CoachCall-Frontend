@@ -183,6 +183,21 @@ function handleServerRouteGuarding(
 ) {
   const publicRoutes = ['/login', '/register'];
 
+  if (auth.isAuthenticated && auth.user) {
+    const onboardingRoute = '/onboarding';
+    const hasCompletedOnboarding = auth.user.profile?.has_completed_onboarding;
+
+    if (!hasCompletedOnboarding && to.path !== onboardingRoute) {
+      if (to.path.startsWith('/api/')) {
+        return;
+      }
+      return navigateTo(onboardingRoute, { replace: true });
+    }
+
+    if (hasCompletedOnboarding && to.path === onboardingRoute) {
+      return navigateTo('/dashboard', { replace: true });
+    }
+  }
   if (publicRoutes.includes(to.path) && auth.isAuthenticated) {
     return navigateTo('/dashboard', { replace: true });
   }
@@ -203,7 +218,20 @@ async function handleClientRouteGuarding(
   const publicRoutes = ['/login', '/register'];
 
   if (!auth.isInitialized) {
-    await Promise.resolve(); // nextTick equivalent
+    await Promise.resolve();
+  }
+
+  if (auth.isAuthenticated && auth.user) {
+    const onboardingRoute = '/onboarding';
+    const hasCompletedOnboarding = auth.user.profile?.has_completed_onboarding;
+
+    if (!hasCompletedOnboarding && to.path !== onboardingRoute) {
+      return navigateTo(onboardingRoute, { replace: true });
+    }
+
+    if (hasCompletedOnboarding && to.path === onboardingRoute) {
+      return navigateTo('/dashboard', { replace: true });
+    }
   }
 
   if (publicRoutes.includes(to.path)) {

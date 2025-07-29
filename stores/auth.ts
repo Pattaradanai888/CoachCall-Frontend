@@ -10,6 +10,7 @@ const UserSchema = z.object({
   profile: z.object({
     display_name: z.string(),
     profile_image_url: z.string().url().nullable().optional(),
+    has_completed_onboarding: z.boolean(),
   }).nullable(),
 }).transform((user) => {
   return {
@@ -155,9 +156,11 @@ export const useAuthStore = defineStore('auth', () => {
         if (updatedUserData.profile) {
           // Ensure display_name is always provided
           updatedUserData.profile = {
-            display_name: updatedUserData.profile.display_name || user.value.profile?.display_name || user.value.fullname || 'N/A',
-            profile_image_url: updatedUserData.profile.profile_image_url,
-          };
+          display_name: updatedUserData.profile.display_name || user.value.profile?.display_name || user.value.fullname || 'N/A',
+          profile_image_url: updatedUserData.profile.profile_image_url,
+          // Always preserve the existing onboarding status when updating
+          has_completed_onboarding: updatedUserData.profile.has_completed_onboarding ?? user.value.profile?.has_completed_onboarding ?? false,
+        };
         }
 
         user.value = UserSchema.parse(updatedUserData);
@@ -275,6 +278,7 @@ export const useAuthStore = defineStore('auth', () => {
         profile: {
           display_name: response.fullname, // Always ensure display_name is set
           profile_image_url: response.profile_image_url ?? user.value?.profile?.profile_image_url ?? null,
+          has_completed_onboarding: user.value?.profile?.has_completed_onboarding ?? false,
         },
       };
 

@@ -7,6 +7,7 @@ export interface TokenResponse {
 export interface UserProfile {
   display_name: string;
   profile_image_url?: string | null;
+  has_completed_onboarding: boolean;
 }
 
 export interface User {
@@ -22,6 +23,7 @@ export interface User {
 export interface UserProfileUpdate {
   display_name?: string;
   profile_image_url?: string | null;
+  has_completed_onboarding?: boolean;
 }
 
 // Helper type for user updates
@@ -39,6 +41,7 @@ export function normalizeUserProfile(user: Partial<User>): User {
   const profile: UserProfile = {
     display_name: user.profile?.display_name || user.fullname || 'N/A',
     profile_image_url: user.profile?.profile_image_url || user.profile_image_url || null,
+    has_completed_onboarding: user.profile?.has_completed_onboarding ?? false,
   };
 
   return {

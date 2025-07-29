@@ -162,8 +162,16 @@ const onSubmit = handleSubmit(async (values) => {
 
   try {
     await auth.login({ email: values.email, password: values.password });
-    const redirectPath = (route.query.redirect as string) || '/dashboard';
-    await navigateTo(redirectPath, { replace: true });
+
+    const hasCompletedOnboarding = auth.user?.profile?.has_completed_onboarding;
+
+    if (hasCompletedOnboarding === false) {
+      await navigateTo('/onboarding', { replace: true });
+    }
+    else {
+      const redirectPath = (route.query.redirect as string) || '/dashboard';
+      await navigateTo(redirectPath, { replace: true });
+    }
   }
   catch (error: unknown) {
     console.error('Login failed:', error);
