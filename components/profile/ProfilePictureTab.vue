@@ -184,6 +184,7 @@ const { loading: loadingUpload, submit: uploadPicture } = useSubmit(
           profile: {
             display_name: currentUser.profile?.display_name || currentUser.fullname || 'N/A',
             profile_image_url: data.image_url,
+            has_completed_onboarding: currentUser.profile?.has_completed_onboarding ?? false,
           },
         };
         auth.setUserData(updatedUserData);
@@ -210,6 +211,7 @@ const { loading: loadingDelete, submit: deletePicture } = useSubmit(
           profile: {
             display_name: currentUser.profile?.display_name || currentUser.fullname || 'N/A',
             profile_image_url: null,
+            has_completed_onboarding: currentUser.profile?.has_completed_onboarding ?? false,
           },
         };
         auth.setUserData(updatedUserData);
