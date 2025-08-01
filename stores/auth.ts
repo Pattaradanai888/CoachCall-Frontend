@@ -39,7 +39,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function _performRefreshAndFetchProfile(): Promise<void> {
     try {
-      const refreshResponse = await $fetch<TokenResponse>('/api/auth/refresh', {
+      const { $api } = useNuxtApp();
+      const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
         method: 'POST',
         credentials: 'include',
       });
@@ -108,7 +109,8 @@ export const useAuthStore = defineStore('auth', () => {
     isRefreshing.value = true;
     refreshPromise = (async () => {
       try {
-        const refreshResponse = await $fetch<TokenResponse>('/api/auth/refresh', {
+        const { $api } = useNuxtApp();
+        const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
           method: 'POST',
           credentials: 'include',
         });

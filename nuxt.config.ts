@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     '@samk-dev/nuxt-vcalendar',
   ],
   devtools: { enabled: true },
+  
   runtimeConfig: {
     // Private keys (only available on server-side)
     apiBase: process.env.API_BASE || 'http://localhost:8000',

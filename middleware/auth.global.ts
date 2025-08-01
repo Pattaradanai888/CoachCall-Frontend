@@ -7,6 +7,7 @@ import {
   useAuthStore,
   useNuxtApp,
   useRequestHeaders,
+  useRuntimeConfig,
 } from '#imports';
 
 let serverAuthPromise: Promise<void> | null = null;
@@ -105,6 +106,7 @@ async function performServerAuth(
   nuxtApp: ReturnType<typeof useNuxtApp>,
 ): Promise<void> {
   const headers = useRequestHeaders(['cookie']);
+  const config = useRuntimeConfig();
 
   if (!headers.cookie) {
     nuxtApp.payload.auth = {
@@ -116,13 +118,14 @@ async function performServerAuth(
   }
 
   try {
-    const refresh = await $fetch<RefreshTokenResponse>('/api/auth/refresh', {
+    const refresh = await $fetch<RefreshTokenResponse>(`${config.public.apiBase}/auth/refresh`, {
       method: 'POST',
       headers,
+      credentials: 'include',
     });
     auth.accessToken = refresh.access_token;
 
-    const profileData = await $fetch<User>('/api/auth/me', {
+    const profileData = await $fetch<User>(`${config.public.apiBase}/auth/me`, {
       headers: { Authorization: `Bearer ${auth.accessToken}` },
     });
     auth.setUserData(profileData);
@@ -151,8 +154,10 @@ async function fetchProfileAndSetPayload(
   auth: ReturnType<typeof useAuthStore>,
   nuxtApp: ReturnType<typeof useNuxtApp>,
 ): Promise<void> {
+  const config = useRuntimeConfig();
+  
   try {
-    const profileData = await $fetch<User>('/api/auth/me', {
+    const profileData = await $fetch<User>(`${config.public.apiBase}/auth/me`, {
       headers: { Authorization: `Bearer ${auth.accessToken}` },
     });
     auth.setUserData(profileData);

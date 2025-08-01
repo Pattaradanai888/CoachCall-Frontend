@@ -14,16 +14,17 @@
       class="bg-white rounded-xl shadow-lg flex max-w-[1140px] w-full mx-auto h-[600px] max-h-[80vh] my-10 mt-[6.5rem]"
     >
       <div class="relative w-1/2 rounded-l-xl overflow-hidden">
-        <NuxtImg
-          src="/auth-bg.png"
-          alt="Basketball player"
-          class="object-cover w-full h-full"
-          fetchpriority="high"
-          quality="80"
-          format="webp"
-          width="570"
-          height="600"
-        />
+        <picture>
+          <source srcset="/auth-bg.avif" type="image/avif">
+          <source srcset="/auth-bg.webp" type="image/webp">
+          <img
+            src="/auth-bg.png"
+            alt="Basketball player"
+            class="object-cover w-full h-full"
+            loading="eager"
+            fetchpriority="high"
+          >
+        </picture>
         <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-6">
           <div class="text-white">
             <h2 class="text-2xl font-bold">
