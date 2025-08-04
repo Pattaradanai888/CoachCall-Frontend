@@ -3,13 +3,16 @@
     {
       "route": "/index.html",
       "redirect": "/"
+    },
+    {
+      "route": "/",
+      "rewrite": "/api/server"
     }
   ],
-  "navigationFallback": {
-    "rewrite": "/index.html"
+  "platform": {
+    "apiRuntime": "node:20"
   },
-  "mimeTypes": {
-    ".js": "text/javascript",
-    ".mjs": "text/javascript"
+  "navigationFallback": {
+    "rewrite": "/api/server"
   }
 }
