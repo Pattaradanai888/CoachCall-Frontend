@@ -60,9 +60,22 @@ export default defineNuxtRouteMiddleware(
 
     // --- CLIENT-SIDE ---
     if (import.meta.client) {
+      const payload = nuxtApp.payload.auth as AuthPayload | undefined;
+
+      // Hydrate from the server payload on initial client load.
+      if (payload?.processed && !auth.isInitialized) {
+        if (payload.accessToken && payload.user) {
+          auth.hydrateFromSSR(payload.accessToken, payload.user);
+        }
+        // Mark as initialized to prevent re-running initializeAuth
+        auth.isInitialized = true; 
+      }
+
+      // If not initialized (e.g., client-side navigation), run the full auth check.
       if (!auth.isInitialized) {
         await auth.initializeAuth('client');
       }
+      
       return handleClientRouteGuarding(to, auth);
     }
   },
