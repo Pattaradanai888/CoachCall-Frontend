@@ -75,7 +75,7 @@ async function initializeServerSideAuth(
   const headers = useRequestHeaders(['cookie']);
   const config = useRuntimeConfig();
 
-  let authResult: AuthPayload = {
+  const authResult: AuthPayload = {
     accessToken: null,
     user: null,
     processed: true,
@@ -94,24 +94,29 @@ async function initializeServerSideAuth(
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        authResult = {
-          accessToken,
-          user: profileData,
-          processed: true,
-        };
+        // *** THE FIX IS HERE ***
+        // We must assign the fetched data to the authResult object
+        authResult.accessToken = accessToken;
+        authResult.user = profileData;
       }
     }
   }
   catch (error) {
     console.error('Server-side authentication failed:', error);
+    // Reset authResult on failure to ensure a clean state
+    authResult.accessToken = null;
+    authResult.user = null;
   }
   finally {
+    // Now, correctly hydrate the store on the server AND set the payload for the client
     if (authResult.accessToken && authResult.user) {
       auth.hydrateFromSSR(authResult.accessToken, authResult.user);
     }
     else {
+      // Ensure the store is clean if auth failed
       await auth.logoutSilently();
     }
+    // Pass the final, correct result to the client
     nuxtApp.payload.auth = JSON.parse(JSON.stringify(authResult));
   }
 }
