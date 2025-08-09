@@ -1,7 +1,7 @@
 import type { TokenResponse, User } from '~/types/auth';
 // stores/auth.ts - Fixed version
 import { defineStore } from 'pinia';
-import { computed, getCurrentInstance, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { z } from 'zod';
 
 const UserSchema = z.object({
@@ -22,163 +22,96 @@ const UserSchema = z.object({
 
 export type UserFromSchema = z.infer<typeof UserSchema>;
 
+interface AuthPayload {
+  accessToken: string | null;
+  user: User | null;
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null);
   const user = ref<User | null>(null);
-  const isAuthenticated = computed(() => Boolean(user.value) && Boolean(accessToken.value));
-
-  // Enhanced state management for preventing duplicates
-  const isRefreshing = ref(false);
+  const isAuthenticated = computed(() => !!user.value && !!accessToken.value);
   const isInitialized = ref(false);
-  const initializationSource = ref<'ssr' | 'client' | null>(null);
+  const isRefreshing = ref(false);
+
   let refreshPromise: Promise<void> | null = null;
 
-  // Track if we're currently fetching profile to prevent duplicates
-  const isFetchingProfile = ref(false);
-  let profilePromise: Promise<User> | null = null;
-
-  async function _performRefreshAndFetchProfile(): Promise<void> {
-    try {
-      const { $api } = useNuxtApp();
-      const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      accessToken.value = refreshResponse.access_token;
-      await fetchProfile(true);
-    }
-    catch (err) {
-      console.error('Refresh and profile fetch failed:', err);
-      await logoutSilently();
-      throw err;
-    }
-  }
-
-  async function initializeAuth(source: 'ssr' | 'client' = 'client'): Promise<void> {
-    // If already initialized by SSR, don't re-initialize on client
-    if (isInitialized.value && initializationSource.value === 'ssr' && source === 'client') {
-      return Promise.resolve();
+  async function initialize(
+    nuxtApp: ReturnType<typeof useNuxtApp>,
+  ): Promise<void> {
+    if (isInitialized.value) {
+      return;
     }
 
-    // If already authenticated, no need to initialize
-    if (isAuthenticated.value) {
-      isInitialized.value = true;
-      initializationSource.value = source;
-      return Promise.resolve();
-    }
+    if (import.meta.server) {
+      const headers = useRequestHeaders(['cookie']);
+      const config = useRuntimeConfig();
+      let serverAccessToken: string | null = null;
+      let serverUser: User | null = null;
 
-    // If already refreshing, wait for that promise
-    if (isRefreshing.value && refreshPromise) {
-      return refreshPromise;
-    }
-
-    isRefreshing.value = true;
-    refreshPromise = (async () => {
       try {
-        if (accessToken.value && !user.value) {
-          await fetchProfile();
+        if (headers.cookie) {
+          const refreshResponse = await $fetch<TokenResponse>(
+            `${config.public.apiBase}/auth/refresh`,
+            {
+              method: 'POST',
+              headers: { cookie: headers.cookie },
+            },
+          );
+
+          if (refreshResponse.access_token) {
+            serverAccessToken = refreshResponse.access_token;
+            const profileData = await $fetch<User>(
+              `${config.public.apiBase}/auth/me`,
+              {
+                headers: { Authorization: `Bearer ${serverAccessToken}` },
+              },
+            );
+            serverUser = UserSchema.parse(profileData);
+          }
         }
-        else if (!accessToken.value) {
-          await _performRefreshAndFetchProfile();
-        }
-        isInitialized.value = true;
-        initializationSource.value = source;
       }
       catch (error) {
-        console.error('Auth initialization failed:', error);
-        // Reset state on error
-        await logoutSilently();
-        throw error;
+        console.error('SSR Auth Error:', error);
+        serverAccessToken = null;
+        serverUser = null;
       }
       finally {
-        isRefreshing.value = false;
-        refreshPromise = null;
+        accessToken.value = serverAccessToken;
+        user.value = serverUser;
+        // Share state with the client
+        nuxtApp.payload.auth = {
+          accessToken: accessToken.value,
+          user: user.value,
+        } as AuthPayload;
+        isInitialized.value = true; // Server pass is complete
       }
-    })();
-
-    return refreshPromise;
-  }
-
-  // Method to manually refresh token (can be called from API plugin)
-  async function refreshToken(): Promise<string> {
-    if (isRefreshing.value && refreshPromise) {
-      await refreshPromise;
-      return accessToken.value || '';
     }
-
-    isRefreshing.value = true;
-    refreshPromise = (async () => {
-      try {
-        const { $api } = useNuxtApp();
-        const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
-          method: 'POST',
-          credentials: 'include',
-        });
-        accessToken.value = refreshResponse.access_token;
-
-        // Try to fetch profile but don't fail if it doesn't work
+    else { // Client-side
+      const payload = nuxtApp.payload.auth as AuthPayload | undefined;
+      // On initial client load, hydrate from the server-provided payload.
+      if (payload && payload.accessToken && payload.user) {
+        accessToken.value = payload.accessToken;
+        user.value = payload.user;
+      }
+      // After initial load, payload will be empty. If we don't have a token,
+      // it means we are navigating client-side and need to check our auth status.
+      else if (!accessToken.value) {
         try {
-          await fetchProfile(true);
+          // This will attempt to get a new token. If it fails, it will logout silently.
+          await refreshToken();
         }
-        catch (profileError) {
-          console.warn('Profile fetch failed after refresh:', profileError);
+        catch (e) {
+          console.error('Client-side refresh token failed:', e);
         }
       }
-      catch (error) {
-        console.error('Token refresh failed:', error);
-        await logoutSilently();
-        throw error;
-      }
-    })();
-
-    await refreshPromise;
-    isRefreshing.value = false;
-    refreshPromise = null;
-
-    return accessToken.value || '';
-  }
-
-  // Method to hydrate from SSR payload without triggering API calls
-  function hydrateFromSSR(ssrAccessToken: string, ssrUser: User): void {
-    if (accessToken.value !== ssrAccessToken || user.value?.id !== ssrUser.id) {
-      accessToken.value = ssrAccessToken;
-      user.value = ssrUser;
-    }
-    isInitialized.value = true;
-    initializationSource.value = 'ssr';
-  }
-
-  function setUserData(userData: Partial<User> | User): void {
-    // userData can be partial for updates too
-    try {
-      if (user.value && typeof userData === 'object' && userData !== null) {
-        const updatedUserData = { ...user.value, ...userData };
-
-        // FIXED: Ensure profile has required fields when updating
-        if (updatedUserData.profile) {
-          // Ensure display_name is always provided
-          updatedUserData.profile = {
-          display_name: updatedUserData.profile.display_name || user.value.profile?.display_name || user.value.fullname || 'N/A',
-          profile_image_url: updatedUserData.profile.profile_image_url,
-          // Always preserve the existing onboarding status when updating
-          has_completed_onboarding: updatedUserData.profile.has_completed_onboarding ?? user.value.profile?.has_completed_onboarding ?? false,
-        };
-        }
-
-        user.value = UserSchema.parse(updatedUserData);
-      }
-      else {
-        user.value = UserSchema.parse(userData);
-      }
-    }
-    catch (error) {
-      console.error('Invalid user data:', error, userData);
-      if (!user.value)
-        user.value = null;
+      isInitialized.value = true;
     }
   }
 
-  async function login(payload: { email: string; password: string }): Promise<User> {
+  async function login(
+    payload: { email: string; password: string },
+  ): Promise<User> {
     const { $api } = useNuxtApp();
     const form = new URLSearchParams();
     form.append('grant_type', 'password');
@@ -196,110 +129,42 @@ export const useAuthStore = defineStore('auth', () => {
     return profile;
   }
 
-  async function fetchProfile(isAfterRefresh: boolean = false): Promise<User> {
-    // Return existing user if we have one and not forcing refresh
-    if (user.value && !isAfterRefresh)
-      return user.value;
+  async function fetchProfile(): Promise<User> {
+    const { $api } = useNuxtApp();
+    const profileData = await $api('/auth/me');
+    const parsedUser = UserSchema.parse(profileData);
+    user.value = parsedUser;
+    return parsedUser;
+  }
 
-    // If already fetching profile, wait for that promise
-    if (isFetchingProfile.value && profilePromise) {
-      return profilePromise;
+  async function refreshToken(): Promise<string> {
+    if (isRefreshing.value && refreshPromise) {
+      await refreshPromise;
+      return accessToken.value || '';
     }
 
-    if (!accessToken.value) {
-      await logoutSilently();
-      throw new Error('Authentication required: No access token available to fetch profile.');
-    }
-
-    // Only proceed if we're in a valid Nuxt context (client-side or within proper server context)
-    if (import.meta.server && !getCurrentInstance() && !useNuxtApp()) {
-      throw new Error('Cannot fetch profile: Invalid server context');
-    }
-
-    isFetchingProfile.value = true;
-    profilePromise = (async (): Promise<User> => {
+    isRefreshing.value = true;
+    const promise = (async () => {
       try {
         const { $api } = useNuxtApp();
-        const profileData = await $api('/auth/me');
-        const parsedUser = UserSchema.parse(profileData);
-        user.value = parsedUser;
-        return parsedUser;
+        const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
+          method: 'POST',
+        });
+        accessToken.value = refreshResponse.access_token;
+        return accessToken.value || '';
       }
-      catch (error: unknown) {
-        // Let the API plugin handle 401 errors with automatic refresh
-        // Only logout if it's not a 401 or if refresh has already been attempted
-        if (
-          error
-          && typeof error === 'object'
-          && 'response' in error
-          && error.response
-          && typeof error.response === 'object'
-          && 'status' in error.response
-          && error.response.status === 401
-          && isAfterRefresh // Only logout if this was after a refresh attempt
-        ) {
-          await logoutSilently();
-        }
+      catch (error) {
+        console.error('Token refresh failed:', error);
+        await logoutSilently();
         throw error;
       }
       finally {
-        isFetchingProfile.value = false;
-        profilePromise = null;
+        isRefreshing.value = false;
+        refreshPromise = null;
       }
     })();
-
-    return profilePromise;
-  }
-
-  // UPDATED: Update profile method
-  async function updateDisplayName(newDisplayName: string): Promise<User> {
-    const { $api } = useNuxtApp();
-
-    if (!accessToken.value) {
-      throw new Error('Authentication required: No access token available.');
-    }
-
-    try {
-      // Call the API to update the display name
-      const response = await $api<{
-        fullname: string;
-        id: number;
-        email: string;
-        profile_image_url?: string | null;
-      }>('/profile/me', {
-        method: 'PUT',
-        body: { fullname: newDisplayName },
-      });
-
-      // FIXED: Create properly typed user data
-      const updatedUserData: User = {
-        ...user.value!,
-        id: response.id,
-        email: response.email,
-        fullname: response.fullname,
-        profile: {
-          display_name: response.fullname, // Always ensure display_name is set
-          profile_image_url: response.profile_image_url ?? user.value?.profile?.profile_image_url ?? null,
-          has_completed_onboarding: user.value?.profile?.has_completed_onboarding ?? false,
-        },
-      };
-
-      user.value = UserSchema.parse(updatedUserData);
-      return user.value;
-    }
-    catch (error: unknown) {
-      console.error('Display name update failed:', error);
-      throw error;
-    }
-  }
-
-  async function register(payload: {
-    fullname: string;
-    email: string;
-    password: string;
-  }): Promise<void> {
-    const { $api } = useNuxtApp();
-    await $api('/auth/register', { method: 'POST', body: payload });
+    refreshPromise = promise.then(() => {});
+    return promise;
   }
 
   async function logout() {
@@ -319,30 +184,68 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
     accessToken.value = null;
     isInitialized.value = false;
-    initializationSource.value = null;
-    isRefreshing.value = false;
-    isFetchingProfile.value = false;
-    refreshPromise = null;
-    profilePromise = null;
+  }
+
+  async function updateDisplayName(newDisplayName: string): Promise<User> {
+    const { $api } = useNuxtApp();
+    const response = await $api<{
+      id: number;
+      email: string;
+      fullname: string;
+      profile_image_url?: string | null;
+    }>('/profile/me', {
+      method: 'PUT',
+      body: { fullname: newDisplayName },
+    });
+
+    const updatedUserData: User = {
+      ...user.value!,
+      id: response.id,
+      email: response.email,
+      fullname: response.fullname,
+      profile: {
+        display_name: response.fullname,
+        profile_image_url:
+          response.profile_image_url
+          ?? user.value?.profile?.profile_image_url
+          ?? null,
+        has_completed_onboarding:
+          user.value?.profile?.has_completed_onboarding ?? false,
+      },
+    };
+
+    user.value = UserSchema.parse(updatedUserData);
+    return user.value;
+  }
+
+  // Simple setter to allow components to update the user in store (e.g., after profile image changes)
+  function setUserData(newUser: User) {
+    user.value = UserSchema.parse(newUser);
+  }
+
+  async function register(payload: {
+    fullname: string;
+    email: string;
+    password: string;
+  }): Promise<void> {
+    const { $api } = useNuxtApp();
+    await $api('/auth/register', { method: 'POST', body: payload });
   }
 
   return {
     user,
     accessToken,
     isAuthenticated,
-    isRefreshing,
     isInitialized,
-    initializationSource,
-    isFetchingProfile,
+    isRefreshing,
+    initialize,
     login,
     register,
     fetchProfile,
     updateDisplayName,
     logout,
-    initializeAuth,
-    hydrateFromSSR,
-    setUserData,
     refreshToken,
     logoutSilently,
+  setUserData,
   };
 });

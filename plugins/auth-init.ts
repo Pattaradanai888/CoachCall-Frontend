@@ -6,29 +6,14 @@ export default defineNuxtPlugin(async () => {
   const auth = useAuthStore();
   const nuxtApp = useNuxtApp();
 
-  // Only run on client
-  if (import.meta.server) {
-    return;
-  }
-
-  // Check if SSR provided auth state
-  const ssrAccessToken = (nuxtApp.payload as any).auth?.accessToken;
-  const ssrUser = (nuxtApp.payload as any).auth?.user;
-
-  if (ssrAccessToken && ssrUser) {
-    // Hydrate store with SSR data - this doesn't trigger API calls
-    auth.hydrateFromSSR(ssrAccessToken, ssrUser);
-    return;
-  }
-
-  // Only initialize if not already initialized and not authenticated
-  if (!auth.isInitialized && !auth.isAuthenticated && !auth.isRefreshing) {
+  // Client only: as a safety net, ensure auth is initialized once
+  if (import.meta.client && !auth.isInitialized) {
     try {
-      await auth.initializeAuth('client');
+      await auth.initialize(nuxtApp);
     }
-    catch (error) {
-      // Silently handle initialization errors
-      console.warn('Auth initialization failed:', error);
+    catch (e) {
+      // Silent fail; global middleware will handle redirects
+      console.warn('Auth client init failed:', e);
     }
   }
 });

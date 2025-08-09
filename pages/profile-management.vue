@@ -199,13 +199,13 @@ async function fetchPageProfileData() {
     if (!auth.user && auth.accessToken) {
       // Only fetch if user is null but token exists
       // Use initializeAuth instead of fetchProfile since it doesn't exist
-      await auth.initializeAuth('client');
+  await auth.initialize(useNuxtApp());
     }
     // If auth.user is still null after this, it might indicate an issue resolved by redirection.
     if (!auth.user && auth.isAuthenticated) {
       // Should not happen if isAuthenticated is true
       console.warn('User is authenticated but user data is null. Attempting fetch.');
-      await auth.initializeAuth('client');
+  await auth.initialize(useNuxtApp());
     }
   }
   catch (err: unknown) {

@@ -1,198 +1,52 @@
 import type { RouteLocationNormalized } from 'vue-router';
-import type { User } from '~/types/auth';
 // middleware/auth.global.ts
 import {
   defineNuxtRouteMiddleware,
   navigateTo,
   useAuthStore,
   useNuxtApp,
-  useRequestHeaders,
-  useRuntimeConfig,
 } from '#imports';
 
-let serverAuthPromise: Promise<void> | null = null;
-
-interface AuthPayload {
-  accessToken: string | null;
-  user: User | null;
-  processed: boolean;
-}
-
-interface RefreshTokenResponse {
-  access_token: string;
-}
-
 export default defineNuxtRouteMiddleware(
-  async (to: RouteLocationNormalized, _from: RouteLocationNormalized) => {
+  async (to: RouteLocationNormalized) => {
     const auth = useAuthStore();
     const nuxtApp = useNuxtApp();
 
-    if (import.meta.hot) {
+    // Initialize server/client auth state before guarding
+    await auth.initialize(nuxtApp);
+
+    const onboardingRoute = '/onboarding';
+    // Root (/) is public to avoid SSR/client mismatch flashes
+    const publicRoutes = ['/', '/login', '/register', '/reset-password', '/create-new-password', '/verify-otp'];
+
+    // Authenticated flow
+    if (auth.isAuthenticated) {
+      const user = auth.user!;
+      const hasCompletedOnboarding = user.profile?.has_completed_onboarding;
+
+      // Onboarding enforcement
+      if (!hasCompletedOnboarding && to.path !== onboardingRoute) {
+        return navigateTo(onboardingRoute, { replace: true, redirectCode: 302 });
+      }
+      if (hasCompletedOnboarding && to.path === onboardingRoute) {
+        return navigateTo('/dashboard', { replace: true, redirectCode: 302 });
+      }
+
+      // Public pages (including /) should push authenticated users to dashboard
+      if (publicRoutes.includes(to.path)) {
+        return navigateTo('/dashboard', { replace: true, redirectCode: 302 });
+      }
+
       return;
     }
 
-    // --- SERVER-SIDE ---
-    if (import.meta.server) {
-      const payload = nuxtApp.payload.auth as AuthPayload | undefined;
-      if (payload?.processed) {
-        if (payload.accessToken && payload.user && !auth.isAuthenticated) {
-          auth.hydrateFromSSR(payload.accessToken, payload.user);
-        }
-        return handleServerRouteGuarding(to, auth);
-      }
-
-      if (!serverAuthPromise) {
-        serverAuthPromise = initializeServerSideAuth(auth, nuxtApp);
-      }
-      
-      try {
-        await serverAuthPromise;
-      }
-      catch (error) {
-        // Error is already logged in initializeServerSideAuth.
-      }
-      finally {
-        serverAuthPromise = null;
-      }
-
-      return handleServerRouteGuarding(to, auth);
+    // Unauthenticated flow
+    // Allow only explicitly public routes when unauthenticated (including '/')
+    if (!publicRoutes.includes(to.path)) {
+      const redirectQuery = to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
+      return navigateTo(`/login${redirectQuery}`, { replace: true, redirectCode: 302 });
     }
 
-    // --- CLIENT-SIDE ---
-    if (import.meta.client) {
-      const payload = nuxtApp.payload.auth as AuthPayload | undefined;
-
-      // Hydrate from the server payload on initial client load.
-      if (payload?.processed && !auth.isInitialized) {
-        if (payload.accessToken && payload.user) {
-          auth.hydrateFromSSR(payload.accessToken, payload.user);
-        }
-        // Mark as initialized to prevent re-running initializeAuth
-        auth.isInitialized = true; 
-      }
-
-      // If not initialized (e.g., client-side navigation), run the full auth check.
-      if (!auth.isInitialized) {
-        await auth.initializeAuth('client');
-      }
-      
-      return handleClientRouteGuarding(to, auth);
-    }
+    return;
   },
 );
-
-async function initializeServerSideAuth(
-  auth: ReturnType<typeof useAuthStore>,
-  nuxtApp: ReturnType<typeof useNuxtApp>,
-): Promise<void> {
-  const headers = useRequestHeaders(['cookie']);
-  const config = useRuntimeConfig();
-
-  const authResult: AuthPayload = {
-    accessToken: null,
-    user: null,
-    processed: true,
-  };
-
-  try {
-    if (headers.cookie) {
-      const refresh = await $fetch<RefreshTokenResponse>(`${config.public.apiBase}/auth/refresh`, {
-        method: 'POST',
-        headers: { cookie: headers.cookie },
-      });
-
-      if (refresh.access_token) {
-        const accessToken = refresh.access_token;
-        const profileData = await $fetch<User>(`${config.public.apiBase}/auth/me`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        // *** THE FIX IS HERE ***
-        // We must assign the fetched data to the authResult object
-        authResult.accessToken = accessToken;
-        authResult.user = profileData;
-      }
-    }
-  }
-  catch (error) {
-    console.error('Server-side authentication failed:', error);
-    // Reset authResult on failure to ensure a clean state
-    authResult.accessToken = null;
-    authResult.user = null;
-  }
-  finally {
-    // Now, correctly hydrate the store on the server AND set the payload for the client
-    if (authResult.accessToken && authResult.user) {
-      auth.hydrateFromSSR(authResult.accessToken, authResult.user);
-    }
-    else {
-      // Ensure the store is clean if auth failed
-      await auth.logoutSilently();
-    }
-    // Pass the final, correct result to the client
-    nuxtApp.payload.auth = JSON.parse(JSON.stringify(authResult));
-  }
-}
-
-function handleServerRouteGuarding(
-  to: RouteLocationNormalized,
-  auth: ReturnType<typeof useAuthStore>,
-) {
-  const publicRoutes = ['/', '/login', '/register', '/reset-password', '/create-new-password', '/verify-otp'];
-
-  if (auth.isAuthenticated && auth.user) {
-    const onboardingRoute = '/onboarding';
-    const hasCompletedOnboarding = auth.user.profile?.has_completed_onboarding;
-
-    if (!hasCompletedOnboarding && to.path !== onboardingRoute) {
-      return navigateTo(onboardingRoute, { replace: true });
-    }
-
-    if (hasCompletedOnboarding && to.path === onboardingRoute) {
-      return navigateTo('/dashboard', { replace: true });
-    }
-    
-    if (publicRoutes.includes(to.path)) {
-      return navigateTo('/dashboard', { replace: true });
-    }
-  }
-  else {
-    if (publicRoutes.includes(to.path)) {
-      return;
-    }
-    
-    const redirectQuery = to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
-    return navigateTo(`/login${redirectQuery}`, { replace: true });
-  }
-}
-
-async function handleClientRouteGuarding(
-  to: RouteLocationNormalized,
-  auth: ReturnType<typeof useAuthStore>,
-) {
-  const publicRoutes = ['/', '/login', '/register', '/reset-password', '/create-new-password', '/verify-otp'];
-
-  if (auth.isAuthenticated && auth.user) {
-    const onboardingRoute = '/onboarding';
-    const hasCompletedOnboarding = auth.user.profile?.has_completed_onboarding;
-
-    if (!hasCompletedOnboarding && to.path !== onboardingRoute) {
-      return navigateTo(onboardingRoute, { replace: true });
-    }
-
-    if (hasCompletedOnboarding && to.path === onboardingRoute) {
-      return navigateTo('/dashboard', { replace: true });
-    }
-    
-    if (publicRoutes.includes(to.path)) {
-      return navigateTo('/dashboard', { replace: true });
-    }
-  }
-  else {
-    if (publicRoutes.includes(to.path)) {
-      return;
-    }
-    const redirectQuery = to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
-    return navigateTo(`/login${redirectQuery}`, { replace: true });
-  }
-}
