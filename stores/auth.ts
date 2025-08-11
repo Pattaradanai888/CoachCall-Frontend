@@ -44,31 +44,18 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     if (import.meta.server) {
-      const headers = useRequestHeaders(['cookie']);
-      const config = useRuntimeConfig();
+      const { $api } = useNuxtApp();
       let serverAccessToken: string | null = null;
       let serverUser: User | null = null;
 
       try {
-        if (headers.cookie) {
-          const refreshResponse = await $fetch<TokenResponse>(
-            `${config.public.apiBase}/auth/refresh`,
-            {
-              method: 'POST',
-              headers: { cookie: headers.cookie },
-            },
-          );
-
-          if (refreshResponse.access_token) {
-            serverAccessToken = refreshResponse.access_token;
-            const profileData = await $fetch<User>(
-              `${config.public.apiBase}/auth/me`,
-              {
-                headers: { Authorization: `Bearer ${serverAccessToken}` },
-              },
-            );
-            serverUser = UserSchema.parse(profileData);
-          }
+        // Refresh using same-origin /api; Cookie header is forwarded by the API plugin
+        const refreshResponse = await $api<TokenResponse>('/auth/refresh', { method: 'POST' });
+        if (refreshResponse.access_token) {
+          serverAccessToken = refreshResponse.access_token;
+          accessToken.value = serverAccessToken; // so $api adds Authorization for subsequent requests
+          const profileData = await $api<User>('/auth/me');
+          serverUser = UserSchema.parse(profileData);
         }
       }
       catch (error) {

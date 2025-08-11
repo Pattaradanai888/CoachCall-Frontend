@@ -5,6 +5,11 @@
       "redirect": "/"
     },
     {
+      "route": "/api/*",
+      "rewrite": "https://coach-call-fastapi.southeastasia.cloudapp.azure.com/*",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/",
       "rewrite": "/api/server"
     }
@@ -13,6 +18,11 @@
     "apiRuntime": "node:20"
   },
   "navigationFallback": {
-    "rewrite": "/api/server"
+    "rewrite": "/api/server",
+    "exclude": [
+      "/api/*",
+      "/_nuxt/*",
+      "/favicon.*"
+    ]
   }
 }
