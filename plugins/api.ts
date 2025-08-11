@@ -2,6 +2,7 @@ import type { FetchOptions, FetchRequest } from 'ofetch';
 import { defineNuxtPlugin, useRuntimeConfig } from '#app';
 // plugins/api.ts
 import { ofetch } from 'ofetch';
+import { isRef, unref, type Ref } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
 export default defineNuxtPlugin((nuxtApp) => {
@@ -18,8 +19,11 @@ export default defineNuxtPlugin((nuxtApp) => {
       }
       const headers = options.headers as Headers;
 
-      if (authStore.accessToken) {
-        headers.set('Authorization', `Bearer ${authStore.accessToken}`);
+  type TokenLike = string | null | Ref<string | null>;
+  const tokenSource = (authStore as unknown as { accessToken: TokenLike }).accessToken;
+  const token = isRef(tokenSource) ? unref(tokenSource) : tokenSource;
+  if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
       }
 
       if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
@@ -33,19 +37,25 @@ export default defineNuxtPlugin((nuxtApp) => {
     },
   });
 
-  const apiFetch = async <T>(request: FetchRequest, options?: FetchOptions): Promise<T> => {
-    const error = await baseFetcher<T>(request, options as any).catch(e => e);
-    if (error?.response?.status === 401 && !String(request).includes('/auth/refresh')) {
-      await authStore.refreshToken();
+  function is401(err: unknown): boolean {
+    if (typeof err !== 'object' || err === null) return false;
+    const e = err as Record<string, unknown>;
+    const response = e['response'] as Record<string, unknown> | undefined;
+    const status = response?.['status'] as number | undefined;
+    return status === 401;
+  }
 
-      return await baseFetcher<T>(request, options as any);
+  const apiFetch = async <T>(request: FetchRequest, options?: FetchOptions<'json'>): Promise<T> => {
+    try {
+      return await baseFetcher<T>(request, options);
     }
-
-    if (error instanceof Error) {
-      throw error;
+    catch (err: unknown) {
+      if (is401(err) && !String(request).includes('/auth/refresh')) {
+        await authStore.refreshToken();
+        return await baseFetcher<T>(request, options);
+      }
+      throw err;
     }
-
-    return error;
   };
 
   nuxtApp.provide('api', apiFetch);
