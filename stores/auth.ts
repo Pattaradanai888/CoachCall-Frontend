@@ -44,35 +44,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     if (import.meta.server) {
-      const { $api } = useNuxtApp();
-      let serverAccessToken: string | null = null;
-      let serverUser: User | null = null;
-
-      try {
-        // Refresh using same-origin /api; Cookie header is forwarded by the API plugin
-        const refreshResponse = await $api<TokenResponse>('/auth/refresh', { method: 'POST' });
-        if (refreshResponse.access_token) {
-          serverAccessToken = refreshResponse.access_token;
-          accessToken.value = serverAccessToken; // so $api adds Authorization for subsequent requests
-          const profileData = await $api<User>('/auth/me');
-          serverUser = UserSchema.parse(profileData);
-        }
-      }
-      catch (error) {
-        console.error('SSR Auth Error:', error);
-        serverAccessToken = null;
-        serverUser = null;
-      }
-      finally {
-        accessToken.value = serverAccessToken;
-        user.value = serverUser;
-        // Share state with the client
-        nuxtApp.payload.auth = {
-          accessToken: accessToken.value,
-          user: user.value,
-        } as AuthPayload;
-        isInitialized.value = true; // Server pass is complete
-      }
+      // Do not attempt refresh on server: FastAPI cookie is on its own domain and not visible to SWA SSR
+      // Render as unauthenticated on SSR; client will hydrate and refresh immediately if cookies exist
+      nuxtApp.payload.auth = { accessToken: null, user: null } as AuthPayload;
+      isInitialized.value = true;
     }
     else { // Client-side
       const payload = nuxtApp.payload.auth as AuthPayload | undefined;
@@ -83,7 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       // After initial load, payload will be empty. If we don't have a token,
       // it means we are navigating client-side and need to check our auth status.
-      else if (!accessToken.value) {
+  else if (!accessToken.value) {
         try {
           // This will attempt to get a new token. If it fails, it will logout silently.
           await refreshToken();

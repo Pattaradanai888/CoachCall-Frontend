@@ -1,5 +1,5 @@
 import type { FetchOptions, FetchRequest } from 'ofetch';
-import { defineNuxtPlugin, useRequestHeaders } from '#app';
+import { defineNuxtPlugin } from '#app';
 // plugins/api.ts
 import { ofetch } from 'ofetch';
 import { isRef, unref, type Ref } from 'vue';
@@ -7,26 +7,16 @@ import { useAuthStore } from '~/stores/auth';
 
 export default defineNuxtPlugin((nuxtApp) => {
   const authStore = useAuthStore();
-
-  const reqHeaders = import.meta.server
-    ? useRequestHeaders(['cookie', 'host', 'x-forwarded-proto'])
-    : undefined;
-
-  const proto = import.meta.server ? (reqHeaders?.['x-forwarded-proto'] || 'https') : '';
-  const host = import.meta.server ? (reqHeaders?.host || '') : '';
-  const baseURL = import.meta.server ? `${proto}://${host}/api` : '/api';
+  const config = useRuntimeConfig();
 
   const baseFetcher = ofetch.create({
-    baseURL,
+    baseURL: config.public.apiBase,
     credentials: 'include',
 
     onRequest({ options }) {
       const headers = new Headers(options.headers as HeadersInit | undefined);
 
-      // Forward browser cookies during SSR so backend sees session
-      if (import.meta.server && reqHeaders?.cookie) {
-        headers.set('cookie', reqHeaders.cookie);
-      }
+  // Don't forward SSR cookies; browser cookies for backend domain aren't available server-side
 
       type TokenLike = string | null | Ref<string | null>;
       const tokenSource = (authStore as unknown as { accessToken: TokenLike }).accessToken;
