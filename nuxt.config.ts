@@ -12,15 +12,16 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   
   runtimeConfig: {
-    // Private keys (only available on server-side)
+    backendUrl: process.env.BACKEND_URL || 'https://coach-call-fastapi.southeastasia.cloudapp.azure.com',
     apiBase: process.env.API_BASE || 'http://localhost:8000',
 
-    // Public keys (exposed to client-side)
     public: {
-      apiBase: process.env.API_BASE || 'http://localhost:8000',
+      apiBase: '/api',
     },
   },
+  
   compatibilityDate: '2024-11-01',
+  
   image: {
     format: ['avif', 'webp', 'png', 'jpg'],
     quality: 80,
@@ -61,8 +62,19 @@ export default defineNuxtConfig({
       },
     },
   },
-  // Add route rules for caching
+  
   routeRules: {
+    '/api/**': { 
+      headers: { 
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie'
+      },
+      cors: true 
+    },
+    
+    // Your existing caching rules
     // Cache static assets for 1 year
     '/images/**': {
       headers: {
@@ -82,7 +94,16 @@ export default defineNuxtConfig({
       },
     },
   },
+  
   nitro: {
-    preset: 'azure',
+  preset: 'azure-swa',
+    
+    azure: {
+      config: {
+        navigationFallback: {
+          rewrite: '/200.html'
+        }
+      }
+    }
   },
 });
