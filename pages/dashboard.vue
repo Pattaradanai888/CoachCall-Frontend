@@ -1,144 +1,149 @@
 <template>
   <div>
     <SubNavbar />
-    <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px]">
-      <div v-if="pending" class="flex justify-center items-center py-20 text-gray-500">
-        <p>Loading Dashboard...</p>
-      </div>
-      <div v-else class="w-full mx-7 lg:mx-0">
-        <!-- Overview Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
-          <div v-for="(card, index) in cards" :key="index" class="bg-white shadow-md p-4 rounded-md">
+  <ClientOnly>
+      <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px]">
+        <div v-if="pending" class="flex justify-center items-center py-20 text-gray-500">
+          <p>Loading Dashboard...</p>
+        </div>
+        <div v-else class="w-full mx-7 lg:mx-0">
+          <!-- Overview Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
+            <div v-for="(card, index) in cards" :key="index" class="bg-white shadow-md p-4 rounded-md">
+              <div class="flex items-center">
+                <Icon :name="card.icon" size="1.25rem" class="mr-2" />
+                <div class="text-sm text-gray-600">
+                  {{ card.label }}
+                </div>
+              </div>
+              <div class="text-2xl sm:text-3xl font-bold">
+                {{ card.value }}
+              </div>
+              <div v-if="'changeDirection' in card && 'changePercentage' in card && card.changeDirection && card.changePercentage" class="flex items-center">
+                <Icon :name="card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'" size="1.25rem" :style="{ color: card.changeDirection === 'up' ? 'green' : 'red' }" />
+                <div :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'" class="text-sm">
+                  {{ card.changePercentage }}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar Section -->
+          <div class="bg-white shadow-md p-4 sm:p-8 rounded-md flex-1">
             <div class="flex items-center">
-              <Icon :name="card.icon" size="1.25rem" class="mr-2" />
-              <div class="text-sm text-gray-600">
-                {{ card.label }}
-              </div>
+              <Icon name="mdi:calendar" size="2rem" class="mr-2" />
+              <h1 class="text-xl sm:text-2xl font-bold">
+                Calendar
+              </h1>
             </div>
-            <div class="text-2xl sm:text-3xl font-bold">
-              {{ card.value }}
-            </div>
-            <div v-if="'changeDirection' in card && 'changePercentage' in card && card.changeDirection && card.changePercentage" class="flex items-center">
-              <Icon :name="card.changeDirection === 'up' ? 'mdi:arrow-top-right' : 'mdi:arrow-bottom-right'" size="1.25rem" :style="{ color: card.changeDirection === 'up' ? 'green' : 'red' }" />
-              <div :class="card.changeDirection === 'up' ? 'text-green-500' : 'text-red-500'" class="text-sm">
-                {{ card.changePercentage }}%
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Calendar Section -->
-        <div class="bg-white shadow-md p-4 sm:p-8 rounded-md flex-1">
-          <div class="flex items-center">
-            <Icon name="mdi:calendar" size="2rem" class="mr-2" />
-            <h1 class="text-xl sm:text-2xl font-bold">
-              Calendar
-            </h1>
-          </div>
-          <p class="mb-4 text-sm sm:text-base">
-            Your scheduled training sessions. Click a day to see details.
-          </p>
-          <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
-            <!-- Calendar Component -->
-            <div class="flex justify-center w-full lg:w-1/2">
-              <VDatePicker
-                v-model="selectedDate"
-                expanded
-                mode="date"
-                :attributes="calendarAttributes"
-                locale="en-US"
-                class="border-2 border-[#9C1313] rounded-md"
-              />
-            </div>
-
-            <!-- Right-hand Side Panel -->
-            <div class="mt-4 lg:mt-0 lg:ml-5 w-full lg:w-1/2 flex flex-col">
-              <!-- Header for the panel -->
-              <div class="flex justify-between items-center mb-2 flex-shrink-0">
-                <h1 class="font-bold text-lg">
-                  <span v-if="viewMode === 'today'">Today's Focus</span>
-                  <span v-else-if="viewMode === 'agenda'">Upcoming Agenda</span>
-                  <span v-else>Sessions on {{ formatSelectedDate }}</span>
-                </h1>
-                <button class="text-sm text-blue-600 hover:underline" @click="toggleViewMode">
-                  <span v-if="viewMode === 'today'">View Full Agenda →</span>
-                  <span v-else>← Back to Today</span>
-                </button>
+            <p class="mb-4 text-sm sm:text-base">
+              Your scheduled training sessions. Click a day to see details.
+            </p>
+            <div class="flex flex-col lg:flex-row gap-4 px-0 sm:px-4">
+              <!-- Calendar Component -->
+              <div class="flex justify-center w-full lg:w-1/2">
+                <VDatePicker
+                  v-model="selectedDate"
+                  expanded
+                  mode="date"
+                  :attributes="calendarAttributes"
+                  locale="en-US"
+                  class="border-2 border-[#9C1313] rounded-md"
+                />
               </div>
 
-              <!-- Scrollable Content Area -->
-              <div class="flex-grow overflow-y-auto pr-2">
-                <!-- TODAY'S VIEW -->
-                <div v-if="viewMode === 'today'" class="space-y-4">
-                  <DashboardSessionGroup
-                    title="Upcoming Today"
-                    icon="mdi:clock-outline"
-                    :sessions="sessionsForToday.upcoming"
-                    color-class="text-blue-700"
-                  />
-                  <DashboardSessionGroup
-                    title="Completed Today"
-                    icon="mdi:check-circle-outline"
-                    :sessions="sessionsForToday.completed"
-                    color-class="text-green-700"
-                  />
-                  <p v-if="sessionsForToday.total === 0" class="text-center text-gray-500 pt-10">
-                    No sessions scheduled for today.
-                  </p>
+              <!-- Right-hand Side Panel -->
+              <div class="mt-4 lg:mt-0 lg:ml-5 w-full lg:w-1/2 flex flex-col">
+                <!-- Header for the panel -->
+                <div class="flex justify-between items-center mb-2 flex-shrink-0">
+                  <h1 class="font-bold text-lg">
+                    <span v-if="viewMode === 'today'">Today's Focus</span>
+                    <span v-else-if="viewMode === 'agenda'">Upcoming Agenda</span>
+                    <span v-else>Sessions on {{ formatSelectedDate }}</span>
+                  </h1>
+                  <button class="text-sm text-blue-600 hover:underline" @click="toggleViewMode">
+                    <span v-if="viewMode === 'today'">View Full Agenda →</span>
+                    <span v-else>← Back to Today</span>
+                  </button>
                 </div>
 
-                <!-- AGENDA VIEW -->
-                <div v-else-if="viewMode === 'agenda'" class="space-y-3">
-                  <div v-if="agendaSessions.length > 0">
-                    <NuxtLink
-                      v-for="event in agendaSessions"
-                      :key="`agenda-${event.id}`"
-                      :to="getEventPath(event)"
-                      class="block p-3 rounded-lg transition-all border-2 bg-blue-50 border-blue-200 hover:border-red-500"
-                    >
-                      <p class="font-semibold text-gray-800">
-                        {{ event.title }}
-                      </p>
-                      <p class="text-sm font-medium text-blue-700">
-                        {{ formatEventDate(event.date) }}
-                      </p>
-                    </NuxtLink>
+                <!-- Scrollable Content Area -->
+                <div class="flex-grow overflow-y-auto pr-2">
+                  <!-- TODAY'S VIEW -->
+                  <div v-if="viewMode === 'today'" class="space-y-4">
+                    <DashboardSessionGroup
+                      title="Upcoming Today"
+                      icon="mdi:clock-outline"
+                      :sessions="sessionsForToday.upcoming"
+                      color-class="text-blue-700"
+                    />
+                    <DashboardSessionGroup
+                      title="Completed Today"
+                      icon="mdi:check-circle-outline"
+                      :sessions="sessionsForToday.completed"
+                      color-class="text-green-700"
+                    />
+                    <p v-if="sessionsForToday.total === 0" class="text-center text-gray-500 pt-10">
+                      No sessions scheduled for today.
+                    </p>
                   </div>
-                  <p v-else class="text-center text-gray-500 pt-10">
-                    Nothing scheduled for the week ahead.
-                  </p>
-                </div>
 
-                <!-- SELECTED DAY VIEW -->
-                <div v-else class="space-y-4">
-                  <DashboardSessionGroup
-                    title="Upcoming"
-                    icon="mdi:clock-outline"
-                    :sessions="sessionsOnSelectedDate.upcoming"
-                    color-class="text-blue-700"
-                  />
-                  <DashboardSessionGroup
-                    title="Completed"
-                    icon="mdi:check-circle-outline"
-                    :sessions="sessionsOnSelectedDate.completed"
-                    color-class="text-green-700"
-                  />
-                  <DashboardSessionGroup
-                    title="Missed"
-                    icon="mdi:alert-circle-outline"
-                    :sessions="sessionsOnSelectedDate.missed"
-                    color-class="text-gray-500"
-                  />
-                  <p v-if="sessionsOnSelectedDate.total === 0" class="text-center text-gray-500 pt-10">
-                    No sessions scheduled for this day.
-                  </p>
+                  <!-- AGENDA VIEW -->
+                  <div v-else-if="viewMode === 'agenda'" class="space-y-3">
+                    <div v-if="agendaSessions.length > 0">
+                      <NuxtLink
+                        v-for="event in agendaSessions"
+                        :key="`agenda-${event.id}`"
+                        :to="getEventPath(event)"
+                        class="block p-3 rounded-lg transition-all border-2 bg-blue-50 border-blue-200 hover:border-red-500"
+                      >
+                        <p class="font-semibold text-gray-800">
+                          {{ event.title }}
+                        </p>
+                        <p class="text-sm font-medium text-blue-700">
+                          {{ formatEventDate(event.date) }}
+                        </p>
+                      </NuxtLink>
+                    </div>
+                    <p v-else class="text-center text-gray-500 pt-10">
+                      Nothing scheduled for the week ahead.
+                    </p>
+                  </div>
+
+                  <!-- SELECTED DAY VIEW -->
+                  <div v-else class="space-y-4">
+                    <DashboardSessionGroup
+                      title="Upcoming"
+                      icon="mdi:clock-outline"
+                      :sessions="sessionsOnSelectedDate.upcoming"
+                      color-class="text-blue-700"
+                    />
+                    <DashboardSessionGroup
+                      title="Completed"
+                      icon="mdi:check-circle-outline"
+                      :sessions="sessionsOnSelectedDate.completed"
+                      color-class="text-green-700"
+                    />
+                    <DashboardSessionGroup
+                      title="Missed"
+                      icon="mdi:alert-circle-outline"
+                      :sessions="sessionsOnSelectedDate.missed"
+                      color-class="text-gray-500"
+                    />
+                    <p v-if="sessionsOnSelectedDate.total === 0" class="text-center text-gray-500 pt-10">
+                      No sessions scheduled for this day.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <template #fallback>
+        <div />
+      </template>
+    </ClientOnly>
   </div>
 </template>
 
@@ -153,11 +158,11 @@ const [
 ] = await Promise.all([
   useAsyncData<EventItem[]>('coach-events-all', () => $api('/course/events/all'), {
     default: () => [],
-    server: true,
+    server: false, // Disable SSR to prevent hydration mismatch
   }),
   useAsyncData<CourseListEntry[]>('active-courses', () => $api('/course', { params: { is_archived: false } }), {
     default: () => [],
-    server: true,
+    server: false, // Disable SSR to prevent hydration mismatch
   }),
 ]);
 

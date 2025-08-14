@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     '@samk-dev/nuxt-vcalendar',
   ],
   devtools: { enabled: true },
-  
+
   runtimeConfig: {
     backendUrl: process.env.BACKEND_URL || 'https://coach-call-fastapi.southeastasia.cloudapp.azure.com',
     apiBase: process.env.API_BASE || 'http://localhost:8000',
@@ -19,9 +19,9 @@ export default defineNuxtConfig({
       apiBase: '/api',
     },
   },
-  
+
   compatibilityDate: '2024-11-01',
-  
+
   image: {
     format: ['avif', 'webp', 'png', 'jpg'],
     quality: 80,
@@ -62,18 +62,9 @@ export default defineNuxtConfig({
       },
     },
   },
-  
+
   routeRules: {
-    '/api/**': { 
-      headers: { 
-        'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie'
-      },
-      cors: true 
-    },
-    
+    // CORS for API is handled inside server functions; avoid wildcard + credentials conflicts here
     // Your existing caching rules
     // Cache static assets for 1 year
     '/images/**': {
@@ -94,14 +85,12 @@ export default defineNuxtConfig({
       },
     },
   },
-  
   nitro: {
-  preset: 'azure-swa',
-    
+    preset: 'azure-swa',
     azure: {
       config: {
-        navigationFallback: {
-          rewrite: '/200.html'
+        "platform": {
+          "apiRuntime": "node:20"
         }
       }
     }

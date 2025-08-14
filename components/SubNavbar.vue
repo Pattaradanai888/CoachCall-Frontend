@@ -4,14 +4,16 @@
       ref="navContainer"
       class="relative bg-gray-100 rounded-lg p-1 inline-flex mt-[6rem] overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full"
     >
-      <!-- Moving background indicator -->
-      <div
-        class="absolute top-1 bottom-1 bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out"
-        :style="{
-          left: `${indicatorLeft}px`,
-          width: `${indicatorWidth}px`,
-        }"
-      />
+      <!-- Moving background indicator (client-only to avoid SSR mismatch) -->
+      <ClientOnly>
+        <div
+          class="absolute top-1 bottom-1 bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out"
+          :style="{
+            left: `${indicatorLeft}px`,
+            width: `${indicatorWidth}px`,
+          }"
+        />
+      </ClientOnly>
 
       <!-- Navigation items -->
       <NuxtLink
@@ -56,6 +58,7 @@ const navItems = [
 const activeTab = ref('');
 const indicatorLeft = ref(0);
 const indicatorWidth = ref(0);
+const isClient = ref(false);
 const navContainer = ref<HTMLElement | null>(null);
 
 function updateIndicator() {
@@ -73,6 +76,7 @@ function updateIndicator() {
 }
 
 onMounted(() => {
+  isClient.value = true;
   activeTab.value = route.path;
   updateIndicator();
 

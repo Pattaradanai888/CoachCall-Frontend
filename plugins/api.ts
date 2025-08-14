@@ -47,9 +47,21 @@ export default defineNuxtPlugin((nuxtApp) => {
     try {
       return await baseFetcher<T>(request, options);
     } catch (err: unknown) {
-      if (is401(err) && !String(request).includes('/auth/refresh')) {
-        await authStore.refreshToken();
-        return await baseFetcher<T>(request, options);
+      // Only attempt token refresh on client-side to avoid SSR composable issues
+      if (is401(err) && !String(request).includes('/auth/refresh') && import.meta.client) {
+        console.log('API: 401 detected, attempting token refresh...');
+        try {
+          await authStore.refreshToken();
+          console.log('API: Token refresh successful, retrying request');
+          return await baseFetcher<T>(request, options);
+        } catch (refreshError) {
+          console.log('API: Token refresh failed, logging out');
+          await authStore.logoutSilently();
+          if (import.meta.client) {
+            await navigateTo('/login');
+          }
+          throw refreshError;
+        }
       }
       throw err;
     }

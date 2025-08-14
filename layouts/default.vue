@@ -8,18 +8,34 @@
     >
       <nav class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
         <!-- Logo -->
-        <NuxtLink :to="isAuthenticated ? '/dashboard' : '/'" class="flex items-center space-x-2">
-          <div
-            class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
-          >
-            CC
-          </div>
-          <span
-            class="text-lg font-semibold" :class="[isHeaderTransparent ? 'text-white' : 'text-gray-900']"
-          >
-            CoachCall
-          </span>
-        </NuxtLink>
+        <ClientOnly>
+          <NuxtLink :to="isAuthenticated ? '/dashboard' : '/'" class="flex items-center space-x-2">
+            <div
+              class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
+            >
+              CC
+            </div>
+            <span
+              class="text-lg font-semibold" :class="[isHeaderTransparent ? 'text-white' : 'text-gray-900']"
+            >
+              CoachCall
+            </span>
+          </NuxtLink>
+          <template #fallback>
+            <NuxtLink to="/" class="flex items-center space-x-2">
+              <div
+                class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
+              >
+                CC
+              </div>
+              <span
+                class="text-lg font-semibold" :class="[isHeaderTransparent ? 'text-white' : 'text-gray-900']"
+              >
+                CoachCall
+              </span>
+            </NuxtLink>
+          </template>
+        </ClientOnly>
 
         <!-- Right Side - Desktop -->
         <div class="hidden lg:flex items-center space-x-6">
@@ -232,25 +248,27 @@ const displayName = computed(() => {
 const isProfileMenuOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 
-// Scroll state
-const isScrolled = ref(false);
+// Scroll state (default to true on SSR to force solid header until client evaluates scroll)
+const isScrolled = ref(import.meta.server ? true : false);
 
-// Detect if on landing page
-const isLandingPage = computed(() => route.path === '/');
+// Detect if on landing page (client-only to avoid SSR showing transparent header on protected routes)
+const isLandingPage = computed(() => (import.meta.client ? route.path === '/' : false));
 
 // Determine if header should be transparent
 const isHeaderTransparent = computed(() => isLandingPage.value && !isScrolled.value);
 
 // Handle scroll event
 function handleScroll() {
-  // The background image section has h-screen (100vh)
-  // We want the navbar to stay transparent while any part of it overlaps with the bg image
-  const navbar = document.querySelector('header');
-  const navbarHeight = navbar ? navbar.offsetHeight : 80; // fallback height
+  if (import.meta.client) {
+    // The background image section has h-screen (100vh)
+    // We want the navbar to stay transparent while any part of it overlaps with the bg image
+    const navbar = document.querySelector('header');
+    const navbarHeight = navbar ? (navbar as HTMLElement).offsetHeight : 80; // fallback height
 
-  // Switch to white navbar when we've scrolled past the background image section
-  const bgImageHeight = window.innerHeight; // h-screen = 100vh
-  isScrolled.value = window.scrollY >= bgImageHeight - navbarHeight;
+    // Switch to white navbar when we've scrolled past the background image section
+    const bgImageHeight = window.innerHeight; // h-screen = 100vh
+    isScrolled.value = window.scrollY >= bgImageHeight - navbarHeight;
+  }
 }
 
 // Toggle profile dropdown

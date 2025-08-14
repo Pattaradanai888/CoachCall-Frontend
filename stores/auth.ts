@@ -39,35 +39,35 @@ export const useAuthStore = defineStore('auth', () => {
   async function initialize(
     nuxtApp: ReturnType<typeof useNuxtApp>,
   ): Promise<void> {
-    if (isInitialized.value) {
-      return;
-    }
-
     if (import.meta.server) {
-      // Do not attempt refresh on server: FastAPI cookie is on its own domain and not visible to SWA SSR
-      // Render as unauthenticated on SSR; client will hydrate and refresh immediately if cookies exist
+      // Always render as unauthenticated on SSR to avoid complexity
+      // Client will check cookies and authenticate immediately after hydration
       nuxtApp.payload.auth = { accessToken: null, user: null } as AuthPayload;
       isInitialized.value = true;
+      return;
     }
     else { // Client-side
-      const payload = nuxtApp.payload.auth as AuthPayload | undefined;
-      // On initial client load, hydrate from the server-provided payload.
-      if (payload && payload.accessToken && payload.user) {
-        accessToken.value = payload.accessToken;
-        user.value = payload.user;
-      }
-      // After initial load, payload will be empty. If we don't have a token,
-      // it means we are navigating client-side and need to check our auth status.
-  else if (!accessToken.value) {
-        try {
-          // This will attempt to get a new token. If it fails, it will logout silently.
-          await refreshToken();
-        }
-        catch (e) {
-          console.error('Client-side refresh token failed:', e);
+      // On client-side, always run the initialization even if SSR marked it as initialized
+      // This is because we need to check for cookies on the client
+      
+      // Reset the initialized state on client to ensure we run the auth check
+      isInitialized.value = false;
+      
+      try {
+        await refreshToken();
+        
+        // If token refresh succeeded but we still don't have user data, fetch it
+        if (accessToken.value && !user.value) {
+          await fetchProfile();
         }
       }
-      isInitialized.value = true;
+      catch (error) {
+        // Don't log errors for expired sessions - this is normal
+        console.debug('Auth Store: No valid auth cookies found (likely expired session):', error);
+      }
+      finally {
+        isInitialized.value = true;
+      }
     }
   }
 
@@ -100,7 +100,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function refreshToken(): Promise<string> {
+    console.log('Auth Store: refreshToken() called, isRefreshing:', isRefreshing.value);
+    
     if (isRefreshing.value && refreshPromise) {
+      console.log('Auth Store: Already refreshing, waiting for existing promise...');
       await refreshPromise;
       return accessToken.value || '';
     }
@@ -113,10 +116,16 @@ export const useAuthStore = defineStore('auth', () => {
           method: 'POST',
         });
         accessToken.value = refreshResponse.access_token;
+        
+        // After successful token refresh, ensure we have user data
+        if (!user.value && accessToken.value) {
+          await fetchProfile();
+        }
+        
         return accessToken.value || '';
       }
       catch (error) {
-        console.error('Token refresh failed:', error);
+        console.error('Auth Store: Token refresh failed:', error);
         await logoutSilently();
         throw error;
       }
@@ -208,6 +217,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     refreshToken,
     logoutSilently,
-  setUserData,
+    setUserData,
   };
 });
