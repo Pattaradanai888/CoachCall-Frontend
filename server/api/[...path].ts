@@ -11,7 +11,6 @@ export default defineEventHandler(async (event) => {
   let body: BodyInit | undefined = undefined;
   if (['POST', 'PUT', 'PATCH'].includes(method)) {
     try {
-      // Read the raw body as a string to forward it
       const rawBody = await readRawBody(event);
       if (rawBody) {
         body = rawBody;
@@ -24,7 +23,6 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const backendUrl = config.backendUrl || 'https://coach-call-fastapi.southeastasia.cloudapp.azure.com'
   
-  // Build the target URL with the correct path
   let targetUrl = `${backendUrl}/${pathSegment}`
   
   if (Object.keys(query).length > 0) {
@@ -37,54 +35,82 @@ export default defineEventHandler(async (event) => {
     targetUrl += `?${params.toString()}`
   }
 
-  console.log(`[SWA-PROXY*] ${method} ${targetUrl}`)
+  console.log(`[SWA-PROXY] ${method} ${targetUrl}`)
 
   try {
     const forwardHeaders = new Headers()
-    if (headers['content-type']) forwardHeaders.set('content-type', headers['content-type'])
-    if (headers['authorization']) forwardHeaders.set('authorization', headers['authorization'])
-    if (headers['user-agent']) forwardHeaders.set('user-agent', headers['user-agent'])
-    if (headers['accept']) forwardHeaders.set('accept', headers['accept'])
-    if (headers['cookie']) forwardHeaders.set('cookie', headers['cookie'])
+    
+    // Forward all important headers including cookies
+    const headersToForward = [
+      'content-type', 'authorization', 'user-agent', 
+      'accept', 'cookie', 'x-forwarded-for', 'x-real-ip'
+    ]
+    
+    headersToForward.forEach(header => {
+      if (headers[header]) {
+        forwardHeaders.set(header, headers[header])
+      }
+    })
+
+    console.log(`[SWA-PROXY] Forwarding cookies: ${headers['cookie'] || 'none'}`)
 
     const response = await $fetch.raw(targetUrl, {
       method,
       body,
       headers: forwardHeaders,
-      credentials: 'include',
+      credentials: 'include', // This is crucial
     })
 
-    // Forward response headers
+    // IMPORTANT: Proper cookie handling
     const responseHeaders = response.headers
     
-    // Handle Set-Cookie headers
+    // Handle Set-Cookie headers - this is the key fix
     const setCookieHeaders = response.headers.getSetCookie?.() || []
+    console.log(`[SWA-PROXY] Backend set ${setCookieHeaders.length} cookies`)
+    
     if (setCookieHeaders.length > 0) {
-      setCookieHeaders.forEach(cookieString => {
-        let modifiedCookie = cookieString.replace(/;\s*domain=[^;]+/i, '')
-        if (!modifiedCookie.includes('secure') && !modifiedCookie.includes('Secure')) {
+      setCookieHeaders.forEach((cookieString, index) => {
+        console.log(`[SWA-PROXY] Setting cookie ${index}: ${cookieString}`)
+        
+        // Remove problematic attributes that SWA doesn't handle well
+        let modifiedCookie = cookieString
+          .replace(/;\s*domain=[^;]+/i, '') // Remove domain
+          .replace(/;\s*samesite=[^;]+/i, '') // Remove samesite temporarily
+        
+        // Ensure Secure flag in production
+        if (!modifiedCookie.includes('Secure') && !modifiedCookie.includes('secure')) {
           modifiedCookie += '; Secure'
         }
+        
+        // Add SameSite=None for cross-origin (required with Secure)
+        modifiedCookie += '; SameSite=None'
+        
+        console.log(`[SWA-PROXY] Modified cookie ${index}: ${modifiedCookie}`)
+        
         appendResponseHeader(event, 'Set-Cookie', modifiedCookie)
       })
     }
 
-    // Forward important headers
-    const headersToForward = ['content-type', 'cache-control', 'expires', 'last-modified', 'etag']
-    headersToForward.forEach(headerName => {
+    // Forward other important headers
+    const headersToForwardBack = ['content-type', 'cache-control', 'expires', 'last-modified', 'etag']
+    headersToForwardBack.forEach(headerName => {
       const headerValue = responseHeaders.get(headerName)
       if (headerValue) {
         setResponseHeader(event, headerName, headerValue)
       }
     })
 
+    // CORS headers
     setResponseHeader(event, 'Access-Control-Allow-Credentials', 'true')
-    setResponseHeader(event, 'Access-Control-Allow-Origin', getHeader(event, 'origin') || '*')
+    const origin = getHeader(event, 'origin')
+    if (origin) {
+      setResponseHeader(event, 'Access-Control-Allow-Origin', origin)
+    }
     
     return response._data
     
   } catch (error: any) {
-    console.error(`[SWA-PROXY*] Error proxying ${method} ${targetUrl}:`, error)
+    console.error(`[SWA-PROXY] Error proxying ${method} ${targetUrl}:`, error)
     
     if (error.response) {
       setResponseStatus(event, error.response.status)
