@@ -12,14 +12,13 @@ export default defineNuxtPlugin((nuxtApp) => {
     baseURL: '/api', // This will use your SWA domain + /api
     credentials: 'include',
 
-    onRequest({ options }) {
+    onRequest({ options , request }) {
       const headers = new Headers(options.headers as HeadersInit | undefined);
 
-      // Keep the authorization header logic
-      type TokenLike = string | null | Ref<string | null>;
-      const tokenSource = (authStore as unknown as { accessToken: TokenLike }).accessToken;
+      const tokenSource = (authStore as unknown as { accessToken: string | null }).accessToken;
       const token = isRef(tokenSource) ? unref(tokenSource) : tokenSource;
-      if (token) {
+      const requestUrl = String(request);
+      if (token && !requestUrl.startsWith('/api')) {
         headers.set('Authorization', `Bearer ${token}`);
       }
 
