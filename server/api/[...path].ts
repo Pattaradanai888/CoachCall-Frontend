@@ -70,25 +70,26 @@ export default defineEventHandler(async (event) => {
     
     if (setCookieHeaders.length > 0) {
       setCookieHeaders.forEach((cookieString, index) => {
-        console.log(`[SWA-PROXY] Setting cookie ${index}: ${cookieString}`)
+        console.log(`[SWA-PROXY] Setting cookie ${index}: ${cookieString}`);
         
         // Remove problematic attributes that SWA doesn't handle well
         let modifiedCookie = cookieString
           .replace(/;\s*domain=[^;]+/i, '') // Remove domain
-          .replace(/;\s*samesite=[^;]+/i, '') // Remove samesite temporarily
+          .replace(/;\s*samesite=[^;]+/i, ''); // Remove samesite temporarily
         
         // Ensure Secure flag in production
         if (!modifiedCookie.includes('Secure') && !modifiedCookie.includes('secure')) {
-          modifiedCookie += '; Secure'
+          modifiedCookie += '; Secure';
         }
         
-        // Add SameSite=None for cross-origin (required with Secure)
-        modifiedCookie += '; SameSite=None'
+        // Do NOT add SameSite=None - let browser default to Lax for same-site
+        // If you want explicit, add '; SameSite=Lax' instead, but test without first
+        // modifiedCookie += '; SameSite=Lax'; // Optional - uncomment if needed
         
-        console.log(`[SWA-PROXY] Modified cookie ${index}: ${modifiedCookie}`)
+        console.log(`[SWA-PROXY] Modified cookie ${index}: ${modifiedCookie}`);
         
-        appendResponseHeader(event, 'Set-Cookie', modifiedCookie)
-      })
+        appendResponseHeader(event, 'Set-Cookie', modifiedCookie);
+      });
     }
 
     // Forward other important headers
