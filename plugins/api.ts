@@ -52,17 +52,16 @@ export default defineNuxtPlugin((nuxtApp) => {
       const pathAfterApi = url.pathname.replace(/^\/api/, '') || '/';
 
       // debug: log the normalized path (useful to confirm matching logic)
-      // this will help you see what the client matched against on different deployments
       console.debug('[API-FETCH] normalized pathAfterApi:', pathAfterApi);
 
       const publicAuthPaths = ['/auth/token', '/auth/refresh', '/auth/register'];
 
       // Only add auth header when token exists and the request is NOT one of the public auth endpoints
       if (token && !publicAuthPaths.includes(pathAfterApi)) {
-        headers.set('Authorization', `Bearer ${token}`);
-        console.debug('[API-FETCH] Authorization header set for', pathAfterApi);
+        headers.set('x-auth-token', `Bearer ${token}`);
+        console.debug('[API-FETCH] x-auth-token header set for', pathAfterApi);
       } else {
-        console.debug('[API-FETCH] Authorization header NOT set for', pathAfterApi, 'tokenPresent=', !!token);
+        console.debug('[API-FETCH] x-auth-token header NOT set for', pathAfterApi, 'tokenPresent=', !!token);
       }
 
       // content-type handling (unchanged)

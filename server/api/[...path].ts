@@ -64,6 +64,13 @@ export default defineEventHandler(async (event) => {
     } else {
       summary['authorization'] = '<missing>';
     }
+    // Custom auth (x-auth-token)
+    const customAuthKey = Object.keys(hdrs).find(k => k.toLowerCase() === 'x-auth-token');
+    if (customAuthKey) {
+      summary['x-auth-token'] = maskValue(hdrs[customAuthKey]).toString();
+    } else {
+      summary['x-auth-token'] = '<missing>';
+    }
     // Cookie (only presence)
     const cookieKey = Object.keys(hdrs).find(k => k.toLowerCase() === 'cookie');
     if (cookieKey) {
@@ -114,11 +121,20 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // Map x-auth-token back to Authorization (overrides any SWA-injected value)
+    if (forwardHeaders.has('x-auth-token')) {
+      forwardHeaders.set('Authorization', forwardHeaders.get('x-auth-token')!);
+      // Optional: Remove x-auth-token if not needed by backend
+      // forwardHeaders.delete('x-auth-token');
+      console.debug('[SWA-PROXY] Mapped x-auth-token to Authorization for forwarding');
+    }
+
     if (VERBOSE) {
       // list which headers we'll forward and whether they contain auth/cookie
       const forwardedList: Record<string, string> = {};
       forwardHeaders.forEach((v, k) => {
         if (k.toLowerCase() === 'authorization') forwardedList[k] = maskValue(v);
+        else if (k.toLowerCase() === 'x-auth-token') forwardedList[k] = maskValue(v);
         else if (k.toLowerCase() === 'cookie') forwardedList[k] = '<cookie(s) forwarded>';
         else forwardedList[k] = '<forwarded>';
       });
@@ -126,7 +142,8 @@ export default defineEventHandler(async (event) => {
     } else {
       // minimal logging
       const hasAuth = forwardHeaders.has('authorization') || forwardHeaders.has('Authorization');
-      console.log(`[SWA-PROXY] Forwarding cookies: ${headers['cookie'] ? '<present>' : 'none'}, hasAuthorization: ${hasAuth}`);
+      const hasCustomAuth = forwardHeaders.has('x-auth-token');
+      console.log(`[SWA-PROXY] Forwarding cookies: ${headers['cookie'] ? '<present>' : 'none'}, hasAuthorization: ${hasAuth}, hasCustomAuth: ${hasCustomAuth}`);
     }
 
     const response = await $fetch.raw(targetUrl, {
