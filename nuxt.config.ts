@@ -33,8 +33,7 @@ export default defineNuxtConfig({
       xxl: 1536,
     },
     domains: ['coachcall.blob.core.windows.net'],
-    densities: [1, 2],
-    // Add presets for common image sizes
+    density: [1, 2],
     presets: {
       avatar: {
         modifiers: {
@@ -64,35 +63,37 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    // CORS for API is handled inside server functions; avoid wildcard + credentials conflicts here
-    // Your existing caching rules
-    // Cache static assets for 1 year
     '/images/**': {
       headers: {
         'cache-control': 'public, max-age=31536000, immutable',
       },
     },
-    // Cache profile images for 1 day
     '/_ipx/**': {
       headers: {
         'cache-control': 'public, max-age=86400',
       },
     },
-    // Cache default images for 1 year
     '/default-profile.jpg': {
       headers: {
         'cache-control': 'public, max-age=31536000, immutable',
       },
     },
   },
+
   nitro: {
     preset: 'azure-swa',
     azure: {
       config: {
-        "platform": {
-          "apiRuntime": "node:20"
-        }
-      }
-    }
+        platform: {
+          apiRuntime: 'node:20',
+        },
+        routes: [
+          {
+            route: '/api/*',
+            allowedRoles: ['anonymous'],
+          },
+        ]
+      },
+    },
   },
 });
