@@ -1,3 +1,4 @@
+// server/api/[...path].ts
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   const fullPath = url.pathname
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
       body = undefined;
     }
   }
-
+  
   const config = useRuntimeConfig()
   const backendUrl = config.backendUrl || 'https://coach-call-fastapi.southeastasia.cloudapp.azure.com'
   
@@ -34,9 +35,9 @@ export default defineEventHandler(async (event) => {
     })
     targetUrl += `?${params.toString()}`
   }
-
+  
   console.log(`[SWA-PROXY] ${method} ${targetUrl}`)
-
+  
   try {
     const forwardHeaders = new Headers()
     
@@ -51,62 +52,63 @@ export default defineEventHandler(async (event) => {
         forwardHeaders.set(header, headers[header])
       }
     })
-
+    
     console.log(`[SWA-PROXY] Forwarding cookies: ${headers['cookie'] || 'none'}`)
-
+    
     const response = await $fetch.raw(targetUrl, {
       method,
       body,
       headers: forwardHeaders,
-      credentials: 'include', // This is crucial
     })
 
-    // IMPORTANT: Proper cookie handling
-    const responseHeaders = response.headers
-    
-    // Handle Set-Cookie headers - this is the key fix
+    // Handle Set-Cookie headers properly
     const setCookieHeaders = response.headers.getSetCookie?.() || []
     console.log(`[SWA-PROXY] Backend set ${setCookieHeaders.length} cookies`)
     
     if (setCookieHeaders.length > 0) {
       setCookieHeaders.forEach((cookieString, index) => {
-        console.log(`[SWA-PROXY] Setting cookie ${index}: ${cookieString}`);
+        console.log(`[SWA-PROXY] Original cookie ${index}: ${cookieString}`);
         
-        // Remove problematic attributes that SWA doesn't handle well
-        let modifiedCookie = cookieString
-          .replace(/;\s*domain=[^;]+/i, '') // Remove domain
-          .replace(/;\s*samesite=[^;]+/i, ''); // Remove samesite temporarily
+        // Parse the cookie to modify it properly
+        let modifiedCookie = cookieString;
         
-        // Ensure Secure flag in production
-        if (!modifiedCookie.includes('Secure') && !modifiedCookie.includes('secure')) {
-          modifiedCookie += '; Secure';
+        // Remove domain attribute (let it default to current domain)
+        modifiedCookie = modifiedCookie.replace(/;\s*domain=[^;]+/gi, '');
+        
+        // Set SameSite=Lax for same-origin requests (since we're proxying)
+        if (!modifiedCookie.toLowerCase().includes('samesite=')) {
+          modifiedCookie += '; SameSite=Lax';
+        } else {
+          // Replace SameSite=None with SameSite=Lax
+          modifiedCookie = modifiedCookie.replace(/samesite=none/gi, 'SameSite=Lax');
         }
         
-        // Do NOT add SameSite=None - let browser default to Lax for same-site
-        // If you want explicit, add '; SameSite=Lax' instead, but test without first
-        // modifiedCookie += '; SameSite=Lax'; // Optional - uncomment if needed
+        // Ensure Secure flag is present in production
+        if (!modifiedCookie.toLowerCase().includes('secure')) {
+          modifiedCookie += '; Secure';
+        }
         
         console.log(`[SWA-PROXY] Modified cookie ${index}: ${modifiedCookie}`);
         
         appendResponseHeader(event, 'Set-Cookie', modifiedCookie);
       });
     }
-
+    
     // Forward other important headers
     const headersToForwardBack = ['content-type', 'cache-control', 'expires', 'last-modified', 'etag']
     headersToForwardBack.forEach(headerName => {
-      const headerValue = responseHeaders.get(headerName)
+      const headerValue = response.headers.get(headerName)
       if (headerValue) {
         setResponseHeader(event, headerName, headerValue)
       }
     })
-
-    // CORS headers
+    
+    // Set CORS headers for same-origin
     setResponseHeader(event, 'Access-Control-Allow-Credentials', 'true')
-    const origin = getHeader(event, 'origin')
-    if (origin) {
-      setResponseHeader(event, 'Access-Control-Allow-Origin', origin)
-    }
+    
+    // Get the frontend origin
+    const frontendOrigin = getHeader(event, 'origin') || url.origin
+    setResponseHeader(event, 'Access-Control-Allow-Origin', frontendOrigin)
     
     return response._data
     

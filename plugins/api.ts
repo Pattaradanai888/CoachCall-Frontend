@@ -1,3 +1,4 @@
+// plugins/api.ts
 import type { FetchOptions, FetchRequest } from 'ofetch';
 import { defineNuxtPlugin } from '#app';
 import { ofetch } from 'ofetch';
@@ -8,20 +9,23 @@ export default defineNuxtPlugin((nuxtApp) => {
   const authStore = useAuthStore();
 
   const baseFetcher = ofetch.create({
-    // CHANGED: Use the SWA domain for API calls instead of external backend
-    baseURL: '/api', // This will use your SWA domain + /api
-    credentials: 'include',
-
-    onRequest({ options , request }) {
+    baseURL: '/api', // This uses your SWA domain + /api (which proxies to backend)
+    credentials: 'include', // This is crucial for cookies
+    
+    onRequest({ options, request }) {
       const headers = new Headers(options.headers as HeadersInit | undefined);
 
+      // Add Authorization header for non-auth endpoints
       const tokenSource = (authStore as unknown as { accessToken: string | null }).accessToken;
       const token = isRef(tokenSource) ? unref(tokenSource) : tokenSource;
       const requestUrl = String(request);
-      if (token && !requestUrl.startsWith('/api')) {
+      
+      // Only add auth header for non-auth endpoints and when token exists
+      if (token && !requestUrl.includes('/auth/')) {
         headers.set('Authorization', `Bearer ${token}`);
       }
 
+      // Set proper content type
       if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
         if (options.body instanceof URLSearchParams) {
           headers.set('Content-Type', 'application/x-www-form-urlencoded');
@@ -46,8 +50,12 @@ export default defineNuxtPlugin((nuxtApp) => {
     try {
       return await baseFetcher<T>(request, options);
     } catch (err: unknown) {
-      // Only attempt token refresh on client-side to avoid SSR composable issues
-      if (is401(err) && !String(request).includes('/auth/refresh') && import.meta.client) {
+      // Only attempt token refresh on client-side and for 401 errors
+      if (is401(err) && 
+          !String(request).includes('/auth/refresh') && 
+          !String(request).includes('/auth/token') &&
+          import.meta.client) {
+        
         console.log('API: 401 detected, attempting token refresh...');
         try {
           await authStore.refreshToken();
