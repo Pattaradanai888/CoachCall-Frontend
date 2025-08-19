@@ -11,19 +11,33 @@ export default defineNuxtPlugin((nuxtApp) => {
   const baseFetcher = ofetch.create({
     baseURL: '/api', // This uses your SWA domain + /api (which proxies to backend)
     credentials: 'include', // This is crucial for cookies
-    
     onRequest({ options, request }) {
       const headers = new Headers(options.headers as HeadersInit | undefined);
 
-      // Add Authorization header for non-auth endpoints
+      // get token from store (works with refs)
       const tokenSource = (authStore as unknown as { accessToken: string | null }).accessToken;
       const token = isRef(tokenSource) ? unref(tokenSource) : tokenSource;
-      const requestUrl = String(request);
+
+      // Normalize request -> absolute URL so checks are consistent
+      const requestUrlStr = String(request || '');
+      // options.baseURL exists on the fetch instance; fallback to window origin on client
+      const base = (options && (options as any).baseURL) || (typeof window !== 'undefined' ? window.location.origin : '');
+      let url: URL;
+      try {
+        url = new URL(requestUrlStr, base);
+      } catch (e) {
+        // fallback if something odd
+        url = new URL('/' + requestUrlStr.replace(/^\/+/, ''), base);
+      }
+
+      // path after the API proxy, e.g. "/auth/me" or "/auth/token"
+      // if your fetch baseURL is "/api", this yields "/auth/me"
+      const pathAfterApi = url.pathname.replace(/^\/api/, '');
 
       const publicAuthPaths = ['/auth/token', '/auth/refresh', '/auth/register'];
-      
-      // Only add auth header for non-auth endpoints and when token exists
-      if (token && !publicAuthPaths.includes(requestUrl)) {
+
+      // Only add header when token exists and the request is NOT one of the public auth endpoints
+      if (token && !publicAuthPaths.includes(pathAfterApi)) {
         headers.set('Authorization', `Bearer ${token}`);
       }
 
@@ -53,11 +67,11 @@ export default defineNuxtPlugin((nuxtApp) => {
       return await baseFetcher<T>(request, options);
     } catch (err: unknown) {
       // Only attempt token refresh on client-side and for 401 errors
-      if (is401(err) && 
-          !String(request).includes('/auth/refresh') && 
-          !String(request).includes('/auth/token') &&
-          import.meta.client) {
-        
+      if (is401(err) &&
+        !String(request).includes('/auth/refresh') &&
+        !String(request).includes('/auth/token') &&
+        import.meta.client) {
+
         console.log('API: 401 detected, attempting token refresh...');
         try {
           await authStore.refreshToken();
