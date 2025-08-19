@@ -19,9 +19,11 @@ export default defineNuxtPlugin((nuxtApp) => {
       const tokenSource = (authStore as unknown as { accessToken: string | null }).accessToken;
       const token = isRef(tokenSource) ? unref(tokenSource) : tokenSource;
       const requestUrl = String(request);
+
+      const publicAuthPaths = ['/auth/token', '/auth/refresh', '/auth/register'];
       
       // Only add auth header for non-auth endpoints and when token exists
-      if (token && !requestUrl.includes('/auth/')) {
+      if (token && !publicAuthPaths.includes(requestUrl)) {
         headers.set('Authorization', `Bearer ${token}`);
       }
 
