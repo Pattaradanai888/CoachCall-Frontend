@@ -4,6 +4,7 @@ import { defineNuxtPlugin } from '#app';
 import { ofetch } from 'ofetch';
 import { isRef, unref, type Ref } from 'vue';
 import { useAuthStore } from '~/stores/auth';
+import { debug } from '~/utils/logger';
 
 export default defineNuxtPlugin((nuxtApp) => {
   const authStore = useAuthStore();
@@ -52,16 +53,16 @@ export default defineNuxtPlugin((nuxtApp) => {
       const pathAfterApi = url.pathname.replace(/^\/api/, '') || '/';
 
       // debug: log the normalized path (useful to confirm matching logic)
-      console.debug('[API-FETCH] normalized pathAfterApi:', pathAfterApi);
+      debug('[API-FETCH] normalized pathAfterApi:', pathAfterApi);
 
       const publicAuthPaths = ['/auth/token', '/auth/refresh', '/auth/register'];
 
       // Only add auth header when token exists and the request is NOT one of the public auth endpoints
       if (token && !publicAuthPaths.includes(pathAfterApi)) {
         headers.set('x-auth-token', `Bearer ${token}`);
-        console.debug('[API-FETCH] x-auth-token header set for', pathAfterApi);
+        debug('[API-FETCH] x-auth-token header set for', pathAfterApi);
       } else {
-        console.debug('[API-FETCH] x-auth-token header NOT set for', pathAfterApi, 'tokenPresent=', !!token);
+        debug('[API-FETCH] x-auth-token header NOT set for', pathAfterApi, 'tokenPresent=', !!token);
       }
 
       // content-type handling (unchanged)

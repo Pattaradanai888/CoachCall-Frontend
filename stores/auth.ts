@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { z } from 'zod';
 import type { TokenResponse, User } from '~/types/auth';
+import { log, debug, error as logError } from '~/utils/logger';
 
 const UserSchema = z.object({
   id: z.number(),
@@ -46,7 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     } else {
       // Client-side initialization
-      console.log('Auth Store: Initializing on client...');
+      log('Auth Store: Initializing on client...');
       
       try {
         // Try to refresh token (this will check for cookies)
@@ -57,9 +58,9 @@ export const useAuthStore = defineStore('auth', () => {
           await fetchProfile();
         }
         
-        console.log('Auth Store: Initialization complete, authenticated:', isAuthenticated.value);
+        log('Auth Store: Initialization complete, authenticated:', isAuthenticated.value);
       } catch (error) {
-        console.debug('Auth Store: No valid session found:', error);
+        debug('Auth Store: No valid session found:', error);
         // Clear any partial state
         accessToken.value = null;
         user.value = null;
@@ -78,7 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
     form.append('username', payload.email);
     form.append('password', payload.password);
 
-    console.log('Auth Store: Attempting login...');
+    log('Auth Store: Attempting login...');
     
     const tokenResponse = await $api<TokenResponse>('/auth/token', {
       method: 'POST',
@@ -89,7 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
     const profile = await fetchProfile();
     isInitialized.value = true;
     
-    console.log('Auth Store: Login successful, user:', profile.email);
+    log('Auth Store: Login successful, user:', profile.email);
     return profile;
   }
 
@@ -110,7 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
     isRefreshing.value = true;
     const promise = (async () => {
       try {
-        console.log('Auth Store: Attempting token refresh...');
+        log('Auth Store: Attempting token refresh...');
         const { $api } = useNuxtApp();
         
         const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
@@ -124,10 +125,10 @@ export const useAuthStore = defineStore('auth', () => {
           await fetchProfile();
         }
         
-        console.log('Auth Store: Token refresh successful');
+        log('Auth Store: Token refresh successful');
         return accessToken.value || '';
       } catch (error) {
-        console.log('Auth Store: Token refresh failed:', error);
+        logError('Auth Store: Token refresh failed:', error);
         await logoutSilently();
         throw error;
       } finally {
@@ -144,16 +145,16 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { $api } = useNuxtApp();
       await $api('/auth/logout', { method: 'POST' });
-      console.log('Auth Store: Logout API call successful');
+      log('Auth Store: Logout API call successful');
     } catch (error) {
-      console.error('Auth Store: Logout API call failed:', error);
+      logError('Auth Store: Logout API call failed:', error);
     } finally {
       await logoutSilently();
     }
   }
 
   async function logoutSilently() {
-    console.log('Auth Store: Clearing auth state');
+    log('Auth Store: Clearing auth state');
     user.value = null;
     accessToken.value = null;
     isInitialized.value = false;

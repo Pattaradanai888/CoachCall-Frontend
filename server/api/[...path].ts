@@ -1,5 +1,6 @@
 // server/api/[...path].ts
 import { appendResponseHeader, defineEventHandler, getHeaders, getMethod, getQuery, getRequestURL, readRawBody, setResponseHeader, setResponseStatus } from 'h3';
+import { log, debug } from '~/utils/logger';
 
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event);
@@ -96,10 +97,10 @@ export default defineEventHandler(async (event) => {
 
   // Print request debug info (masked)
   if (VERBOSE) {
-    console.log(`[SWA-PROXY] PROXY REQUEST -> Method: ${method} Target: ${targetUrl}`);
-    console.log(`[SWA-PROXY] Incoming headers summary:`, summarizeRequestHeaders(headers));
+    log(`[SWA-PROXY] PROXY REQUEST -> Method: ${method} Target: ${targetUrl}`);
+    log(`[SWA-PROXY] Incoming headers summary:`, summarizeRequestHeaders(headers));
   } else {
-    console.log(`[SWA-PROXY] ${method} ${targetUrl}`);
+    log(`[SWA-PROXY] ${method} ${targetUrl}`);
   }
 
   try {
@@ -126,7 +127,7 @@ export default defineEventHandler(async (event) => {
       forwardHeaders.set('Authorization', forwardHeaders.get('x-auth-token')!);
       // Optional: Remove x-auth-token if not needed by backend
       // forwardHeaders.delete('x-auth-token');
-      console.debug('[SWA-PROXY] Mapped x-auth-token to Authorization for forwarding');
+      debug('[SWA-PROXY] Mapped x-auth-token to Authorization for forwarding');
     }
 
     if (VERBOSE) {
@@ -138,12 +139,12 @@ export default defineEventHandler(async (event) => {
         else if (k.toLowerCase() === 'cookie') forwardedList[k] = '<cookie(s) forwarded>';
         else forwardedList[k] = '<forwarded>';
       });
-      console.log('[SWA-PROXY] Forwarding headers:', forwardedList);
+      log('[SWA-PROXY] Forwarding headers:', forwardedList);
     } else {
       // minimal logging
       const hasAuth = forwardHeaders.has('authorization') || forwardHeaders.has('Authorization');
       const hasCustomAuth = forwardHeaders.has('x-auth-token');
-      console.log(`[SWA-PROXY] Forwarding cookies: ${headers['cookie'] ? '<present>' : 'none'}, hasAuthorization: ${hasAuth}, hasCustomAuth: ${hasCustomAuth}`);
+      log(`[SWA-PROXY] Forwarding cookies: ${headers['cookie'] ? '<present>' : 'none'}, hasAuthorization: ${hasAuth}, hasCustomAuth: ${hasCustomAuth}`);
     }
 
     const response = await $fetch.raw(targetUrl, {
@@ -162,9 +163,9 @@ export default defineEventHandler(async (event) => {
     // response.headers.getSetCookie?.() is available in ofetch raw response in your previous code
     const setCookieHeaders = (response.headers.getSetCookie && response.headers.getSetCookie()) || [];
     if (VERBOSE) {
-      console.log(`[SWA-PROXY] Backend responded status=${respStatus} content-length=${contentLength} set-cookie-count=${setCookieHeaders.length}`);
+      log(`[SWA-PROXY] Backend responded status=${respStatus} content-length=${contentLength} set-cookie-count=${setCookieHeaders.length}`);
     } else {
-      console.log(`[SWA-PROXY] Backend set ${setCookieHeaders.length} cookies`);
+      log(`[SWA-PROXY] Backend set ${setCookieHeaders.length} cookies`);
     }
 
     if (setCookieHeaders.length > 0) {
@@ -172,11 +173,11 @@ export default defineEventHandler(async (event) => {
         // Mask cookie value for logs
         const maskedForLog = maskCookieForLog(cookieString);
         if (VERBOSE) {
-          console.log(`[SWA-PROXY] Original cookie ${index}: ${maskedForLog}`);
+          log(`[SWA-PROXY] Original cookie ${index}: ${maskedForLog}`);
         } else {
           // show only cookie names in non-verbose mode
           const names = String(cookieString).split(';').map(s => s.split('=')[0].trim()).filter(Boolean).join(', ');
-          console.log(`[SWA-PROXY] Original cookie ${index}: ${names}`);
+          log(`[SWA-PROXY] Original cookie ${index}: ${names}`);
         }
 
         // Modify cookie for security: remove Domain, ensure SameSite & Secure & HttpOnly for refresh
@@ -195,10 +196,10 @@ export default defineEventHandler(async (event) => {
 
         // Append masked log of modified cookie (no raw values)
         if (VERBOSE) {
-          console.log(`[SWA-PROXY] Modified cookie ${index}: ${maskCookieForLog(modifiedCookie)}`);
+          log(`[SWA-PROXY] Modified cookie ${index}: ${maskCookieForLog(modifiedCookie)}`);
         } else {
           const names = String(modifiedCookie).split(';').map(s => s.split('=')[0].trim()).filter(Boolean).join(', ');
-          console.log(`[SWA-PROXY] Modified cookie ${index}: ${names}`);
+          log(`[SWA-PROXY] Modified cookie ${index}: ${names}`);
         }
 
         appendResponseHeader(event, 'Set-Cookie', modifiedCookie);
@@ -220,7 +221,7 @@ export default defineEventHandler(async (event) => {
     setResponseHeader(event, 'Vary', 'Origin');
 
     if (VERBOSE) {
-      console.log(`[SWA-PROXY] Returning proxied response status=${respStatus}`);
+      log(`[SWA-PROXY] Returning proxied response status=${respStatus}`);
     }
     return response._data;
   } catch (error: any) {
