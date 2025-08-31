@@ -175,5 +175,13 @@ export function useLeaderboard() {
     fetchAthleteDetailOptimized,
     refreshLeaderboard,
     refreshAthleteDetail,
+    // Client-side only data fetching (for auth-protected pages)
+    fetchLeaderboardClient: async () => {
+      if (import.meta.server) {
+        throw new Error('fetchLeaderboardClient should not be called during SSR');
+      }
+      const response = await $api<BackendLeaderboardResponse>('/analytics/leaderboard');
+      return response.athletes?.map(transformBackendAthlete) || [];
+    },
   };
 }

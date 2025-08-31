@@ -35,16 +35,27 @@
           </div>
           <button
             class="bg-[#9C1313] text-white font-semibold py-3 px-5 rounded-xl flex items-center gap-2 hover:bg-[#7A0F0F] transition-all duration-300"
+            :disabled="isLoadingAthletes"
             @click="refreshLeaderboard"
           >
-            <Icon name="mdi:refresh" class="text-xl" />
+            <Icon name="mdi:refresh" class="text-xl" :class="{ 'animate-spin': isLoadingAthletes }" />
             Refresh
           </button>
         </div>
       </div>
 
+      <!-- Loading State -->
+      <div v-if="isLoadingAthletes" class="text-center py-24 text-gray-500">
+        <div class="inline-block">
+          <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+          <p class="text-lg">
+            Loading Leaderboard...
+          </p>
+        </div>
+      </div>
+
       <!-- Leaderboard Content -->
-      <div class="grid grid-cols-1 gap-8 xl:grid-cols-4">
+      <div v-else class="grid grid-cols-1 gap-8 xl:grid-cols-4">
         <!-- Main Leaderboard -->
         <div class="xl:col-span-3">
           <!-- Top 3 Podium -->
@@ -235,14 +246,14 @@ import AthleteDetailCard from '~/components/leaderboard/AthleteDetailCard.vue';
 const athletes = ref<LeaderboardAthlete[]>([]);
 const isLoadingAthletes = ref(true);
 
-const { fetchLeaderboard, fetchAthleteDetailOptimized } = useLeaderboard();
+const { fetchLeaderboard, fetchAthleteDetailOptimized, fetchLeaderboardClient } = useLeaderboard();
 
 // Function to fetch leaderboard data
 async function fetchLeaderboardData() {
   isLoadingAthletes.value = true;
   try {
-    const result = await fetchLeaderboard();
-    athletes.value = result.data.value || [];
+    const result = await fetchLeaderboardClient();
+    athletes.value = result || [];
   } catch (error) {
     console.error('Failed to fetch leaderboard:', error);
   } finally {

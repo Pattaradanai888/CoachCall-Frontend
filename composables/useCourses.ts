@@ -283,6 +283,30 @@ export function useCourses() {
     return course.sessions.find(session => session.id === sessionId) || null;
   };
 
+  // Client-side only data fetching (for auth-protected pages that need refresh capability)
+  const fetchAllCourseDetailsClient = async () => {
+    if (import.meta.server) {
+      throw new Error('fetchAllCourseDetailsClient should not be called during SSR');
+    }
+    return $api<CourseDetail[]>('/course/details/all');
+  };
+
+  const fetchSessionTemplatesClient = async () => {
+    if (import.meta.server) {
+      throw new Error('fetchSessionTemplatesClient should not be called during SSR');
+    }
+    return $api<Session[]>('/course/sessions', {
+      params: { is_template: true },
+    });
+  };
+
+  const fetchSkillsClient = async () => {
+    if (import.meta.server) {
+      throw new Error('fetchSkillsClient should not be called during SSR');
+    }
+    return $api<Skill[]>('/course/skills');
+  };
+
   return {
     // SSR-safe data fetching
     fetchCourses,
@@ -292,6 +316,11 @@ export function useCourses() {
     fetchSkills,
     fetchSessionReport,
     fetchSessionById,
+
+    // Client-side data fetching (for auth-protected pages)
+    fetchAllCourseDetailsClient,
+    fetchSessionTemplatesClient,
+    fetchSkillsClient,
 
     // Client-side mutations
     updateCourseAthletes,

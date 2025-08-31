@@ -3,9 +3,17 @@
     <SubNavbar />
   <ClientOnly>
       <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px]">
-        <div v-if="pending" class="flex justify-center items-center py-20 text-gray-500">
-          <p>Loading Dashboard...</p>
+        <!-- Loading State -->
+        <div v-if="pending" class="w-full text-center py-24 text-gray-500">
+          <div class="inline-block">
+            <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+            <p class="text-lg">
+              Loading Dashboard...
+            </p>
+          </div>
         </div>
+        
+        <!-- Main Content -->
         <div v-else class="w-full mx-7 lg:mx-0">
           <!-- Overview Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">

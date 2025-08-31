@@ -18,5 +18,12 @@ export function useCoachStatData() {
 
   return {
     fetchCoachStats,
+    // Client-side only data fetching (for auth-protected pages)
+    fetchCoachStatsClient: async () => {
+      if (import.meta.server) {
+        throw new Error('fetchCoachStatsClient should not be called during SSR');
+      }
+      return $api<CoachStatData>('/analytics/coach-stats/all');
+    },
   };
 }

@@ -4,7 +4,7 @@
       Loading course details...
     </div>
 
-    <div v-else-if="error || !course" class="w-full text-center py-10">
+    <div v-else-if="!course" class="w-full text-center py-10">
       <h1 class="text-2xl font-bold text-red-600">
         Course Not Found
       </h1>

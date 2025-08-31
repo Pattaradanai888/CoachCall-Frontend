@@ -71,6 +71,7 @@
 
 <script lang="ts" setup>
 import ActivityOverview from '~/components/coach-stat/ActivityOverview.vue';
+import ImpactOverview from '~/components/coach-stat/ImpactOverview.vue';
 import HeroSection from '~/components/coach-stat/HeroSection.vue';
 import { ref, onMounted } from 'vue';
 import type { CoachStatData } from '~/types/coach-stat';
@@ -81,15 +82,15 @@ const data = ref<CoachStatData | null>(null);
 const pending = ref(true);
 const error = ref<Error | null>(null);
 
-const { fetchCoachStats } = useCoachStatData();
+const { fetchCoachStats, fetchCoachStatsClient } = useCoachStatData();
 
 // Function to fetch coach stats
 async function fetchData() {
   pending.value = true;
   error.value = null;
   try {
-    const result = await fetchCoachStats();
-    data.value = result.data.value;
+    const result = await fetchCoachStatsClient();
+    data.value = result;
   } catch (err) {
     error.value = err as Error;
   } finally {

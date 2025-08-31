@@ -3,7 +3,18 @@
     <SubNavbar />
 
     <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] max-h-[none]">
-      <div class="w-full mx-7 lg:mx-0">
+      <!-- Loading State -->
+      <div v-if="coursesPending && templatesPending" class="w-full text-center py-24 text-gray-500">
+        <div class="inline-block">
+          <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+          <p class="text-lg">
+            Loading Course Management...
+          </p>
+        </div>
+      </div>
+      
+      <!-- Main Content -->
+      <div v-else class="w-full mx-7 lg:mx-0">
         <div v-motion-slide-visible-once-top class="flex justify-between mb-5">
           <div>
             <h1 class="text-3xl font-bold">
@@ -24,8 +35,11 @@
         </div>
 
         <div v-motion-slide-visible-once-left :delay="200" class="mb-12">
-          <div v-if="templatesPending" class="text-center p-8 bg-white min-h-[250px] flex items-center justify-center">
-            Loading Templates...
+          <div v-if="templatesPending" class="text-center p-8 bg-white rounded-xl shadow-sm min-h-[250px] flex items-center justify-center">
+            <div class="inline-block">
+              <div class="w-8 h-8 mx-auto mb-2 bg-red-200 rounded-full animate-spin border-2 border-red-700 border-t-transparent" />
+              <p class="text-gray-500">Loading Templates...</p>
+            </div>
           </div>
           <OverviewTemplate
             v-else
@@ -38,8 +52,11 @@
         </div>
 
         <div v-motion-slide-visible-once-right :delay="200">
-          <div v-if="coursesPending" class="text-center p-8 bg-white min-h-[300px] flex items-center justify-center">
-            Loading Courses...
+          <div v-if="coursesPending" class="text-center p-8 bg-white rounded-xl shadow-sm min-h-[300px] flex items-center justify-center">
+            <div class="inline-block">
+              <div class="w-8 h-8 mx-auto mb-2 bg-red-200 rounded-full animate-spin border-2 border-red-700 border-t-transparent" />
+              <p class="text-gray-500">Loading Courses...</p>
+            </div>
           </div>
           <OverviewActiveCourse
             v-else
@@ -153,6 +170,9 @@ const {
   fetchAllCourseDetails,
   fetchSessionTemplates,
   fetchSkills,
+  fetchAllCourseDetailsClient,
+  fetchSessionTemplatesClient,
+  fetchSkillsClient,
   createSession,
   createSessionFromTemplate,
   updateSessionTemplate,
@@ -167,15 +187,16 @@ async function fetchAllData() {
   templatesPending.value = true;
   
   try {
+    // Use client-side functions for auth-protected data fetching
     const [coursesResult, templatesResult, skillsResult] = await Promise.all([
-      fetchAllCourseDetails(),
-      fetchSessionTemplates(),
-      fetchSkills(),
+      fetchAllCourseDetailsClient(),
+      fetchSessionTemplatesClient(),
+      fetchSkillsClient(),
     ]);
     
-    allCourses.value = coursesResult.data.value || [];
-    sessionTemplates.value = templatesResult.data.value || [];
-    availableSkills.value = skillsResult.data.value || [];
+    allCourses.value = coursesResult || [];
+    sessionTemplates.value = templatesResult || [];
+    availableSkills.value = skillsResult || [];
   } catch (error) {
     console.error('Failed to fetch data:', error);
   } finally {
@@ -191,8 +212,8 @@ const refresh = async () => {
 
 const refreshTemplates = async () => {
   try {
-    const result = await fetchSessionTemplates();
-    sessionTemplates.value = result.data.value || [];
+    const result = await fetchSessionTemplatesClient();
+    sessionTemplates.value = result || [];
   } catch (error) {
     console.error('Failed to refresh templates:', error);
   }

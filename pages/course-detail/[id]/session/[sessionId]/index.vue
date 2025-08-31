@@ -1,7 +1,7 @@
 <template>
   <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] mt-[7rem]">
     <!-- Loading / Error State -->
-    <div v-if="pending || error || !session" class="w-full text-center py-10">
+    <div v-if="pending || error() || !session" class="w-full text-center py-10">
       <h1 v-if="pending" class="text-2xl font-bold text-gray-700">
         Loading Session...
       </h1>
