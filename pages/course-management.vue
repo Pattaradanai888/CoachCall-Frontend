@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="min-h-screen bg-[#FAFAFA]">
     <SubNavbar />
 
-    <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px] max-h-[none]">
+    <div class="max-w-[1140px] mx-auto pt-4 pb-8 px-4 lg:px-0 h-auto min-h-[300px]">
       <!-- Loading State -->
       <div v-if="coursesPending && templatesPending" class="w-full text-center py-24 text-gray-500">
         <div class="inline-block">
@@ -14,17 +14,17 @@
       </div>
       
       <!-- Main Content -->
-      <div v-else class="w-full mx-7 lg:mx-0">
-        <div v-motion-slide-visible-once-top class="flex justify-between mb-5">
+      <div v-else class="w-full">
+        <div v-motion-slide-visible-once-top class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
           <div>
-            <h1 class="text-3xl font-bold">
+            <h1 class="text-3xl font-bold text-gray-800">
               Course Management
             </h1>
-            <p>Manage your athletes and track their progress</p>
+            <p class="text-gray-600 mt-1">Manage your athletes and track their progress</p>
           </div>
-          <div>
+          <div class="mt-4 lg:mt-0">
             <NuxtLink to="/course/form/new">
-              <button class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg">
+              <button class="bg-[#9C1313] text-white font-bold px-4 py-3 rounded-xl hover:bg-[#7A0F0F] shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">
                 <div class="flex items-center justify-center">
                   <Icon name="mdi:plus" size="1.5rem" class="mr-2" />
                   <p>Create Course</p>
@@ -67,8 +67,9 @@
           />
         </div>
       </div>
-    </div>
+    </div> <!-- Close container div -->
 
+    <!-- Modals at root level -->
     <SessionBuilderModal
       :show="showModal"
       mode="template"
@@ -109,7 +110,7 @@
       :type="notificationType"
       @close="closeNotificationModal"
     />
-  </div>
+  </div> <!-- Close root div -->
 </template>
 
 <script lang="ts" setup>

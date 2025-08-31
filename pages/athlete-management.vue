@@ -3,7 +3,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <SubNavbar />
-    <div class="max-w-[1140px] mx-auto py-8 px-4 lg:px-0">
+    <div class="max-w-[1140px] mx-auto pt-4 pb-8 px-4 lg:px-0">
       <!-- Header -->
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
         <div>

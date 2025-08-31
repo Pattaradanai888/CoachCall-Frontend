@@ -34,6 +34,22 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!user.value && !!accessToken.value);
   const isInitialized = ref(false);
   const isRefreshing = ref(false);
+  
+  // Show loading only when necessary to avoid flashing
+  const isCheckingAuth = computed(() => {
+    // Show loading during initial client-side initialization
+    // but only for a brief moment to check for existing session
+    if (!isInitialized.value && import.meta.client) {
+      return true;
+    }
+    
+    // Show loading when refreshing an existing session
+    if (isRefreshing.value) {
+      return true;
+    }
+    
+    return false;
+  });
 
   let refreshPromise: Promise<void> | null = null;
 
@@ -50,8 +66,14 @@ export const useAuthStore = defineStore('auth', () => {
       log('Auth Store: Initializing on client...');
       
       try {
-        // Try to refresh token (this will check for cookies)
-        await refreshToken();
+        // Try to refresh token silently (this will check for cookies)
+        // Set initialized to true quickly to minimize loading flash
+        const refreshPromise = refreshTokenSilently();
+        
+        // Set as initialized after starting the refresh to minimize loading time
+        isInitialized.value = true;
+        
+        await refreshPromise;
         
         // If token refresh succeeded but no user data, fetch profile
         if (accessToken.value && !user.value) {
@@ -64,9 +86,36 @@ export const useAuthStore = defineStore('auth', () => {
         // Clear any partial state
         accessToken.value = null;
         user.value = null;
-      } finally {
+        // Ensure initialized is set even on error
         isInitialized.value = true;
       }
+    }
+  }
+
+  async function refreshTokenSilently(): Promise<string> {
+    try {
+      log('Auth Store: Attempting silent token refresh...');
+      const { $api } = useNuxtApp();
+      
+      const refreshResponse = await $api<TokenResponse>('/auth/refresh', {
+        method: 'POST',
+      });
+      
+      accessToken.value = refreshResponse.access_token;
+      
+      // Fetch user data if we don't have it
+      if (!user.value && accessToken.value) {
+        await fetchProfile();
+      }
+      
+      log('Auth Store: Silent token refresh successful');
+      return accessToken.value || '';
+    } catch (error) {
+      // Don't log as error for silent refresh - this is expected when no session exists
+      debug('Auth Store: Silent token refresh failed:', error);
+      accessToken.value = null;
+      user.value = null;
+      throw error;
     }
   }
 
@@ -157,7 +206,8 @@ export const useAuthStore = defineStore('auth', () => {
     log('Auth Store: Clearing auth state');
     user.value = null;
     accessToken.value = null;
-    isInitialized.value = false;
+    // Keep isInitialized as true to prevent re-initialization
+    // isInitialized.value = false; // Remove this line
   }
 
   async function updateDisplayName(newDisplayName: string): Promise<User> {
@@ -211,6 +261,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isInitialized,
     isRefreshing,
+    isCheckingAuth,
     initialize,
     login,
     register,

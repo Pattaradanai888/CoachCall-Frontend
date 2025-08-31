@@ -1,22 +1,24 @@
 <template>
-  <div>
+  <div class="min-h-screen bg-[#FAFAFA]">
     <SubNavbar />
-  <ClientOnly>
-      <div class="flex max-w-[1140px] w-full mx-auto my-10 h-auto min-h-[300px]">
-        <!-- Loading State -->
-        <div v-if="pending" class="w-full text-center py-24 text-gray-500">
-          <div class="inline-block">
-            <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
-            <p class="text-lg">
+    
+    <div class="max-w-[1140px] mx-auto pt-4 pb-8 px-4 lg:px-0">
+      <ClientOnly>
+        <div class="w-full h-auto min-h-[300px]">
+          <!-- Loading State -->
+          <div v-if="pending" class="w-full text-center py-24 text-gray-500">
+            <div class="inline-block">
+              <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+              <p class="text-lg">
               Loading Dashboard...
             </p>
           </div>
         </div>
         
         <!-- Main Content -->
-        <div v-else class="w-full mx-7 lg:mx-0">
+        <div v-else class="w-full">
           <!-- Overview Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
             <div v-for="(card, index) in cards" :key="index" class="bg-white shadow-md p-4 rounded-md">
               <div class="flex items-center">
                 <Icon :name="card.icon" size="1.25rem" class="mr-2" />
@@ -147,11 +149,12 @@
             </div>
           </div>
         </div>
-      </div>
-      <template #fallback>
-        <div />
-      </template>
-    </ClientOnly>
+        </div>
+        <template #fallback>
+          <div />
+        </template>
+      </ClientOnly>
+    </div>
   </div>
 </template>
 

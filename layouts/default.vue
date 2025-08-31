@@ -1,15 +1,13 @@
 <template>
   <div class="min-h-screen flex flex-col bg-[#FAFAFA]">
-    <!-- Header -->
     <header
       class="fixed top-0 left-0 right-0 z-50" :class="[
         isHeaderTransparent ? 'bg-transparent' : 'bg-white shadow-sm border-b border-gray-200',
       ]"
     >
       <nav class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-        <!-- Logo -->
         <ClientOnly>
-          <NuxtLink :to="isAuthenticated ? '/dashboard' : '/'" class="flex items-center space-x-2">
+          <NuxtLink :to="isAuthInitialized ? (isAuthenticated ? '/dashboard' : '/') : '/'" class="flex items-center space-x-2">
             <div
               class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
             >
@@ -37,15 +35,19 @@
           </template>
         </ClientOnly>
 
-        <!-- Right Side - Desktop -->
         <ClientOnly>
           <div class="hidden lg:flex items-center space-x-6">
-            <div v-if="isAuthenticated" class="relative">
+            <div v-if="isCheckingAuth" class="flex items-center space-x-2 animate-pulse">
+              <div class="w-8 h-8 rounded-full bg-gray-300"/>
+              <div class="h-4 w-24 bg-gray-300 rounded"/>
+            </div>
+            
+            <div v-else-if="isAuthenticated" class="relative">
               <button
-                class="flex items-center space-x-2 focus:outline-none profile-button"
+                class="flex items-center space-x-2 focus:outline-none profile-button transition-all duration-200 hover:opacity-80"
                 @click.stop="toggleProfileMenu"
               >
-                <div class="w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
+                <div class="w-8 h-8 rounded-full bg-gray-300 overflow-hidden ring-2 ring-transparent transition-all">
                   <NuxtImg
                     :src="user?.profile?.profile_image_url || '/default-profile.jpg'"
                     alt="User avatar"
@@ -57,38 +59,59 @@
                   />
                 </div>
                 <span
-                  class="text-sm font-semibold" :class="[
+                  class="text-sm font-semibold transition-colors" :class="[
                     isHeaderTransparent ? 'text-white' : 'text-gray-900',
                   ]"
                 >
                   {{ displayName }}
                 </span>
+                <svg 
+                  class="w-4 h-4 transition-transform duration-200" 
+                  :class="[
+                    isProfileMenuOpen ? 'rotate-180' : 'rotate-0',
+                    isHeaderTransparent ? 'text-white' : 'text-gray-500'
+                  ]"
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
 
-              <!-- Profile Dropdown -->
-              <div
-                v-if="isProfileMenuOpen"
-                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 profile-menu"
+              <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="transform opacity-0 scale-95"
+                enter-to-class="transform opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="transform opacity-100 scale-100"
+                leave-to-class="transform opacity-0 scale-95"
               >
-                <NuxtLink
-                  to="profile-management"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  @click="isProfileMenuOpen = false"
+                <div
+                  v-if="isProfileMenuOpen"
+                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 profile-menu border border-gray-200"
                 >
-                  Profile
-                </NuxtLink>
-                <button
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  @click="handleLogout"
-                >
-                  Sign out
-                </button>
-              </div>
+                  <NuxtLink
+                    to="/profile-management"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    @click="isProfileMenuOpen = false"
+                  >
+                    Profile Settings
+                  </NuxtLink>
+                  <button
+                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    @click="handleLogout"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </Transition>
             </div>
+            
             <div v-else>
               <NuxtLink
                 to="/login"
-                class="text-sm font-semibold transition" :class="[
+                class="text-sm font-semibold transition-all duration-200 hover:scale-105" :class="[
                   isHeaderTransparent
                     ? 'text-white hover:text-gray-300'
                     : 'text-gray-900 hover:text-[#991B1B]',
@@ -99,22 +122,10 @@
             </div>
           </div>
           <template #fallback>
-            <div class="hidden lg:flex items-center space-x-6">
-              <NuxtLink
-                to="/login"
-                class="text-sm font-semibold transition" :class="[
-                  isHeaderTransparent
-                    ? 'text-white hover:text-gray-300'
-                    : 'text-gray-900 hover:text-[#991B1B]',
-                ]"
-              >
-                Log in <span aria-hidden="true">→</span>
-              </NuxtLink>
-            </div>
+            <div class="hidden lg:flex items-center space-x-6 w-20 h-8"/>
           </template>
         </ClientOnly>
 
-        <!-- Mobile Menu Button -->
         <div class="lg:hidden">
           <button
             type="button"
@@ -133,13 +144,12 @@
         </div>
       </nav>
 
-      <!-- Mobile Menu -->
       <div v-if="isMobileMenuOpen" class="lg:hidden">
         <div class="fixed inset-0 z-10 bg-black/30" @click="isMobileMenuOpen = false" />
         <div class="fixed inset-y-0 right-0 z-20 w-3/4 max-w-sm bg-white p-6 shadow-lg">
           <div class="flex items-center justify-between">
             <NuxtLink
-              :to="isAuthenticated ? '/dashboard' : '/'"
+              :to="isAuthInitialized ? (isAuthenticated ? '/dashboard' : '/') : '/'"
               class="flex items-center space-x-2"
             >
               <div
@@ -163,76 +173,78 @@
 
           <ClientOnly>
             <div class="mt-6 space-y-4">
-              <!-- Mobile Profile Section -->
-              <div v-if="isAuthenticated" class="space-y-2">
-                <div class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
-                  <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
+              <div v-if="isCheckingAuth" class="space-y-2 animate-pulse">
+                <div class="flex items-center space-x-3 p-4 rounded-lg bg-gray-100 border border-gray-200">
+                  <div class="w-12 h-12 rounded-full bg-gray-300"/>
+                  <div class="flex-1 space-y-2">
+                    <div class="h-4 bg-gray-300 rounded w-3/4"/>
+                    <div class="h-3 bg-gray-300 rounded w-1/2"/>
+                  </div>
+                </div>
+                <div class="h-12 bg-gray-200 rounded-lg"/>
+                <div class="h-12 bg-gray-200 rounded-lg"/>
+              </div>
+              
+              <div v-else-if="isAuthenticated" class="space-y-2">
+                <div class="flex items-center space-x-3 p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
+                  <div class="w-12 h-12 rounded-full bg-gray-300 overflow-hidden ring-2 ring-white shadow-sm">
                     <NuxtImg
                       :src="user?.profile?.profile_image_url || '/default-profile.jpg'"
                       alt="User avatar"
                       class="w-full h-full object-cover"
                       placeholder="/default-profile.jpg"
                       format="webp"
-                      width="40"
-                      height="40"
+                      width="48"
+                      height="48"
                     />
                   </div>
-                  <div>
-                    <p class="font-medium text-gray-900">
+                  <div class="flex-1">
+                    <p class="font-semibold text-gray-900">
                       {{ displayName }}
                     </p>
-                    <p class="text-sm text-gray-500">
+                    <p class="text-sm text-gray-600">
                       {{ user?.email || '' }}
                     </p>
                   </div>
                 </div>
 
                 <NuxtLink
-                  to="profile-management"
-                  class="block py-2 px-3 text-base font-medium text-gray-900 hover:bg-gray-100 rounded-md"
+                  to="/profile-management"
+                  class="block py-3 px-4 text-base font-medium text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   @click="isMobileMenuOpen = false"
                 >
-                  Profile
+                  Profile Settings
                 </NuxtLink>
                 <button
-                  class="w-full text-left py-2 px-3 text-base font-medium text-gray-900 hover:bg-gray-100 rounded-md"
+                  class="w-full text-left py-3 px-4 text-base font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   @click="handleLogout"
                 >
-                  Sign out
+                  Sign Out
                 </button>
               </div>
+              
               <div v-else>
                 <NuxtLink
                   to="/login"
-                  class="block text-base font-medium text-gray-900 hover:text-[#991B1B]"
+                  class="block py-3 px-4 text-center text-base font-semibold text-white bg-[#991B1B] hover:bg-[#7f1d1d] rounded-lg transition-colors"
                   @click="isMobileMenuOpen = false"
                 >
-                  Log in
+                  Log In
                 </NuxtLink>
               </div>
             </div>
             <template #fallback>
-              <div class="mt-6 space-y-4">
-                <NuxtLink
-                  to="/login"
-                  class="block text-base font-medium text-gray-900 hover:text-[#991B1B]"
-                  @click="isMobileMenuOpen = false"
-                >
-                  Log in
-                </NuxtLink>
-              </div>
+              <div class="mt-6 h-20"/>
             </template>
           </ClientOnly>
         </div>
       </div>
     </header>
 
-    <!-- Page Content -->
     <main class="flex-grow">
       <slot />
     </main>
 
-    <!-- Footer -->
     <footer class="bg-[#FAFAFA] border-t border-gray-200 text-center text-sm text-gray-500 py-6">
       <p>© 2025 CoachCall. All rights reserved.</p>
       <div class="mt-2 space-x-4">
@@ -259,56 +271,47 @@ const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-// Get user data from store with proper reactivity
 const user = computed(() => auth.user);
 const isAuthenticated = computed(() => auth.isAuthenticated);
+const isAuthInitialized = computed(() => auth.isInitialized);
+const isCheckingAuth = computed(() => auth.isCheckingAuth);
 
-// Computed property for display name with fallback logic
 const displayName = computed(() => {
-  // First try the profile display_name, then fallback to fullname, then 'User'
   return user.value?.profile?.display_name || user.value?.fullname || 'User';
 });
 
-// Profile menu state
 const isProfileMenuOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 
-// Determine if on landing page (same logic SSR + client)
 const isLandingPage = computed(() => route.path === '/');
 
-// Scroll state: transparent (not scrolled) only at initial load on landing page
 const isScrolled = ref(!isLandingPage.value);
 
-// Determine if header should be transparent
 const isHeaderTransparent = computed(() => isLandingPage.value && !isScrolled.value);
 
-// Handle scroll event
 function handleScroll() {
   if (import.meta.client) {
     const navbar = document.querySelector('header');
     const navbarHeight = navbar ? (navbar as HTMLElement).offsetHeight : 80;
-    const bgImageHeight = window.innerHeight; // hero section height assumption
+    const bgImageHeight = window.innerHeight;
     isScrolled.value = window.scrollY >= bgImageHeight - navbarHeight;
   }
 }
 
-// When route changes, reset scrolled state appropriately (e.g., navigating back to landing page)
 watch(isLandingPage, (val) => {
   if (val) {
-    isScrolled.value = false; // start transparent
-    nextTick(() => handleScroll()); // then evaluate actual scroll position
+    isScrolled.value = false;
+    nextTick(() => handleScroll());
   } else {
-    isScrolled.value = true; // always solid off landing page
+    isScrolled.value = true;
   }
 });
 
-// Toggle profile dropdown
 function toggleProfileMenu(event: Event) {
   event.stopPropagation();
   isProfileMenuOpen.value = !isProfileMenuOpen.value;
 }
 
-// Handle logout
 async function handleLogout() {
   try {
     await auth.logout();
@@ -321,7 +324,6 @@ async function handleLogout() {
   }
 }
 
-// Close profile menu when clicking outside
 function handleClickOutside(event: MouseEvent) {
   const profileMenu = document.querySelector('.profile-menu');
   const profileButton = document.querySelector('.profile-button');
@@ -337,7 +339,6 @@ function handleClickOutside(event: MouseEvent) {
 
 onMounted(() => {
   if (import.meta.client) {
-    // Do not call handleScroll immediately to keep SSR + client initial match and avoid flash
     document.addEventListener('click', handleClickOutside);
     window.addEventListener('scroll', handleScroll, { passive: true });
   }
@@ -353,11 +354,26 @@ onUnmounted(() => {
 
 <style scoped>
 .profile-menu {
-  z-index: 50; /* Ensure dropdown is above other elements */
+  z-index: 50;
 }
 header {
   transition:
     background-color 0.3s ease-in-out,
     box-shadow 0.3s ease-in-out;
+}
+
+.auth-section {
+  transition: all 0.3s ease-in-out;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.profile-button:hover .w-8 {
+  box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.5);
 }
 </style>
