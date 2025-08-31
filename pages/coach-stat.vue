@@ -72,10 +72,40 @@
 <script lang="ts" setup>
 import ActivityOverview from '~/components/coach-stat/ActivityOverview.vue';
 import HeroSection from '~/components/coach-stat/HeroSection.vue';
-import ImpactOverview from '~/components/coach-stat/ImpactOverview.vue';
+import { ref, onMounted } from 'vue';
+import type { CoachStatData } from '~/types/coach-stat';
 import { useCoachStatData } from '~/composables/useCoachStatData';
 
-const { data, pending, error, refresh } = useCoachStatData().fetchCoachStats();
+// Data fetching - moved to onMounted to avoid SSR issues with auth
+const data = ref<CoachStatData | null>(null);
+const pending = ref(true);
+const error = ref<Error | null>(null);
+
+const { fetchCoachStats } = useCoachStatData();
+
+// Function to fetch coach stats
+async function fetchData() {
+  pending.value = true;
+  error.value = null;
+  try {
+    const result = await fetchCoachStats();
+    data.value = result.data.value;
+  } catch (err) {
+    error.value = err as Error;
+  } finally {
+    pending.value = false;
+  }
+}
+
+// Refresh function
+const refresh = async () => {
+  await fetchData();
+};
+
+// Fetch data on client mount only
+onMounted(async () => {
+  await fetchData();
+});
 useHead({
   title: 'Coach Efficiency Dashboard - Track Your Impact & Productivity',
   meta: [

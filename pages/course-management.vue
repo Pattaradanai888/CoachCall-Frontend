@@ -96,7 +96,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { Session, SessionCreatePayload, SessionTemplate } from '~/types/course';
+import { ref, computed, onMounted } from 'vue';
+import type { Session, SessionCreatePayload, SessionTemplate, CourseDetail, Skill } from '~/types/course';
 import OverviewActiveCourse from '~/components/course/course-overview/OverviewActiveCourse.vue';
 import OverviewTemplate from '~/components/course/course-overview/OverviewTemplate.vue';
 import SessionBuilderModal from '~/components/course/SessionBuilderModal.vue';
@@ -141,6 +142,13 @@ function closeNotificationModal() {
   showNotificationModal.value = false;
 }
 
+// Data fetching - moved to onMounted to avoid SSR issues with auth
+const allCourses = ref<CourseDetail[]>([]);
+const coursesPending = ref(true);
+const sessionTemplates = ref<SessionTemplate[]>([]);
+const templatesPending = ref(true);
+const availableSkills = ref<Skill[]>([]);
+
 const {
   fetchAllCourseDetails,
   fetchSessionTemplates,
@@ -153,9 +161,47 @@ const {
   updateCourseArchiveStatus,
 } = useCourses();
 
-const { data: allCourses, pending: coursesPending, refresh } = await fetchAllCourseDetails();
-const { data: sessionTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
-const { data: availableSkills } = await fetchSkills();
+// Function to fetch all data
+async function fetchAllData() {
+  coursesPending.value = true;
+  templatesPending.value = true;
+  
+  try {
+    const [coursesResult, templatesResult, skillsResult] = await Promise.all([
+      fetchAllCourseDetails(),
+      fetchSessionTemplates(),
+      fetchSkills(),
+    ]);
+    
+    allCourses.value = coursesResult.data.value || [];
+    sessionTemplates.value = templatesResult.data.value || [];
+    availableSkills.value = skillsResult.data.value || [];
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+  } finally {
+    coursesPending.value = false;
+    templatesPending.value = false;
+  }
+}
+
+// Refresh functions
+const refresh = async () => {
+  await fetchAllData();
+};
+
+const refreshTemplates = async () => {
+  try {
+    const result = await fetchSessionTemplates();
+    sessionTemplates.value = result.data.value || [];
+  } catch (error) {
+    console.error('Failed to refresh templates:', error);
+  }
+};
+
+// Fetch data on client mount only
+onMounted(async () => {
+  await fetchAllData();
+});
 
 // Define performDeleteTemplate early so it can be used in functions below
 const { submit: performDeleteTemplate } = useSubmit(deleteSession, {

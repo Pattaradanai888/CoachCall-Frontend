@@ -226,15 +226,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useLeaderboard } from '~/composables/useLeaderboard';
-import type { AthleteDetail } from '~/types/leaderboard';
+import type { AthleteDetail, LeaderboardAthlete } from '~/types/leaderboard';
 import AthleteDetailCard from '~/components/leaderboard/AthleteDetailCard.vue';
+
+// Data fetching - moved to onMounted to avoid SSR issues with auth
+const athletes = ref<LeaderboardAthlete[]>([]);
+const isLoadingAthletes = ref(true);
 
 const { fetchLeaderboard, fetchAthleteDetailOptimized } = useLeaderboard();
 
-// Fetch leaderboard data with SSR support
-const { data: athletes, pending: _isLoadingAthletes, refresh: refreshAthletesData } = await fetchLeaderboard();
+// Function to fetch leaderboard data
+async function fetchLeaderboardData() {
+  isLoadingAthletes.value = true;
+  try {
+    const result = await fetchLeaderboard();
+    athletes.value = result.data.value || [];
+  } catch (error) {
+    console.error('Failed to fetch leaderboard:', error);
+  } finally {
+    isLoadingAthletes.value = false;
+  }
+}
+
+// Refresh function
+const refreshAthletesData = async () => {
+  await fetchLeaderboardData();
+};
+
+// Fetch data on client mount only
+onMounted(async () => {
+  await fetchLeaderboardData();
+});
 
 const selectedAthleteUuid = ref<string | null>(null);
 const sortBy = ref<'rank' | 'score' | 'growth' | 'momentum'>('rank');

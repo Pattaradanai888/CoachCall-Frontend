@@ -38,8 +38,8 @@
         </ClientOnly>
 
         <!-- Right Side - Desktop -->
-        <div class="hidden lg:flex items-center space-x-6">
-          <ClientOnly>
+        <ClientOnly>
+          <div class="hidden lg:flex items-center space-x-6">
             <div v-if="isAuthenticated" class="relative">
               <button
                 class="flex items-center space-x-2 focus:outline-none profile-button"
@@ -97,8 +97,22 @@
                 Log in <span aria-hidden="true">→</span>
               </NuxtLink>
             </div>
-          </ClientOnly>
-        </div>
+          </div>
+          <template #fallback>
+            <div class="hidden lg:flex items-center space-x-6">
+              <NuxtLink
+                to="/login"
+                class="text-sm font-semibold transition" :class="[
+                  isHeaderTransparent
+                    ? 'text-white hover:text-gray-300'
+                    : 'text-gray-900 hover:text-[#991B1B]',
+                ]"
+              >
+                Log in <span aria-hidden="true">→</span>
+              </NuxtLink>
+            </div>
+          </template>
+        </ClientOnly>
 
         <!-- Mobile Menu Button -->
         <div class="lg:hidden">
@@ -147,9 +161,9 @@
             </button>
           </div>
 
-          <div class="mt-6 space-y-4">
-            <!-- Mobile Profile Section -->
-            <ClientOnly>
+          <ClientOnly>
+            <div class="mt-6 space-y-4">
+              <!-- Mobile Profile Section -->
               <div v-if="isAuthenticated" class="space-y-2">
                 <div class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
                   <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
@@ -196,8 +210,19 @@
                   Log in
                 </NuxtLink>
               </div>
-            </ClientOnly>
-          </div>
+            </div>
+            <template #fallback>
+              <div class="mt-6 space-y-4">
+                <NuxtLink
+                  to="/login"
+                  class="block text-base font-medium text-gray-900 hover:text-[#991B1B]"
+                  @click="isMobileMenuOpen = false"
+                >
+                  Log in
+                </NuxtLink>
+              </div>
+            </template>
+          </ClientOnly>
         </div>
       </div>
     </header>
@@ -227,7 +252,7 @@
 
 <script lang="ts" setup>
 import { useRoute, useRouter } from '#app';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
 const auth = useAuthStore();
@@ -248,11 +273,11 @@ const displayName = computed(() => {
 const isProfileMenuOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 
-// Scroll state (default to true on SSR to force solid header until client evaluates scroll)
-const isScrolled = ref(import.meta.server ? true : false);
+// Determine if on landing page (same logic SSR + client)
+const isLandingPage = computed(() => route.path === '/');
 
-// Detect if on landing page (client-only to avoid SSR showing transparent header on protected routes)
-const isLandingPage = computed(() => (import.meta.client ? route.path === '/' : false));
+// Scroll state: transparent (not scrolled) only at initial load on landing page
+const isScrolled = ref(!isLandingPage.value);
 
 // Determine if header should be transparent
 const isHeaderTransparent = computed(() => isLandingPage.value && !isScrolled.value);
@@ -260,16 +285,22 @@ const isHeaderTransparent = computed(() => isLandingPage.value && !isScrolled.va
 // Handle scroll event
 function handleScroll() {
   if (import.meta.client) {
-    // The background image section has h-screen (100vh)
-    // We want the navbar to stay transparent while any part of it overlaps with the bg image
     const navbar = document.querySelector('header');
-    const navbarHeight = navbar ? (navbar as HTMLElement).offsetHeight : 80; // fallback height
-
-    // Switch to white navbar when we've scrolled past the background image section
-    const bgImageHeight = window.innerHeight; // h-screen = 100vh
+    const navbarHeight = navbar ? (navbar as HTMLElement).offsetHeight : 80;
+    const bgImageHeight = window.innerHeight; // hero section height assumption
     isScrolled.value = window.scrollY >= bgImageHeight - navbarHeight;
   }
 }
+
+// When route changes, reset scrolled state appropriately (e.g., navigating back to landing page)
+watch(isLandingPage, (val) => {
+  if (val) {
+    isScrolled.value = false; // start transparent
+    nextTick(() => handleScroll()); // then evaluate actual scroll position
+  } else {
+    isScrolled.value = true; // always solid off landing page
+  }
+});
 
 // Toggle profile dropdown
 function toggleProfileMenu(event: Event) {
@@ -306,9 +337,9 @@ function handleClickOutside(event: MouseEvent) {
 
 onMounted(() => {
   if (import.meta.client) {
+    // Do not call handleScroll immediately to keep SSR + client initial match and avoid flash
     document.addEventListener('click', handleClickOutside);
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    window.addEventListener('scroll', handleScroll, { passive: true });
   }
 });
 
