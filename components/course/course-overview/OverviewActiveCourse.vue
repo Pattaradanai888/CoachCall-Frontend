@@ -35,7 +35,7 @@
       >
         <div class="mb-3">
           <NuxtImg
-            :src="course.cover_image_url || '/placeholder.jpg'"
+            :src="course.cover_image_url || getFallbackImage(course.name)"
             :alt="`${course.name} course cover`"
             format="webp"
             width="400"
@@ -221,6 +221,17 @@ const paginatedCourses = computed(() => {
   const endIdx = startIdx + itemsPerPage;
   return filteredCourses.value.slice(startIdx, endIdx);
 });
+
+// Computed property for fallback image with course title
+const getFallbackImage = (courseName: string) => {
+  const svg = `
+    <svg width="400" height="192" viewBox="0 0 400 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="192" fill="#f3f4f6"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="24" fill="#374151" text-anchor="middle" dy=".3em">${courseName}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+};
 
 // --- Tab Indicator and other UI logic (no changes needed) ---
 const tabRefs = ref<HTMLElement[]>([]);
