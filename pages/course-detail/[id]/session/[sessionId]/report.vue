@@ -6,7 +6,7 @@
       </h1>
     </div>
 
-    <div v-else-if="!sessionReport || error()" class="flex flex-col items-center justify-center h-[70vh]">
+    <div v-else-if="!sessionReport || error" class="flex flex-col items-center justify-center h-[70vh]">
       <h1 class="text-2xl font-bold text-gray-700">
         No Report Data Found
       </h1>

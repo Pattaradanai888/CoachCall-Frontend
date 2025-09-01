@@ -1,6 +1,6 @@
 <template>
   <div class="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8 mt-[4.5rem]">
-    <div v-if="pending || error() || !session" class="flex flex-col items-center justify-center h-[70vh]">
+    <div v-if="pending || error || !session" class="flex flex-col items-center justify-center h-[70vh]">
       <h1 v-if="pending" class="text-2xl font-bold text-gray-700">
         Loading Session...
       </h1>

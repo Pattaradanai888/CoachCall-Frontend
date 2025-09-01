@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { z } from 'zod';
 import type { TokenResponse, User } from '~/types/auth';
-import { log, debug, error as logError } from '~/utils/logger';
+import { log, debug, logError } from '~/utils/logger';
 
 const UserSchema = z.object({
   id: z.number(),
