@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- Main content -->
+    <!-- The entire page content is rendered immediately -->
     <div>
       <!-- Hero Section -->
       <div
@@ -156,7 +156,18 @@
 </template>
 
 <script lang="ts" setup>
+import { onMounted } from 'vue';
+import { useAuthStore } from '~/stores/auth';
+import { navigateTo } from '#app';
 import { Icon } from '#components';
+
+const authStore = useAuthStore();
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    navigateTo('/dashboard', { replace: true });
+  }
+});
 
 // Template refs for the feature cards
 const featureCard1 = ref<HTMLElement>();
