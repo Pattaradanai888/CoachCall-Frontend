@@ -1,5 +1,4 @@
 import type { RouteLocationNormalized } from 'vue-router';
-// middleware/auth.global.ts
 import {
   defineNuxtRouteMiddleware,
   navigateTo,
@@ -12,11 +11,10 @@ export default defineNuxtRouteMiddleware(
     const auth = useAuthStore();
     const nuxtApp = useNuxtApp();
 
-  // Initialize server/client auth state before guarding
-  await auth.initialize(nuxtApp);
+    // Initialize auth state
+    await auth.initialize(nuxtApp);
 
     const onboardingRoute = '/onboarding';
-    // Root (/) is public to avoid SSR/client mismatch flashes
     const publicRoutes = ['/', '/login', '/register', '/reset-password', '/create-new-password', '/verify-otp'];
 
     // On client-side, if we're still refreshing tokens, wait for it to complete
@@ -37,12 +35,22 @@ export default defineNuxtRouteMiddleware(
       if (!hasCompletedOnboarding && to.path !== onboardingRoute) {
         return navigateTo(onboardingRoute, { replace: true, redirectCode: 302 });
       }
+
       if (hasCompletedOnboarding && to.path === onboardingRoute) {
         return navigateTo('/dashboard', { replace: true, redirectCode: 302 });
       }
 
-      // Public pages (including /) should push authenticated users to dashboard
-      if (publicRoutes.includes(to.path)) {
+      // For the root route (/), only redirect on client-side to prevent hydration mismatch
+      if (to.path === '/') {
+        if (import.meta.client) {
+          return navigateTo('/dashboard', { replace: true, redirectCode: 302 });
+        }
+        // On server, allow root route to render normally for authenticated users
+        return;
+      }
+
+      // For other public routes, redirect away from them
+      if (publicRoutes.includes(to.path) && to.path !== '/') {
         return navigateTo('/dashboard', { replace: true, redirectCode: 302 });
       }
 
@@ -50,13 +58,14 @@ export default defineNuxtRouteMiddleware(
     }
 
     // Unauthenticated flow
-    // Allow only explicitly public routes when unauthenticated (including '/')
+    // Allow only explicitly public routes when unauthenticated
     if (!publicRoutes.includes(to.path)) {
-      // Do NOT redirect on server; let the client decide post-hydration to avoid SSR/client HTML mismatches
-      if (import.meta.client && auth.isInitialized && !auth.isRefreshing && !auth.isAuthenticated) {
+      // Only redirect on client-side when we're sure about auth state
+      if (import.meta.client && auth.isInitialized && !auth.isRefreshing) {
         const redirectQuery = to.fullPath && to.fullPath !== '/' ? `?redirect=${encodeURIComponent(to.fullPath)}` : '';
         return navigateTo(`/login${redirectQuery}`, { replace: true, redirectCode: 302 });
       }
+      // On server, allow the route to render and let client handle redirect after hydration
     }
 
     return;

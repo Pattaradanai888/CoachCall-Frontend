@@ -1,20 +1,20 @@
 <template>
   <div class="min-h-screen flex flex-col bg-[#FAFAFA]">
     <header
-      class="fixed top-0 left-0 right-0 z-50" :class="[
-        isHeaderTransparent ? 'bg-transparent' : 'bg-white shadow-sm border-b border-gray-200',
-      ]"
+      class="fixed top-0 left-0 right-0 z-50"
+      :class="headerClasses"
     >
       <nav class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
         <ClientOnly>
-          <NuxtLink :to="isAuthInitialized ? (isAuthenticated ? '/dashboard' : '/') : '/'" class="flex items-center space-x-2">
+          <NuxtLink :to="logoLink" class="flex items-center space-x-2">
             <div
               class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
             >
               CC
             </div>
             <span
-              class="text-lg font-semibold" :class="[isHeaderTransparent ? 'text-white' : 'text-gray-900']"
+              class="text-lg font-semibold"
+              :class="logoTextClasses"
             >
               CoachCall
             </span>
@@ -26,9 +26,7 @@
               >
                 CC
               </div>
-              <span
-                class="text-lg font-semibold" :class="[isHeaderTransparent ? 'text-white' : 'text-gray-900']"
-              >
+              <span class="text-lg font-semibold text-gray-900">
                 CoachCall
               </span>
             </NuxtLink>
@@ -37,12 +35,14 @@
 
         <ClientOnly>
           <div class="hidden lg:flex items-center space-x-6">
-            <div v-if="isCheckingAuth" class="flex items-center space-x-2 animate-pulse">
+            <!-- Loading state -->
+            <div v-if="showLoadingState" class="flex items-center space-x-2 animate-pulse">
               <div class="w-8 h-8 rounded-full bg-gray-300"/>
               <div class="h-4 w-24 bg-gray-300 rounded"/>
             </div>
             
-            <div v-else-if="isAuthenticated" class="relative">
+            <!-- Authenticated state -->
+            <div v-else-if="showAuthenticatedState" class="relative">
               <button
                 class="flex items-center space-x-2 focus:outline-none profile-button transition-all duration-200 hover:opacity-80"
                 @click.stop="toggleProfileMenu"
@@ -59,18 +59,14 @@
                   />
                 </div>
                 <span
-                  class="text-sm font-semibold transition-colors" :class="[
-                    isHeaderTransparent ? 'text-white' : 'text-gray-900',
-                  ]"
+                  class="text-sm font-semibold transition-colors"
+                  :class="profileTextClasses"
                 >
                   {{ displayName }}
                 </span>
                 <svg 
                   class="w-4 h-4 transition-transform duration-200" 
-                  :class="[
-                    isProfileMenuOpen ? 'rotate-180' : 'rotate-0',
-                    isHeaderTransparent ? 'text-white' : 'text-gray-500'
-                  ]"
+                  :class="chevronClasses"
                   fill="none" 
                   viewBox="0 0 24 24" 
                   stroke="currentColor"
@@ -108,14 +104,12 @@
               </Transition>
             </div>
             
-            <div v-else>
+            <!-- Unauthenticated state -->
+            <div v-else-if="showUnauthenticatedState">
               <NuxtLink
                 to="/login"
-                class="text-sm font-semibold transition-all duration-200 hover:scale-105" :class="[
-                  isHeaderTransparent
-                    ? 'text-white hover:text-gray-300'
-                    : 'text-gray-900 hover:text-[#991B1B]',
-                ]"
+                class="text-sm font-semibold transition-all duration-200 hover:scale-105"
+                :class="loginLinkClasses"
               >
                 Log in <span aria-hidden="true">→</span>
               </NuxtLink>
@@ -144,21 +138,31 @@
         </div>
       </nav>
 
+      <!-- Mobile menu -->
       <div v-if="isMobileMenuOpen" class="lg:hidden">
         <div class="fixed inset-0 z-10 bg-black/30" @click="isMobileMenuOpen = false" />
         <div class="fixed inset-y-0 right-0 z-20 w-3/4 max-w-sm bg-white p-6 shadow-lg">
           <div class="flex items-center justify-between">
-            <NuxtLink
-              :to="isAuthInitialized ? (isAuthenticated ? '/dashboard' : '/') : '/'"
-              class="flex items-center space-x-2"
-            >
-              <div
-                class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
-              >
-                CC
-              </div>
-              <span class="text-lg font-semibold text-gray-900">CoachCall</span>
-            </NuxtLink>
+            <ClientOnly>
+              <NuxtLink :to="logoLink" class="flex items-center space-x-2">
+                <div
+                  class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
+                >
+                  CC
+                </div>
+                <span class="text-lg font-semibold text-gray-900">CoachCall</span>
+              </NuxtLink>
+              <template #fallback>
+                <NuxtLink to="/" class="flex items-center space-x-2">
+                  <div
+                    class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
+                  >
+                    CC
+                  </div>
+                  <span class="text-lg font-semibold text-gray-900">CoachCall</span>
+                </NuxtLink>
+              </template>
+            </ClientOnly>
             <button type="button" class="p-2 text-gray-700" @click="isMobileMenuOpen = false">
               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -173,7 +177,8 @@
 
           <ClientOnly>
             <div class="mt-6 space-y-4">
-              <div v-if="isCheckingAuth" class="space-y-2 animate-pulse">
+              <!-- Loading state -->
+              <div v-if="showLoadingState" class="space-y-2 animate-pulse">
                 <div class="flex items-center space-x-3 p-4 rounded-lg bg-gray-100 border border-gray-200">
                   <div class="w-12 h-12 rounded-full bg-gray-300"/>
                   <div class="flex-1 space-y-2">
@@ -185,7 +190,8 @@
                 <div class="h-12 bg-gray-200 rounded-lg"/>
               </div>
               
-              <div v-else-if="isAuthenticated" class="space-y-2">
+              <!-- Authenticated state -->
+              <div v-else-if="showAuthenticatedState" class="space-y-2">
                 <div class="flex items-center space-x-3 p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
                   <div class="w-12 h-12 rounded-full bg-gray-300 overflow-hidden ring-2 ring-white shadow-sm">
                     <NuxtImg
@@ -223,7 +229,8 @@
                 </button>
               </div>
               
-              <div v-else>
+              <!-- Unauthenticated state -->
+              <div v-else-if="showUnauthenticatedState">
                 <NuxtLink
                   to="/login"
                   class="block py-3 px-4 text-center text-base font-semibold text-white bg-[#991B1B] hover:bg-[#7f1d1d] rounded-lg transition-colors"
@@ -270,42 +277,86 @@ import { useAuthStore } from '~/stores/auth';
 const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
+const { $isHydrated } = useNuxtApp();
+
+const isProfileMenuOpen = ref(false);
+const isMobileMenuOpen = ref(false);
+const isScrolled = ref(false);
 
 const user = computed(() => auth.user);
-const isAuthenticated = computed(() => auth.isAuthenticated);
-const isAuthInitialized = computed(() => auth.isInitialized);
-const isCheckingAuth = computed(() => auth.isCheckingAuth);
+const isLandingPage = computed(() => route.path === '/');
+
+watch(() => route.path, (newPath) => {
+  isScrolled.value = newPath !== '/';
+}, { immediate: true });
+
+const showLoadingState = computed(() => {
+  return !auth.isInitialized && import.meta.client;
+});
+
+const showAuthenticatedState = computed(() => {
+  return auth.isInitialized && auth.isAuthenticated;
+});
+
+const showUnauthenticatedState = computed(() => {
+  return auth.isInitialized && !auth.isAuthenticated;
+});
+
+const isHeaderTransparent = computed(() => {
+  if (isLandingPage.value && !$isHydrated.value) {
+    return true;
+  }
+  return isLandingPage.value && !isScrolled.value;
+});
+
+const headerClasses = computed(() => {
+  if (isLandingPage.value && !$isHydrated.value) {
+    return 'bg-transparent';
+  }
+  return isHeaderTransparent.value
+    ? 'bg-transparent'
+    : 'bg-white shadow-sm border-b border-gray-200';
+});
+
+const logoTextClasses = computed(() => {
+  return isHeaderTransparent.value ? 'text-white' : 'text-gray-900';
+});
+
+const profileTextClasses = computed(() => {
+  return isHeaderTransparent.value ? 'text-white' : 'text-gray-900';
+});
+
+const chevronClasses = computed(() => {
+  const baseClasses = isProfileMenuOpen.value ? 'rotate-180' : 'rotate-0';
+  const colorClasses = isHeaderTransparent.value ? 'text-white' : 'text-gray-500';
+  return `${baseClasses} ${colorClasses}`;
+});
+
+const loginLinkClasses = computed(() => {
+  return isHeaderTransparent.value
+    ? 'text-white hover:text-gray-300'
+    : 'text-gray-900 hover:text-[#991B1B]';
+});
+
+const logoLink = computed(() => {
+  if ($isHydrated.value && auth.isAuthenticated) {
+    return '/dashboard';
+  }
+  return '/';
+});
 
 const displayName = computed(() => {
   return user.value?.profile?.display_name || user.value?.fullname || 'User';
 });
 
-const isProfileMenuOpen = ref(false);
-const isMobileMenuOpen = ref(false);
-
-const isLandingPage = computed(() => route.path === '/');
-
-const isScrolled = ref(!isLandingPage.value);
-
-const isHeaderTransparent = computed(() => isLandingPage.value && !isScrolled.value);
-
 function handleScroll() {
-  if (import.meta.client) {
+  if (import.meta.client && isLandingPage.value) {
     const navbar = document.querySelector('header');
     const navbarHeight = navbar ? (navbar as HTMLElement).offsetHeight : 80;
     const bgImageHeight = window.innerHeight;
     isScrolled.value = window.scrollY >= bgImageHeight - navbarHeight;
   }
 }
-
-watch(isLandingPage, (val) => {
-  if (val) {
-    isScrolled.value = false;
-    nextTick(() => handleScroll());
-  } else {
-    isScrolled.value = true;
-  }
-});
 
 function toggleProfileMenu(event: Event) {
   event.stopPropagation();
@@ -340,7 +391,10 @@ function handleClickOutside(event: MouseEvent) {
 onMounted(() => {
   if (import.meta.client) {
     document.addEventListener('click', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    if (isLandingPage.value) {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      nextTick(() => handleScroll());
+    }
   }
 });
 
@@ -350,6 +404,19 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
   }
 });
+
+watch(isLandingPage, (val) => {
+  if (import.meta.client) {
+    if (val) {
+      isScrolled.value = false;
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      nextTick(() => handleScroll());
+    } else {
+      isScrolled.value = true;
+      window.removeEventListener('scroll', handleScroll);
+    }
+  }
+}, { immediate: false });
 </script>
 
 <style scoped>
