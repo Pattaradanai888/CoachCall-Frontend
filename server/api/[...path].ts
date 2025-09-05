@@ -206,6 +206,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // *** FIX: Force clear the refresh_token cookie on successful logout ***
+    if (pathSegment === 'auth/logout' && respStatus >= 200 && respStatus < 300) {
+      log('[SWA-PROXY] Detected successful logout. Forcing refresh_token cookie clearance.');
+      // Setting Max-Age=0 tells the browser to expire the cookie immediately.
+      // Not setting a domain is more robust for clearing cookies.
+      const clearingCookie = 'refresh_token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax';
+      appendResponseHeader(event, 'Set-Cookie', clearingCookie);
+    }
+
     // Forward back useful non-sensitive headers
     const headersToForwardBack = ['content-type', 'cache-control', 'expires', 'last-modified', 'etag'];
     headersToForwardBack.forEach(headerName => {
@@ -223,6 +232,7 @@ export default defineEventHandler(async (event) => {
     if (VERBOSE) {
       log(`[SWA-PROXY] Returning proxied response status=${respStatus}`);
     }
+    setResponseStatus(event, respStatus);
     return response._data;
   } catch (error: any) {
     console.error(`[SWA-PROXY] Error proxying ${method} ${targetUrl}:`, error?.message ?? error);
