@@ -16,14 +16,6 @@ export default defineNuxtRouteMiddleware(
     const onboardingRoute = '/onboarding';
     const publicRoutes = ['/', '/login', '/register', '/reset-password', '/create-new-password', '/verify-otp'];
 
-    if (import.meta.client && auth.isRefreshing) {
-      try {
-        await auth.refreshToken();
-      } catch (error) {
-        console.error('Token refresh failed during navigation:', error);
-      }
-    }
-
     // Authenticated flow
     if (auth.isAuthenticated) {
       const user = auth.user!;

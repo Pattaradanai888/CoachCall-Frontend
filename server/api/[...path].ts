@@ -1,6 +1,19 @@
-// server/api/[...path].ts
-import { appendResponseHeader, defineEventHandler, getHeaders, getMethod, getQuery, getRequestURL, readRawBody, setResponseHeader, setResponseStatus } from 'h3';
-import { log, debug } from '~/utils/logger';
+// File: server/api/[...path].ts
+import {
+  appendResponseHeader,
+  defineEventHandler,
+  getHeaders,
+  getMethod,
+  getQuery,
+  getRequestURL,
+  readRawBody,
+  setResponseHeader,
+  setResponseStatus,
+  getHeader,
+  isMethod,
+  readMultipartFormData
+} from 'h3';
+import { log, debug, logError } from '~/utils/logger';
 
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event);
@@ -9,9 +22,32 @@ export default defineEventHandler(async (event) => {
   const method = getMethod(event);
   const query = getQuery(event);
   const headers = getHeaders(event);
+  const contentType = getHeader(event, 'content-type') || '';
 
   let body: BodyInit | undefined = undefined;
-  if (['POST', 'PUT', 'PATCH'].includes(method)) {
+
+  // Correctly handle multipart/form-data for file uploads
+  if (isMethod(event, ['POST', 'PUT', 'PATCH']) && contentType.startsWith('multipart/form-data')) {
+    try {
+      const multipartData = await readMultipartFormData(event);
+      if (multipartData) {
+        const formData = new FormData();
+        for (const part of multipartData) {
+          if (part.name) {
+            // Convert Buffer to Uint8Array to ensure compatibility with Blob constructor
+            const uint8Array = new Uint8Array(part.data);
+            const blob = new Blob([uint8Array], { type: part.type });
+            formData.append(part.name, blob, part.filename);
+          }
+        }
+        body = formData;
+      }
+    } catch (e) {
+      logError('[SWA-PROXY] Error parsing multipart form data:', e);
+      body = undefined;
+    }
+  } else if (isMethod(event, ['POST', 'PUT', 'PATCH'])) {
+    // Keep original logic for other body types like application/json
     try {
       const rawBody = await readRawBody(event);
       if (rawBody) body = rawBody;
@@ -111,7 +147,10 @@ export default defineEventHandler(async (event) => {
     for (const [k, v] of Object.entries(headers)) {
       if (!k) continue;
       const lk = k.toLowerCase();
-      if (lk === 'host') continue;
+      // Let ofetch set the Content-Type header for multipart data
+      if (lk === 'host' || (contentType.startsWith('multipart/form-data') && (lk === 'content-type' || lk === 'content-length'))) {
+        continue;
+      }
       // Some header values may be arrays or objects, normalize to string
       if (typeof v === 'string') {
         forwardHeaders.set(k, v);
@@ -235,7 +274,7 @@ export default defineEventHandler(async (event) => {
     setResponseStatus(event, respStatus);
     return response._data;
   } catch (error: any) {
-    console.error(`[SWA-PROXY] Error proxying ${method} ${targetUrl}:`, error?.message ?? error);
+    logError(`[SWA-PROXY] Error proxying ${method} ${targetUrl}:`, error?.message ?? error);
 
     if (error.response) {
       const status = error.response.status || 500;
@@ -243,7 +282,7 @@ export default defineEventHandler(async (event) => {
       // Mask any proxied error body to avoid sensitive token echoes
       const data = error.response._data;
       if (VERBOSE) {
-        console.error('[SWA-PROXY] Backend error body (masked):', typeof data === 'string' ? '<string body>' : '<json body>');
+        logError('[SWA-PROXY] Backend error body (masked):', typeof data === 'string' ? '<string body>' : '<json body>');
       }
       return data || { error: 'Backend request failed' };
     } else {

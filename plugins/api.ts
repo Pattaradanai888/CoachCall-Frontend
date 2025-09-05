@@ -96,13 +96,13 @@ export default defineNuxtPlugin((nuxtApp) => {
         !String(request).includes('/auth/token') &&
         import.meta.client) {
 
-        console.log('API: 401 detected, attempting token refresh...');
+        log('API: 401 detected, attempting token refresh...');
         try {
           await authStore.refreshToken();
-          console.log('API: Token refresh successful, retrying request');
+          log('API: Token refresh successful, retrying request');
           return await baseFetcher<T>(request, options);
         } catch (refreshError) {
-          console.log('API: Token refresh failed, logging out');
+          log('API: Token refresh failed, logging out');
           await authStore.logoutSilently();
           if (import.meta.client) {
             await navigateTo('/login');
