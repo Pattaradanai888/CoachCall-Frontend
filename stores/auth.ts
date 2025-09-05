@@ -195,6 +195,24 @@ export const useAuthStore = defineStore('auth', () => {
       const { $api } = useNuxtApp();
       await $api('/auth/logout', { method: 'POST' });
       log('Auth Store: Logout API call successful');
+      
+      // Force clear refresh_token cookie on client side as well
+      // This helps in environments where the server-side cookie clearing isn't working
+      if (import.meta.client) {
+        // Import and use the cookie utility functions
+        const { clearCookie, debugLogoutCookies } = await import('~/utils/cookieUtils');
+        
+        // Debug cookies before clearing
+        debugLogoutCookies();
+        
+        // Clear the refresh token cookie
+        clearCookie('refresh_token');
+        
+        // Debug cookies after clearing
+        debugLogoutCookies();
+        
+        log('Auth Store: Manually cleared refresh_token cookie');
+      }
     } catch (error) {
       logError('Auth Store: Logout API call failed:', error);
     } finally {
