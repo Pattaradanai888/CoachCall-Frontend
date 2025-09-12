@@ -47,7 +47,7 @@
               <p class="text-xs text-gray-500">Since day one</p>
             </div>
             <Icon 
-              name="mdi:arrow-up" 
+              :name="(athlete.improvementSinceDayOne || 0) >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'" 
               class="w-6 h-6"
               :class="(athlete.improvementSinceDayOne || 0) >= 0 ? 'text-green-600' : 'text-red-600'"
             />

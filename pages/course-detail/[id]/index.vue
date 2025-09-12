@@ -122,9 +122,6 @@
                 <button class="border-2 shadow-lg rounded-xl mr-2 bg-[#EAEAEA] hover:bg-gray-300" @click="openAddAthleteModal">
                   <Icon name="mdi:plus" size="1.25rem" />
                 </button>
-                <button class="border-2 shadow-lg rounded-xl bg-[#EAEAEA] hover:bg-gray-300" @click="toggleAthleteSearch">
-                  <Icon name="mdi:magnify" size="1.25rem" />
-                </button>
               </div>
             </div>
 

@@ -137,7 +137,7 @@
             </h4>
           </div>
           <div v-if="topImprovers.length" class="space-y-3">
-            <NuxtLink v-for="player in topImprovers" :key="player.uuid" :to="`/athletes/${player.uuid}`" class="block p-1 -m-1 rounded-lg hover:bg-gray-100 transition-colors">
+            <div v-for="player in topImprovers" :key="player.uuid" class="block p-1 -m-1 rounded-lg">
               <div class="flex items-center justify-between py-2 px-3">
                 <div class="flex items-center gap-3">
                   <NuxtImg
@@ -157,7 +157,7 @@
                 </div>
                 <span class="text-sm text-green-600 font-medium bg-green-50 px-2 py-1 rounded">{{ player.reason }}</span>
               </div>
-            </NuxtLink>
+            </div>
           </div>
           <div v-else class="text-center text-sm text-gray-500 py-6">
             No top performers with scores yet.
@@ -173,7 +173,7 @@
             </h4>
           </div>
           <div v-if="needsAttention.length" class="space-y-3">
-            <NuxtLink v-for="player in needsAttention" :key="player.uuid" :to="`/athletes/${player.uuid}`" class="block p-1 -m-1 rounded-lg hover:bg-gray-100 transition-colors">
+            <div v-for="player in needsAttention" :key="player.uuid" class="block p-1 -m-1 rounded-lg">
               <div class="flex items-center justify-between py-2 px-3">
                 <div class="flex items-center gap-3">
                   <NuxtImg
@@ -193,7 +193,7 @@
                 </div>
                 <span class="text-sm text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded">{{ player.reason }}</span>
               </div>
-            </NuxtLink>
+            </div>
           </div>
           <div v-else class="text-center text-sm text-gray-500 py-6">
             Great! No athletes need special attention.
