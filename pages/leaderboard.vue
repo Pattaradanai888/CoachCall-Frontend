@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <SubNavbar />
-    <div class="max-w-[1140px] mx-auto pt-4 pb-8 px-4 lg:px-0">
+    <div class="max-w-[1140px] mx-auto py-8 px-4 lg:px-0">
       <!-- Header Section -->
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
         <div>
@@ -11,7 +11,7 @@
           <p class="text-gray-600 mt-1">
             Ranking athletes by performance and improvement momentum
           </p>
-          <div class="mt-2 flex items-center gap-4 text-sm text-gray-500">
+          <div v-if="athletes && athletes.length > 0" class="mt-2 flex items-center gap-4 text-sm text-gray-500">
             <div class="flex items-center gap-2">
               <Icon name="mdi:sort" class="w-4 h-4" />
               <span>Sorted by: </span>
@@ -35,27 +35,16 @@
           </div>
           <button
             class="bg-[#9C1313] text-white font-semibold py-3 px-5 rounded-xl flex items-center gap-2 hover:bg-[#7A0F0F] transition-all duration-300"
-            :disabled="isLoadingAthletes"
             @click="refreshLeaderboard"
           >
-            <Icon name="mdi:refresh" class="text-xl" :class="{ 'animate-spin': isLoadingAthletes }" />
+            <Icon name="mdi:refresh" class="text-xl" />
             Refresh
           </button>
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="isLoadingAthletes" class="text-center py-24 text-gray-500">
-        <div class="inline-block">
-          <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
-          <p class="text-lg">
-            Loading Leaderboard...
-          </p>
-        </div>
-      </div>
-
       <!-- Leaderboard Content -->
-      <div v-else class="grid grid-cols-1 gap-8 xl:grid-cols-4">
+      <div v-if="athletes && athletes.length > 0" class="grid grid-cols-1 gap-8 xl:grid-cols-4">
         <!-- Main Leaderboard -->
         <div class="xl:col-span-3">
           <!-- Top 3 Podium -->
@@ -232,44 +221,32 @@
           </div>
         </div>
       </div>
+
+      <!-- Empty State for Leaderboard -->
+      <div v-else class="mt-8 bg-white rounded-xl shadow-sm border p-12 text-center">
+        <Icon name="mdi:account-group-outline" class="w-16 h-16 mx-auto text-gray-300" />
+        <h2 class="mt-4 text-xl font-bold text-gray-700">
+          The Leaderboard is Empty
+        </h2>
+        <p class="mt-2 text-gray-500">
+          Add athletes to your roster to see the leaderboard.
+        </p>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useLeaderboard } from '~/composables/useLeaderboard';
-import type { AthleteDetail, LeaderboardAthlete } from '~/types/leaderboard';
+import type { AthleteDetail } from '~/types/leaderboard';
 import AthleteDetailCard from '~/components/leaderboard/AthleteDetailCard.vue';
 
-// Data fetching - moved to onMounted to avoid SSR issues with auth
-const athletes = ref<LeaderboardAthlete[]>([]);
-const isLoadingAthletes = ref(true);
+const { fetchLeaderboard, fetchAthleteDetailOptimized } = useLeaderboard();
 
-const { fetchLeaderboard, fetchAthleteDetailOptimized, fetchLeaderboardClient } = useLeaderboard();
-
-// Function to fetch leaderboard data
-async function fetchLeaderboardData() {
-  isLoadingAthletes.value = true;
-  try {
-    const result = await fetchLeaderboardClient();
-    athletes.value = result || [];
-  } catch (error) {
-    console.error('Failed to fetch leaderboard:', error);
-  } finally {
-    isLoadingAthletes.value = false;
-  }
-}
-
-// Refresh function
-const refreshAthletesData = async () => {
-  await fetchLeaderboardData();
-};
-
-// Fetch data on client mount only
-onMounted(async () => {
-  await fetchLeaderboardData();
-});
+// Fetch leaderboard data with SSR support
+const { data: athletes, pending: _isLoadingAthletes, refresh: refreshAthletesData } = await fetchLeaderboard();
 
 const selectedAthleteUuid = ref<string | null>(null);
 const sortBy = ref<'rank' | 'score' | 'growth' | 'momentum'>('rank');
