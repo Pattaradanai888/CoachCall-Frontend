@@ -480,10 +480,15 @@ const formattedTaskTime = computed(() => formatTime(currentEval.value?.time || 0
 const timersState = computed<TimerState>(() => {
   if (!currentTask.value || participatingAthletes.value.length === 0)
     return 'ALL_PAUSED';
-  const runningCount = participatingAthletes.value.filter(athlete => isTimerRunningFor(athlete.uuid)).length;
+  // Only consider athletes who are NOT finished for the current task
+  const unfinishedAthletes = participatingAthletes.value.filter(
+    athlete => !isAthleteFinished(athlete.uuid)
+  );
+  if (unfinishedAthletes.length === 0) return 'ALL_PAUSED';
+  const runningCount = unfinishedAthletes.filter(athlete => isTimerRunningFor(athlete.uuid)).length;
   if (runningCount === 0)
     return 'ALL_PAUSED';
-  if (runningCount === participatingAthletes.value.length)
+  if (runningCount === unfinishedAthletes.length)
     return 'ALL_RUNNING';
   return 'MIXED';
 });
@@ -564,8 +569,16 @@ function saveCurrentEvaluation() {
   if (!currentEval.value || !currentEvalKey.value)
     return;
 
+  // Save scores and notes
   evaluations.value[currentEvalKey.value].scores = { ...currentScores.value };
   evaluations.value[currentEvalKey.value].notes = notes.value;
+
+  // Mark as finished and stop timer if not already finished
+  if (!currentEval.value.isFinished) {
+    currentEval.value.isFinished = true;
+    currentEval.value.isTimerRunning = false;
+  }
+
   isDirty.value = false;
   if (!completedEvalKeys.value.includes(currentEvalKey.value)) {
     completedEvalKeys.value.push(currentEvalKey.value);
@@ -666,17 +679,32 @@ function markAthleteAsFinished(athleteUuid: string) {
 }
 
 function toggleTaskTimer() {
-  if (!currentEval.value || currentEval.value.isFinished)
+  if (!currentEval.value || !currentEvalKey.value)
     return;
-  currentEval.value.isTimerRunning = !currentEval.value.isTimerRunning;
+  if (currentEval.value.isFinished) {
+    // Unmark as finished and resume timer
+    currentEval.value.isFinished = false;
+    currentEval.value.isTimerRunning = true;
+    // Remove from completedEvalKeys if present
+    const idx = completedEvalKeys.value.indexOf(currentEvalKey.value);
+    if (idx !== -1) completedEvalKeys.value.splice(idx, 1);
+    isDirty.value = true;
+  } else {
+    currentEval.value.isTimerRunning = !currentEval.value.isTimerRunning;
+    isDirty.value = true;
+  }
 }
 
 function resetTaskTimer() {
-  if (!currentEval.value)
+  if (!currentEval.value || !currentEvalKey.value)
     return;
   currentEval.value.time = 0;
   currentEval.value.isFinished = false;
   currentEval.value.isTimerRunning = false;
+  // Remove from completedEvalKeys if present
+  const idx = completedEvalKeys.value.indexOf(currentEvalKey.value);
+  if (idx !== -1) completedEvalKeys.value.splice(idx, 1);
+  isDirty.value = true;
 }
 
 function startAllTimersForCurrentTask() {
