@@ -138,7 +138,7 @@
                       title="Missed"
                       icon="mdi:alert-circle-outline"
                       :sessions="sessionsOnSelectedDate.missed"
-                      color-class="text-gray-500"
+                      color-class="text-red-500"
                     />
                     <p v-if="sessionsOnSelectedDate.total === 0" class="text-center text-gray-500 pt-10">
                       No sessions scheduled for this day.
@@ -203,7 +203,7 @@ function getTodayUTC(): Date {
 
 function getStatusInfo(event: EventItem): {
   label: 'Upcoming' | 'Completed' | 'Missed';
-  color: 'blue' | 'green' | 'gray';
+  color: 'blue' | 'green' | 'red';
 } {
   const eventDate = createSafeDate(event.date);
   const today = getTodayUTC();
@@ -212,7 +212,7 @@ function getStatusInfo(event: EventItem): {
     return { label: 'Completed', color: 'green' };
   }
   if (eventDate < today) {
-    return { label: 'Missed', color: 'gray' };
+    return { label: 'Missed', color: 'red' };
   }
   return { label: 'Upcoming', color: 'blue' };
 }
@@ -280,17 +280,28 @@ const agendaSessions = computed(() => {
     .sort((a, b) => createSafeDate(a.date).getTime() - createSafeDate(b.date).getTime());
 });
 
-const calendarAttributes = computed(() =>
-  (events.value || []).map(event => ({
+const calendarAttributes = computed(() => [
+  ...(events.value || []).map(event => ({
     key: event.id,
-    dot: { color: getStatusInfo(event).color },
+    dot: {
+      color: getStatusInfo(event).color,
+    },
     dates: createSafeDate(event.date),
     popover: {
       label: `${event.title} (${getStatusInfo(event).label})`,
       visibility: 'hover',
     },
   })),
-);
+
+  {
+    key: 'selected',
+    highlight: {
+      color: 'red',
+      fillMode: 'light', 
+    },
+    dates: selectedDate.value,
+  },
+]);
 
 const formatSelectedDate = computed(() => {
   return selectedDate.value.toLocaleDateString('en-US', {
@@ -332,7 +343,6 @@ watch(selectedDate, (newDate, oldDate) => {
 });
 
 useHead({
-  title: 'Coach Dashboard',
   meta: [
     { name: 'description', content: 'Coach dashboard for managing training sessions and courses' },
   ],

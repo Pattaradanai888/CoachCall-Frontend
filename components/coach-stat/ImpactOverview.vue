@@ -11,7 +11,7 @@
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <!-- Active Roster -->
         <div class="text-center">
-          <p class="text-2xl font-bold text-[#9C1313]">
+          <p class="text-2xl font-bold">
             {{ engagement.active_roster_count }}
           </p>
           <p class="text-sm text-gray-600">
@@ -20,7 +20,7 @@
         </div>
         <!-- New Athletes -->
         <div class="text-center">
-          <p class="text-2xl font-bold text-[#9C1313]">
+          <p class="text-2xl font-bold">
             +{{ engagement.new_athletes_month.current }}
           </p>
           <p class="text-sm text-gray-600">
@@ -38,7 +38,7 @@
         </div>
         <!-- Team Attendance -->
         <div class="text-center">
-          <p class="text-2xl font-bold text-[#9C1313]">
+          <p class="text-2xl font-bold">
             {{ engagement.team_attendance_rate !== null ? `${engagement.team_attendance_rate}%` : 'N/A' }}
           </p>
           <p class="text-sm text-gray-600">

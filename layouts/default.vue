@@ -7,11 +7,13 @@
       <nav class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
         <ClientOnly>
           <NuxtLink :to="logoLink" class="flex items-center space-x-2">
-            <div
-              class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
-            >
-              CC
-            </div>
+            <NuxtImg
+                    src="/logo2.ico"
+                    alt="CoachCall logo"
+                    class="w-full h-full object-cover"
+                    placeholder="/logo2.ico"
+                    format="webp"
+                  />
             <span
               class="text-lg font-semibold"
               :class="logoTextClasses"
@@ -21,11 +23,13 @@
           </NuxtLink>
           <template #fallback>
             <NuxtLink to="/" class="flex items-center space-x-2">
-              <div
-                class="w-10 h-10 bg-[#991B1B] text-white font-bold rounded-full flex items-center justify-center"
-              >
-                CC
-              </div>
+              <NuxtImg
+                    src="/logo2.ico"
+                    alt="CoachCall logo"
+                    class="w-full h-full object-cover"
+                    placeholder="/logo2.ico"
+                    format="webp"
+                  />
               <span class="text-lg font-semibold text-gray-900">
                 CoachCall
               </span>

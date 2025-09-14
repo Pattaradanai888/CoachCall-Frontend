@@ -57,7 +57,7 @@ function getStatusInfo(event: EventItem) {
     return { bgClass: 'bg-green-50 border-green-200 hover:border-green-400' };
   }
   if (eventDate < today) {
-    return { bgClass: 'bg-gray-100 border-gray-300 hover:border-gray-400' };
+    return { bgClass: 'bg-red-100 border-red-300 hover:border-red-400' };
   }
   return { bgClass: 'bg-blue-50 border-blue-200 hover:border-blue-400' };
 }

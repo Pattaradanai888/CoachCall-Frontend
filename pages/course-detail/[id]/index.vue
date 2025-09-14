@@ -251,9 +251,4 @@ onMounted(() => {
 });
 
 watch(activeTab, updateIndicator, { flush: 'post' });
-
-// NUXT-PRACTICE: useHead is the idiomatic way to manage the document head per-page.
-useHead({
-  title: () => (course.value ? `Details: ${course.value.name}` : 'Course Details'),
-});
 </script>

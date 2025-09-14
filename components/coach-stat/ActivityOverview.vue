@@ -11,7 +11,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <!-- Sessions Metric -->
         <div class="text-center">
-          <p class="text-2xl font-bold text-[#9C1313]">
+          <p class="text-2xl font-bold ">
             {{ activity.sessions_conducted_month.current }}
           </p>
           <p class="text-sm text-gray-600">
@@ -42,7 +42,7 @@
         </div>
         <!-- Courses Metric -->
         <div class="text-center">
-          <p class="text-2xl font-bold text-[#9C1313]">
+          <p class="text-2xl font-bold ">
             {{ activity.courses_created_month.current }}
           </p>
           <p class="text-sm text-gray-600">

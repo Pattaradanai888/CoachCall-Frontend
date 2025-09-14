@@ -9,6 +9,16 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@samk-dev/nuxt-vcalendar',
   ],
+
+  app: {
+    head: {
+      title: 'CoachCall',
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/logo2.ico' }
+      ]
+    }
+  },
+
   devtools: { enabled: true },
 
   runtimeConfig: {

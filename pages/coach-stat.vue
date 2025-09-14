@@ -111,7 +111,6 @@ import { useCoachStatData } from '~/composables/useCoachStatData';
 
 const { data, pending, error, refresh } = useCoachStatData().fetchCoachStats();
 useHead({
-  title: 'Coach Efficiency Dashboard - Track Your Impact & Productivity',
   meta: [
     {
       name: 'description',
