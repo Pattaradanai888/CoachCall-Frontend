@@ -5,7 +5,8 @@
         Athletes
       </h2>
       <p class="text-gray-500 text-sm">
-        Select an athlete to view details
+        <span v-if="isMobile" class="sm:hidden">Tap an athlete to view details below</span>
+        <span v-else class="hidden sm:inline">Select an athlete to view details</span>
       </p>
     </div>
 
@@ -15,9 +16,9 @@
         <li
           v-for="ath in athletes"
           :key="ath.uuid"
-          class="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors duration-150"
+          class="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors duration-150 touch-target"
           :class="[ath.uuid === selectedUuid ? 'bg-red-50 border-l-4 border-red-600' : '']"
-          @click="selectAthlete(ath.uuid)"
+          @click="handleAthleteClick(ath)"
         >
           <div class="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0">
             <NuxtImg
@@ -43,6 +44,10 @@
               <Icon name="mdi:account-switch" size="1rem" class="mr-1 flex-shrink-0" />
               <span class="truncate">Position: {{ ath.position }}, {{ ath.age ?? 'N/A' }} yrs</span>
             </p>
+          </div>
+          <!-- Mobile scroll indicator -->
+          <div v-if="isMobile" class="sm:hidden flex items-center text-red-600">
+            <Icon name="mdi:arrow-down" size="1.25rem" />
           </div>
         </li>
       </ul>
@@ -98,8 +103,43 @@ const emit = defineEmits<{
   (e: 'nextPage'): void;
 }>();
 
-function selectAthlete(uuid: string) {
-  emit('selectAthlete', uuid);
+// Reactive mobile detection
+const isMobile = ref(false);
+
+onMounted(() => {
+  // Set initial value
+  isMobile.value = window.innerWidth <= 640;
+  
+  // Add resize listener for reactive updates
+  const handleResize = () => {
+    isMobile.value = window.innerWidth <= 640;
+  };
+  
+  window.addEventListener('resize', handleResize);
+  
+  // Cleanup
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
+  });
+});
+
+function handleAthleteClick(athlete: AthleteListEntry) {
+  // Always emit the selection event first
+  emit('selectAthlete', athlete.uuid);
+  
+  // On mobile, scroll to athlete details section after selection
+  if (isMobile.value) {
+    setTimeout(() => {
+      const athleteDetailsSection = document.getElementById('athlete-details-section');
+      if (athleteDetailsSection) {
+        athleteDetailsSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest' 
+        });
+      }
+    }, 100); // Small delay to allow the selection to update first
+  }
 }
 
 function emitPrev() {

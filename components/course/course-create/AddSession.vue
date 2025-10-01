@@ -1,5 +1,6 @@
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <!-- Desktop/Tablet Layout (lg and above) -->
+  <div class="hidden lg:grid lg:grid-cols-3 gap-4">
     <div v-motion-slide-visible-once-left :delay="200" class="lg:col-span-1 bg-white py-2 px-10">
       <h2 class="text-xl font-bold mb-2">
         Session Templates
@@ -85,6 +86,207 @@
     </div>
   </div>
 
+  <!-- Mobile Layout (below lg) -->
+  <div class="lg:hidden space-y-6">
+    <!-- Toggle between templates and timeline -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+      <div class="flex rounded-lg bg-gray-100">
+        <button
+          class="flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200"
+          :class="mobileView === 'templates' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+          @click="mobileView = 'templates'"
+        >
+          <Icon name="mdi:view-list" size="1rem" class="inline-block mr-2" />
+          Templates
+        </button>
+        <button
+          class="flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200 relative"
+          :class="mobileView === 'timeline' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+          @click="mobileView = 'timeline'"
+        >
+          <Icon name="mdi:timeline-clock" size="1rem" class="inline-block mr-2" />
+          Timeline
+          <span
+            v-if="droppedItems.length > 0"
+            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+          >
+            {{ droppedItems.length }}
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Templates View -->
+    <div v-if="mobileView === 'templates'" v-motion-slide-visible-once-left :delay="200" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <h2 class="text-lg font-bold mb-4">
+        Session Templates
+      </h2>
+      <div class="relative mb-4">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search Templates"
+          class="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 text-sm"
+        >
+        <Icon name="mdi:magnify" size="1rem" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+      </div>
+      
+      <div v-if="templatesPending" class="text-center py-8 text-gray-500">
+        Loading...
+      </div>
+      <div v-else-if="!paginatedTemplates.length" class="text-center py-8">
+        <p class="text-gray-500">
+          No templates found.
+        </p>
+      </div>
+      <div v-else class="space-y-3">
+        <div
+          v-for="template in paginatedTemplates"
+          :key="template.id"
+          class="bg-gray-50 rounded-lg border border-gray-200 p-4 relative"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <h3 class="font-semibold text-sm mb-2">
+                {{ template.name }}
+              </h3>
+              <div class="flex items-center space-x-4">
+                <span class="text-xs text-gray-500 flex items-center">
+                  <Icon name="mdi:format-list-bulleted" size="0.8rem" class="mr-1" />
+                  {{ template.task_count }} task{{ template.task_count !== 1 ? 's' : '' }}
+                </span>
+                <span class="text-xs text-gray-500 flex items-center">
+                  <Icon name="mdi:clock-outline" size="0.8rem" class="mr-1" />
+                  {{ template.total_duration_minutes }} min
+                </span>
+              </div>
+            </div>
+            <button
+              class="bg-[#9C1313] text-white hover:bg-[#7A0F0F] px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center"
+              @click="addTemplateToTimeline(template)"
+            >
+              <Icon name="mdi:plus" size="1rem" class="mr-1" />
+              Add
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <button class="flex items-center justify-center w-full mt-4 p-3 border-2 border-dashed rounded-lg" @click="openCreateModal">
+        <Icon name="mdi:plus-circle-outline" size="1.5rem" class="text-gray-600 mr-2" />
+        <span class="font-medium text-gray-700">Create New Session</span>
+      </button>
+      
+      <PaginationBar
+        v-if="totalItems > itemsPerPage"
+        v-model:current-page="currentPage"
+        :total-items="totalItems"
+        :items-per-page="itemsPerPage"
+        class="mt-4"
+      />
+    </div>
+
+    <!-- Timeline View -->
+    <div v-if="mobileView === 'timeline'" v-motion-slide-visible-once-right :delay="200" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 class="text-lg font-bold mb-1">
+            Course Timeline
+          </h2>
+          <p class="text-xs text-gray-500">
+            {{ totalDuration }} min | {{ droppedItems.length }} sessions
+          </p>
+        </div>
+        <button
+          class="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-gray-500 hover:text-red-500 hover:border-red-300 transition-colors duration-200"
+          :disabled="droppedItems.length === 0"
+          @click="clearTimeline"
+        >
+          <Icon name="mdi:trash-can-outline" size="1rem" />
+        </button>
+      </div>
+      
+      <div v-if="droppedItems.length === 0" class="text-center py-16 border-2 border-dashed border-gray-300 rounded-lg">
+        <Icon name="mdi:timeline-clock" size="3rem" class="text-gray-400 mx-auto mb-3" />
+        <p class="text-gray-500 mb-2">
+          No sessions added yet
+        </p>
+        <p class="text-sm text-gray-400">
+          Go to Templates to add sessions
+        </p>
+      </div>
+      
+      <div v-else class="space-y-3">
+        <div
+          v-for="(item, index) in droppedItems"
+          :key="item.timelineId"
+          class="bg-gray-50 rounded-lg border border-gray-200 p-4 relative"
+        >
+          <div class="absolute -left-2 -top-2 w-6 h-6 bg-[#9c1313] text-white rounded-full flex items-center justify-center text-xs font-bold">
+            {{ index + 1 }}
+          </div>
+          
+          <div class="flex justify-between items-start mb-3">
+            <div class="flex-1 pr-2">
+              <h3 class="font-semibold text-sm mb-2">
+                {{ item.name }}
+              </h3>
+              <div class="flex items-center space-x-4">
+                <span class="text-xs text-gray-500 flex items-center">
+                  <Icon name="mdi:format-list-bulleted" size="0.8rem" class="mr-1" />
+                  {{ item.task_count ?? item.tasks_full?.length ?? 0 }} task{{ (item.task_count ?? item.tasks_full?.length ?? 0) !== 1 ? 's' : '' }}
+                </span>
+                <span class="text-xs text-gray-500 flex items-center">
+                  <Icon name="mdi:clock-outline" size="0.8rem" class="mr-1" />
+                  {{ item.total_duration_minutes }} min
+                </span>
+              </div>
+            </div>
+            
+            <button
+              class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors duration-200"
+              @click="removeItem(index)"
+            >
+              <Icon name="mdi:close" size="1.2rem" />
+            </button>
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <button
+              class="flex items-center text-sm px-3 py-2 rounded-lg transition-colors duration-200 flex-1 mr-2"
+              :class="{
+                'text-gray-600 bg-gray-100 hover:bg-gray-200': item.date,
+                'text-yellow-700 bg-yellow-100 hover:bg-yellow-200 border border-yellow-300': !item.date,
+              }"
+              @click="openDatePicker(index)"
+            >
+              <Icon name="mdi:calendar" size="1rem" class="mr-2" />
+              <span v-if="item.date" class="truncate">{{ formatDate(item.date) }}</span>
+              <span v-else class="font-medium">Select Date</span>
+            </button>
+            
+            <div class="flex space-x-2">
+              <button
+                v-if="index > 0"
+                class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                @click="moveItemUp(index)"
+              >
+                <Icon name="mdi:chevron-up" size="1.2rem" />
+              </button>
+              <button
+                v-if="index < droppedItems.length - 1"
+                class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                @click="moveItemDown(index)"
+              >
+                <Icon name="mdi:chevron-down" size="1.2rem" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div v-if="editingDateIndex !== null" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50" @click.self="cancelDateSelection">
     <div class="bg-white p-6 rounded-lg shadow-xl">
       <h3 class="text-lg font-semibold mb-4">
@@ -146,6 +348,7 @@ let timelineSortable: Sortable | null = null;
 let templateSortable: Sortable | null = null;
 const editingDateIndex = ref<number | null>(null);
 const selectedDate = ref<Date | null>(null);
+const mobileView = ref<'templates' | 'timeline'>('templates');
 
 const { fetchSessionTemplates, fetchSkills, createSession } = useCourses();
 const { data: initialTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
@@ -273,7 +476,16 @@ async function initializeSortable() {
         if (!originalTemplate)
           return;
 
-        let tasks_full: any[] = [];
+        interface TaskFull {
+          id: number;
+          title: string;
+          description: string;
+          duration: number;
+          selectedSkillIds: number[];
+          skillWeights: Record<number, number>;
+        }
+        
+        let tasks_full: TaskFull[] = [];
         if (originalTemplate.tasks && Array.isArray(originalTemplate.tasks)) {
           tasks_full = originalTemplate.tasks.map(sessionTask => ({
             id: sessionTask.task?.id || 0,
@@ -289,7 +501,13 @@ async function initializeSortable() {
         }
 
         const newItem: DroppedItem = {
-          ...(originalTemplate as any),
+          id: originalTemplate.id,
+          name: originalTemplate.name,
+          description: originalTemplate.description,
+          total_duration_minutes: originalTemplate.total_duration_minutes,
+          task_count: originalTemplate.task_count,
+          scheduled_date: originalTemplate.scheduled_date,
+          tasks: originalTemplate.tasks,
           date: null,
           timelineId: `${originalTemplate.id}-${Date.now()}`,
           tasks_full,
@@ -313,6 +531,11 @@ watch(paginatedTemplates, () => {
 
 onMounted(() => {
   initializeSortable();
+  
+  // Check if we should show templates or timeline on mobile based on content
+  if (droppedItems.value.length > 0) {
+    mobileView.value = 'timeline';
+  }
 });
 
 onUnmounted(() => {
@@ -348,6 +571,74 @@ function saveDateSelection() {
   }
   cancelDateSelection();
 }
+
+// Mobile-specific functions
+function addTemplateToTimeline(template: Session) {
+  interface TaskFull {
+    id: number;
+    title: string;
+    description: string;
+    duration: number;
+    selectedSkillIds: number[];
+    skillWeights: Record<number, number>;
+  }
+  
+  let tasks_full: TaskFull[] = [];
+  if (template.tasks && Array.isArray(template.tasks)) {
+    tasks_full = template.tasks.map(sessionTask => ({
+      id: sessionTask.task?.id || 0,
+      title: sessionTask.task?.name || '',
+      description: sessionTask.task?.description || '',
+      duration: sessionTask.task?.duration_minutes || 0,
+      selectedSkillIds: sessionTask.task?.skill_weights?.map(sw => sw.skill_id) || [],
+      skillWeights: sessionTask.task?.skill_weights?.reduce((acc, sw) => {
+        acc[sw.skill_id] = Number.parseFloat(sw.weight) * 100;
+        return acc;
+      }, {} as Record<number, number>) || {},
+    }));
+  }
+
+  const newItem: DroppedItem = {
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    total_duration_minutes: template.total_duration_minutes,
+    task_count: template.task_count,
+    scheduled_date: template.scheduled_date,
+    tasks: template.tasks,
+    date: null,
+    timelineId: `${template.id}-${Date.now()}`,
+    tasks_full,
+  };
+
+  droppedItems.value.push(newItem);
+  enforceTimelineOrder();
+  
+  // Switch to timeline view to show the added item
+  mobileView.value = 'timeline';
+}
+
+function moveItemUp(index: number) {
+  if (index > 0) {
+    const item = droppedItems.value.splice(index, 1)[0];
+    droppedItems.value.splice(index - 1, 0, item);
+    enforceTimelineOrder();
+  }
+}
+
+function moveItemDown(index: number) {
+  if (index < droppedItems.value.length - 1) {
+    const item = droppedItems.value.splice(index, 1)[0];
+    droppedItems.value.splice(index + 1, 0, item);
+    enforceTimelineOrder();
+  }
+}
+
+function formatDate(date: string | number | Date) {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
 </script>
 
 <style scoped>
@@ -381,5 +672,22 @@ function saveDateSelection() {
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 1023px) {
+  .session-template {
+    cursor: default;
+    transform: none !important;
+  }
+  
+  .session-template:hover {
+    transform: none !important;
+    scale: 1 !important;
+  }
+  
+  .timeline-item {
+    cursor: default;
+  }
 }
 </style>

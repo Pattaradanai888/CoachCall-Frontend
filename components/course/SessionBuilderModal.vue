@@ -9,30 +9,80 @@
   <transition name="slide-down">
     <div
       v-if="show"
-      class="fixed inset-0 flex items-center justify-center z-50 px-4"
+      class="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4"
     >
-      <div class="bg-white rounded-2xl w-full max-w-[1140px] mx-auto shadow-lg flex flex-col max-h-[90vh] overflow-hidden">
-        <div class="bg-gradient-to-r from-[#9C1313] to-red-600 px-6 py-4 text-white">
+      <div class="bg-white rounded-lg sm:rounded-2xl w-full max-w-[1140px] mx-auto shadow-lg flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+        <div class="bg-gradient-to-r from-[#9C1313] to-red-600 px-4 sm:px-6 py-3 sm:py-4 text-white">
           <div class="flex justify-between items-center">
-            <div>
-              <h2 class="text-2xl font-bold">
+            <div class="flex-1 pr-2">
+              <h2 class="text-lg sm:text-2xl font-bold">
                 {{ isEditMode ? 'Edit Training Session' : 'Create Training Session' }}
               </h2>
-              <p class="text-red-100 text-sm mt-1">
+              <p class="text-red-100 text-xs sm:text-sm mt-1 hidden sm:block">
                 {{ isEditMode ? 'Refine your existing template.' : 'Build your next practice with precision.' }}
               </p>
             </div>
             <button
-              class="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex items-center"
+              class="p-1 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex items-center flex-shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
               @click="emitClose"
             >
-              <Icon name="mdi:close-thick" size="2rem" style="color:white" />
+              <Icon name="mdi:close-thick" size="1.5rem" class="sm:w-8 sm:h-8" style="color:white" />
             </button>
           </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-6">
-          <div class="grid grid-cols-4 gap-3">
+        <div class="flex-1 overflow-y-auto p-3 sm:p-6">
+          <!-- Mobile Layout (stacked) -->
+          <div class="block lg:hidden space-y-4">
+            <!-- Stats Cards at Top on Mobile -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div class="text-xs text-gray-600">
+                  Total Time
+                </div>
+                <p class="text-lg font-bold text-[#9c1313]">
+                  {{ totalTime }} min
+                </p>
+              </div>
+              <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div class="text-xs text-gray-600">
+                  Total Tasks
+                </div>
+                <p class="text-lg font-bold text-[#9c1313]">
+                  {{ tasks.length }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Form Fields -->
+            <div class="space-y-4">
+              <div>
+                <h1 class="font-bold text-gray-700 mb-2 text-sm">
+                  Session Name
+                </h1>
+                <input
+                  v-model="sessionName"
+                  type="text"
+                  class="border-2 rounded-lg w-full shadow-sm p-3 h-12 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] text-base sm:text-sm"
+                  placeholder="e.g. Defensive Drills"
+                >
+              </div>
+
+              <div>
+                <h1 class="font-bold mb-2 text-gray-700 text-sm">
+                  Session Description
+                </h1>
+                <textarea
+                  v-model="sessionDescription"
+                  class="border-2 rounded-lg w-full shadow-sm p-3 h-20 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] text-base sm:text-sm resize-none"
+                  placeholder="Describe the goals and focus of this session"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Desktop Layout (side by side) -->
+          <div class="hidden lg:grid lg:grid-cols-4 gap-3">
             <div class="col-span-3">
               <div class="mb-4">
                 <h1 class="font-bold text-gray-700 mb-1">
@@ -41,7 +91,7 @@
                 <input
                   v-model="sessionName"
                   type="text"
-                  class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+                  class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] text-base sm:text-sm"
                   placeholder="e.g. Defensive Drills"
                 >
               </div>
@@ -52,7 +102,7 @@
                 </h1>
                 <textarea
                   v-model="sessionDescription"
-                  class="border-2 rounded-lg w-full shadow-sm p-3 h-20 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+                  class="border-2 rounded-lg w-full shadow-sm p-3 h-20 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] text-base sm:text-sm"
                   placeholder="Describe the goals and focus of this session"
                 />
               </div>
@@ -92,10 +142,10 @@
               />
             </div>
             <button class="w-full" @click="addTask">
-              <div class="border-2 border-dashed rounded-lg p-6 transition-all duration-200 mt-5 hover:border-[#9c1313] hover:bg-red-50">
+              <div class="border-2 border-dashed rounded-lg p-4 sm:p-6 transition-all duration-200 mt-4 sm:mt-5 hover:border-[#9c1313] hover:bg-red-50">
                 <div class="text-center py-2">
-                  <Icon name="mdi:plus" size="3rem" class="text-gray-400 mx-auto" />
-                  <p class="text-gray-500 text-lg">
+                  <Icon name="mdi:plus" size="2rem" class="sm:w-12 sm:h-12 text-gray-400 mx-auto" />
+                  <p class="text-gray-500 text-sm sm:text-lg">
                     Add Another Task
                   </p>
                 </div>
@@ -103,13 +153,42 @@
             </button>
           </div>
 
-          <div class="mt-6 border-t pt-6">
-            <label v-if="!isEditMode && mode === 'timeline'" class="flex items-center cursor-pointer mb-6">
-              <input v-model="saveAsTemplateFlag" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-[#9c1313] focus:ring-[#9c1313]">
-              <span class="ml-3 text-gray-700">Save this session as a template for future use</span>
+          <div class="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
+            <label v-if="!isEditMode && mode === 'timeline'" class="flex items-start sm:items-center cursor-pointer mb-4 sm:mb-6">
+              <input v-model="saveAsTemplateFlag" type="checkbox" class="h-4 w-4 sm:h-5 sm:w-5 rounded border-gray-300 text-[#9c1313] focus:ring-[#9c1313] mt-0.5 sm:mt-0 flex-shrink-0 scale-110 sm:scale-100">
+              <span class="ml-2 sm:ml-3 text-gray-700 text-sm sm:text-base">Save this session as a template for future use</span>
             </label>
 
-            <div class="flex justify-between w-full">
+            <!-- Mobile Layout (stacked buttons) -->
+            <div class="block sm:hidden space-y-3">
+              <button
+                v-if="isEditMode"
+                class="w-full px-4 py-3 text-gray-600 hover:text-gray-800 transition-colors border-2 border-gray-300 rounded-lg flex items-center justify-center"
+                @click="resetToInitial"
+              >
+                <Icon name="mdi:refresh" class="mr-2" size="1.2rem" />
+                Reset
+              </button>
+              
+              <div class="flex space-x-3">
+                <button
+                  class="flex-1 px-4 py-3 text-gray-600 hover:text-gray-800 transition-colors border-2 border-[#D9D9D9] rounded-lg text-sm font-medium"
+                  @click="emitClose"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="flex-1 px-4 py-3 bg-[#9c1313] text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                  :disabled="!canCreate"
+                  @click="handleFinalize"
+                >
+                  {{ getMobileButtonText() }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Desktop Layout (horizontal buttons) -->
+            <div class="hidden sm:flex justify-between w-full">
               <button
                 v-if="isEditMode"
                 class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors border-2 border-gray-300 rounded-lg flex items-center"
@@ -222,6 +301,15 @@ const finalButtonText = computed(() => {
   }
   return 'Create Template';
 });
+
+const getMobileButtonText = () => {
+  if (isEditMode.value)
+    return 'Update';
+  if (props.mode === 'timeline') {
+    return saveAsTemplateFlag.value ? 'Save Template' : 'Add Session';
+  }
+  return 'Create';
+};
 
 function handleFinalize() {
   if (!canCreate.value)
@@ -355,6 +443,7 @@ function updateField({ id, field, value }: { id: number; field: keyof UITask; va
 </script>
 
 <style scoped>
+/* Vue Transition Classes - Cannot be replaced with Tailwind */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s;
@@ -371,5 +460,27 @@ function updateField({ id, field, value }: { id: number; field: keyof UITask; va
 .slide-down-leave-to {
   opacity: 0;
   transform: translateY(-20px);
+}
+
+/* Mobile-specific modal positioning - Custom behavior for transitions */
+@media (max-width: 640px) {
+  .slide-down-enter-from,
+  .slide-down-leave-to {
+    transform: translateY(-10px);
+  }
+}
+
+/* Tablet modal size optimization - Using CSS for max-w override */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .max-w-\[1140px\] {
+    max-width: 90vw;
+  }
+}
+
+/* Touch scrolling optimization - Browser-specific feature */
+@media (hover: none) and (pointer: coarse) {
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 </style>

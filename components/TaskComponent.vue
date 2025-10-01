@@ -1,49 +1,49 @@
 <template>
-  <div class="bg-white shadow-lg mt-5 p-6 relative">
+  <div class="bg-white shadow-lg mt-3 sm:mt-5 p-4 sm:p-6 relative rounded-lg">
     <button
       v-if="tasksLength > 1"
-      class="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
       @click="emitRemove"
     >
-      <Icon name="mdi:delete-outline" size="1.5rem" class="text-gray-400 mx-auto" />
+      <Icon name="mdi:delete-outline" size="1.2rem" class="sm:w-6 sm:h-6 text-gray-400 mx-auto" />
     </button>
 
-    <div class="flex items-center">
+    <div class="flex items-center mb-4">
       <div class="flex items-center justify-center">
         <p class="w-6 h-6 bg-[#9c1313] text-white rounded-full flex items-center justify-center text-xs font-bold">
           {{ index + 1 }}
         </p>
       </div>
-      <div class="ml-4">
-        <h1 class="font-bold">
+      <div class="ml-3 sm:ml-4">
+        <h1 class="font-bold text-sm sm:text-base">
           Task {{ index + 1 }}
         </h1>
-        <p>Define your training exercise</p>
+        <p class="text-xs sm:text-sm text-gray-600">Define your training exercise</p>
       </div>
     </div>
 
-    <div class="grid grid-cols-2 mb-2 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 mb-4 gap-3 sm:gap-5">
       <div>
-        <h1 class="font-bold text-gray-700 mb-1">
+        <h1 class="font-bold text-gray-700 mb-2 text-sm sm:text-base">
           Task Title
         </h1>
         <input
           v-model="localTask.title"
           type="text"
-          class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+          class="border-2 rounded-lg w-full shadow-sm p-3 h-11 sm:h-12 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] text-sm sm:text-base"
           placeholder="Task title"
           @input="emitUpdateField('title', localTask.title)"
         >
       </div>
       <div>
-        <h1 class="font-bold text-gray-700 mb-1">
+        <h1 class="font-bold text-gray-700 mb-2 text-sm sm:text-base">
           Duration (min)
         </h1>
         <input
           v-model.number="localTask.duration"
           type="number"
           min="0"
-          class="border-2 rounded-lg w-full shadow-lg p-2 h-11 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+          class="border-2 rounded-lg w-full shadow-sm p-3 h-11 sm:h-12 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] text-sm sm:text-base"
           placeholder="Duration in minutes"
           @input="emitUpdateField('duration', localTask.duration)"
         >
@@ -51,27 +51,27 @@
     </div>
 
     <div>
-      <h1 class="font-bold mb-1 text-gray-700">
+      <h1 class="font-bold mb-2 text-gray-700 text-sm sm:text-base">
         Task Description
       </h1>
       <textarea
         v-model="localTask.description"
-        class="border-2 rounded-lg w-full shadow-sm p-3 h-20 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313]"
+        class="border-2 rounded-lg w-full shadow-sm p-3 h-16 sm:h-20 border-[#d9d9d9] focus:border-[#9c1313] focus:outline focus:outline-[#9c1313] text-sm sm:text-base resize-none"
         placeholder="Task description"
         @input="emitUpdateField('description', localTask.description)"
       />
     </div>
 
-    <div class="mt-5">
-      <h1 class="font-bold">
+    <div class="mt-4 sm:mt-5">
+      <h1 class="font-bold text-sm sm:text-base">
         Performance Focus
       </h1>
-      <p>Select skills this task will develop</p>
-      <div class="grid grid-cols-3 gap-5 mt-5">
+      <p class="text-xs sm:text-sm text-gray-600 mb-3">Select skills this task will develop</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <button
           v-for="skill in availableSkills"
           :key="skill.id"
-          class="border-2 shadow-lg w-full h-10 rounded-lg transition-colors"
+          class="border-2 shadow-sm w-full h-10 sm:h-12 rounded-lg transition-colors text-xs sm:text-sm font-medium"
           :class="[
             localTask.selectedSkillIds.includes(skill.id)
               ? 'bg-[#9c1313] text-white border-[#9c1313]'
@@ -83,22 +83,22 @@
         </button>
       </div>
 
-      <div v-if="localTask.selectedSkillIds.length > 0" class="relative w-full mt-5">
+      <div v-if="localTask.selectedSkillIds.length > 0" class="relative w-full mt-4 sm:mt-5">
         <div class="mb-2">
-          <div class="flex justify-between mb-5">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-5 gap-2">
             <div>
-              <h1 class="font-bold">
+              <h1 class="font-bold text-sm sm:text-base">
                 Weight Distribution
               </h1>
             </div>
-            <p class="rounded-lg text-white px-2" :class="[totalWeight === 100 ? 'bg-green-600' : totalWeight > 100 ? 'bg-red-600' : 'bg-orange-500']">
+            <p class="rounded-lg text-white px-2 py-1 text-xs sm:text-sm font-medium w-fit" :class="[totalWeight === 100 ? 'bg-green-600' : totalWeight > 100 ? 'bg-red-600' : 'bg-orange-500']">
               {{ totalWeight }}% Total
             </p>
           </div>
 
           <div class="mb-4">
             <button
-              class="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+              class="px-3 py-2 text-xs sm:text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors font-medium"
               @click="autoDistributeWeights"
             >
               Auto-distribute equally
@@ -108,19 +108,19 @@
           <div
             v-for="skillId in localTask.selectedSkillIds"
             :key="`skill-wrapper-${skillId}`"
-            class="mb-6"
+            class="mb-4 sm:mb-6"
           >
             <div class="flex justify-between mb-2">
-              <span class="text-sm font-bold text-gray-700">{{ getSkillName(skillId) }}</span>
+              <span class="text-xs sm:text-sm font-bold text-gray-700">{{ getSkillName(skillId) }}</span>
               <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-gray-700">{{ Math.round(localTask.skillWeights[skillId] || 0) }}%</span>
-                <span v-if="(localTask.skillWeights[skillId] || 0) === 0" class="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                <span class="text-xs sm:text-sm font-bold text-gray-700">{{ Math.round(localTask.skillWeights[skillId] || 0) }}%</span>
+                <span v-if="(localTask.skillWeights[skillId] || 0) === 0" class="text-xs text-orange-600 bg-orange-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                   No focus
                 </span>
               </div>
             </div>
             <div class="relative">
-              <div class="w-full bg-gray-200 rounded-full h-3">
+              <div class="w-full bg-gray-200 rounded-full h-4 sm:h-3">
                 <div
                   class="h-full bg-[#9c1313] rounded-full transition-all duration-200"
                   :style="{ width: `${localTask.skillWeights[skillId] || 0}%` }"
@@ -137,14 +137,14 @@
                 min="0"
                 :max="100"
                 step="1"
-                class="absolute top-0 left-0 w-full h-3 bg-transparent appearance-none cursor-pointer slider-input"
+                class="absolute top-0 left-0 w-full h-4 sm:h-3 bg-transparent appearance-none cursor-pointer slider-input"
                 @input="handleSliderInput(skillId, $event)"
                 @change="handleSliderChange(skillId, $event)"
               >
             </div>
             <div class="flex justify-between text-xs text-gray-500 mt-1">
               <span>0%</span>
-              <span v-if="getMaxAllowedWeight(skillId) < 100" class="text-orange-600">
+              <span v-if="getMaxAllowedWeight(skillId) < 100" class="text-orange-600 text-center flex-1">
                 Limited to {{ getMaxAllowedWeight(skillId) }}%
               </span>
               <span>{{ getMaxAllowedWeight(skillId) }}%</span>

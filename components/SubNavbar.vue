@@ -1,8 +1,8 @@
 <template>
-  <div class="flex justify-center w-full overflow-x-auto px-2">
+  <div class="flex justify-center w-full overflow-x-auto px-2 sm:px-4">
     <div
       ref="navContainer"
-      class="relative bg-gray-100 rounded-lg p-1 inline-flex mt-[6rem] overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full"
+      class="relative bg-gray-100 rounded-lg p-1 inline-flex mt-20 sm:mt-[6rem] overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full"
     >
       <!-- Moving background indicator (client-only to avoid SSR mismatch) -->
       <ClientOnly>
@@ -20,12 +20,12 @@
         v-for="item in navItems"
         :key="item.id"
         :to="item.route"
-        class="relative z-10 flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap" :class="[
+        class="relative z-10 flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap" :class="[
           activeTab === item.id ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900',
         ]"
       >
-        <Icon :name="item.icon" class="w-5 h-5" filled />
-        {{ item.label }}
+        <Icon :name="item.icon" class="w-4 h-4 sm:w-5 sm:h-5" filled />
+        <span class="hidden xs:inline sm:inline">{{ item.label }}</span>
       </NuxtLink>
     </div>
   </div>

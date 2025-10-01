@@ -1,29 +1,29 @@
 <template>
-  <div class="bg-white p-5 md:min-h-[250px]">
-    <div class="flex justify-between">
-      <div>
-        <h1 class="text-2xl font-bold">
+  <div class="bg-white p-3 sm:p-4 lg:p-5 md:min-h-[250px] rounded-lg shadow-sm">
+    <div class="flex flex-col gap-3 sm:gap-4 md:flex-row md:justify-between md:items-center">
+      <div class="flex-1 min-w-0">
+        <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 leading-tight">
           Session Overview
         </h1>
       </div>
-      <div class="flex">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center md:flex-shrink-0">
         <button
-          class="bg-[#9C1313] text-white font-bold px-2 py-2 rounded-xl hover:bg-[#7A0F0F] mx-auto shadow-lg"
+          class="bg-[#9C1313] text-white font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl hover:bg-[#7A0F0F] w-full sm:w-auto shadow-lg transition-all duration-200 active:scale-95"
           @click="$emit('open-create-modal')"
         >
           <div class="flex items-center justify-center">
-            <Icon name="mdi:plus" size="1rem" class="mr-1" />
-            <p class="text-sm">
+            <Icon name="mdi:plus" size="1rem" class="mr-1 sm:mr-2" />
+            <p class="text-xs sm:text-sm whitespace-nowrap">
               Create Session Template
             </p>
           </div>
         </button>
-        <div class="ml-2">
-          <div class="relative w-full max-w-md shadow-lg">
+        <div class="sm:ml-2">
+          <div class="relative w-full sm:max-w-md shadow-lg">
             <input
               type="text"
-              placeholder="Search..."
-              class="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:border-[#9C1313] transition duration-300 ease-in-out"
+              placeholder="Search templates..."
+              class="w-full px-3 sm:px-4 py-2 pr-10 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-[#9C1313] focus:ring-1 focus:ring-[#9C1313] transition duration-300 ease-in-out"
             >
             <Icon
               name="mdi:magnify"
@@ -35,63 +35,66 @@
       </div>
     </div>
 
-    <div v-if="paginatedTemplates.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 px-6 py-4">
-      <div v-for="(template, index) in paginatedTemplates" :key="template.id" class="shadow-lg px-4 flex flex-col">
+    <!-- Responsive Grid with improved spacing -->
+    <div v-if="paginatedTemplates.length" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6 px-1 sm:px-2 lg:px-4 py-2 sm:py-4">
+      <div v-for="(template, index) in paginatedTemplates" :key="template.id" class="bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-3 sm:p-4 flex flex-col">
         <div class="flex-grow">
-          <div class="flex justify-between items-start pt-4">
+          <div class="flex justify-between items-start mb-3">
             <div class="flex-1 pr-2 min-w-0">
-              <h1 class="font-bold truncate" :title="template.name">
+              <h1 class="font-bold text-sm sm:text-base text-gray-800 truncate" :title="template.name">
                 {{ template.name }}
               </h1>
-              <p v-if="template.description" class="text-sm text-gray-600 truncate" :title="template.description">
+              <p v-if="template.description" class="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2" :title="template.description">
                 {{ template.description }}
               </p>
             </div>
             <div class="relative inline-block text-left flex-shrink-0">
-              <button type="button" class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-200 focus:outline-none" @click="toggle(index)">
-                <Icon name="mdi:dots-horizontal" size="1rem" />
+              <button type="button" class="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-gray-200 focus:outline-none transition-colors duration-200" @click="toggle(index)">
+                <Icon name="mdi:dots-horizontal" size="0.875rem" class="sm:size-4" />
               </button>
-              <div v-if="isOpen[index]" class="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                <ul class="py-1 text-sm text-gray-700">
-                  <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" @click.prevent="$emit('open-edit-modal', template)">Edit</a></li>
-                  <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 text-red-600" @click.prevent="$emit('remove-template', template.id)">Remove</a></li>
+              <div v-if="isOpen[index]" class="absolute right-0 mt-2 w-36 sm:w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                <ul class="py-1 text-xs sm:text-sm text-gray-700">
+                  <li><a href="#" class="block px-3 sm:px-4 py-2 hover:bg-gray-100 transition-colors" @click.prevent="$emit('open-edit-modal', template)">Edit</a></li>
+                  <li><a href="#" class="block px-3 sm:px-4 py-2 hover:bg-gray-100 text-red-600 transition-colors" @click.prevent="$emit('remove-template', template.id)">Remove</a></li>
                 </ul>
               </div>
-              <div v-if="isOpen[index]" class="fixed inset-0 bg-transparent z-0" @click="isOpen[index] = false" />
+              <div v-if="isOpen[index]" class="fixed inset-0 bg-transparent z-10" @click="isOpen[index] = false" />
             </div>
           </div>
-          <div class="flex mt-2">
-            <div class="flex bg-[#F1F5F9] px-2 py-1 rounded-lg">
-              <Icon name="mdi:clock-outline" class="mr-1 text-gray-600" />
-              <p class="font-bold text-sm">
+          <div class="flex mb-3">
+            <div class="inline-flex items-center bg-[#F1F5F9] px-2 py-1 rounded-lg">
+              <Icon name="mdi:clock-outline" class="mr-1 text-gray-600" size="0.875rem" />
+              <p class="font-semibold text-xs sm:text-sm text-gray-700">
                 Time:
               </p>
-              <p class="text-sm ml-1">
+              <p class="text-xs sm:text-sm text-gray-600 ml-1">
                 {{ template.total_duration_minutes }} mins
               </p>
             </div>
           </div>
         </div>
-        <div class="flex justify-center my-3">
+        <div class="mt-auto">
           <button
-            class="bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] border-solid px-4 py-1 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto"
+            class="w-full bg-white text-[#9C1313] font-bold border-2 border-[#9C1313] px-3 sm:px-4 py-2 rounded-xl hover:bg-[#9C1313] hover:text-white transition-all duration-200 active:scale-95 text-xs sm:text-sm"
             @click.prevent="$emit('start-quick-session', template)"
           >
-            <p>Quick Session</p>
+            Quick Session        
           </button>
         </div>
       </div>
     </div>
 
-    <div v-else class="text-center p-8 text-gray-500">
-      No session templates found.
+    <div v-else class="text-center p-6 sm:p-8 text-gray-500">
+      <Icon name="mdi:folder-open-outline" size="3rem" class="mx-auto mb-3 text-gray-400" />
+      <p class="text-sm sm:text-base">No session templates found.</p>
+      <p class="text-xs sm:text-sm text-gray-400 mt-1">Create your first template to get started.</p>
     </div>
 
     <PaginationBar
       v-model:current-page="currentPage"
       :total-items="totalItems"
       :items-per-page="itemsPerPage"
-      class="mt-4"
+      class="mt-4 sm:mt-6"
     />
   </div>
 </template>
@@ -111,6 +114,7 @@ defineEmits<{
 }>();
 
 const currentPage = ref(1);
+// The number of items per page is 6 to ensure the grid is always full for both 2-column and 3-column layouts.
 const itemsPerPage = 3;
 const totalItems = computed(() => props.templates?.length || 0);
 

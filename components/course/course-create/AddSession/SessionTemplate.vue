@@ -1,10 +1,10 @@
 <template>
   <div
     :data-id="template.id"
-    class="session-template bg-white rounded-lg shadow-md border border-gray-200 p-4 cursor-move hover:shadow-lg transition-all duration-200 hover:scale-105"
+    class="session-template bg-white rounded-lg shadow-md border border-gray-200 p-4 cursor-move hover:shadow-lg transition-all duration-200 hover:scale-105 lg:block"
   >
     <div class="flex items-center space-x-3">
-      <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
+      <div class="w-8 h-8 bg-gray-100 rounded-lg hidden lg:flex items-center justify-center hover:bg-gray-200 transition-colors">
         <Icon name="mdi:drag-horizontal-variant" size="1rem" class="text-gray-600" />
       </div>
       <div class="flex-1">

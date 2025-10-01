@@ -1,13 +1,13 @@
 <template>
-  <div class="min-h-screen bg-[#FAFAFA]">
+  <div class="min-h-screen bg-[#FAFAFA] page-with-fab">
     <SubNavbar />
 
-    <div class="max-w-[1140px] mx-auto pt-4 pb-8 px-4 lg:px-0 h-auto min-h-[300px]">
+    <div class="max-w-[1140px] mx-auto pt-2 sm:pt-4 pb-6 sm:pb-8 px-3 sm:px-4 lg:px-0 h-auto min-h-[300px]">
       <!-- Loading State -->
-      <div v-if="coursesPending && templatesPending" class="w-full text-center py-24 text-gray-500">
+      <div v-if="coursesPending && templatesPending" class="w-full text-center py-16 sm:py-24 text-gray-500">
         <div class="inline-block">
-          <div class="w-12 h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
-          <p class="text-lg">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 bg-red-200 rounded-full animate-spin border-4 border-red-700 border-t-transparent" />
+          <p class="text-base sm:text-lg">
             Loading Course Management...
           </p>
         </div>
@@ -15,30 +15,31 @@
       
       <!-- Main Content -->
       <div v-else class="w-full">
-        <div v-motion-slide-visible-once-top class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-800">
+        <div v-motion-slide-visible-once-top class="flex flex-col sm:flex-row lg:flex-row justify-between items-start sm:items-center lg:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
+          <div class="flex-1 min-w-0">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 leading-tight">
               Course Management
             </h1>
-            <p class="text-gray-600 mt-1">Manage your athletes and track their progress</p>
+            <p class="text-sm sm:text-base text-gray-600 mt-1 break-words">Manage your athletes and track their progress</p>
           </div>
-          <div class="mt-4 lg:mt-0">
-            <NuxtLink to="/course/form/new">
-              <button class="bg-[#9C1313] text-white font-bold px-4 py-3 rounded-xl hover:bg-[#7A0F0F] shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">
+          <div class="w-full sm:w-auto flex-shrink-0 create-button-desktop">
+            <NuxtLink to="/course/form/new" class="block w-full sm:w-auto">
+              <button class="w-full sm:w-auto bg-[#9C1313] text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-[#7A0F0F] shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 min-h-[44px]">
                 <div class="flex items-center justify-center">
-                  <Icon name="mdi:plus" size="1.5rem" class="mr-2" />
-                  <p>Create Course</p>
+                  <Icon name="mdi:plus" size="1.25rem" class="sm:size-6 mr-2" />
+                  <p class="text-sm sm:text-base whitespace-nowrap">Create Course</p>
                 </div>
               </button>
             </NuxtLink>
           </div>
         </div>
 
-        <div v-motion-slide-visible-once-left :delay="200" class="mb-12">
-          <div v-if="templatesPending" class="text-center p-8 bg-white rounded-xl shadow-sm min-h-[250px] flex items-center justify-center">
+        <!-- Templates Section -->
+        <div v-motion-slide-visible-once-left :delay="200" class="mb-8 sm:mb-12">
+          <div v-if="templatesPending" class="text-center p-6 sm:p-8 bg-white rounded-xl shadow-sm min-h-[200px] sm:min-h-[250px] flex items-center justify-center">
             <div class="inline-block">
-              <div class="w-8 h-8 mx-auto mb-2 bg-red-200 rounded-full animate-spin border-2 border-red-700 border-t-transparent" />
-              <p class="text-gray-500">Loading Templates...</p>
+              <div class="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 bg-red-200 rounded-full animate-spin border-2 border-red-700 border-t-transparent" />
+              <p class="text-sm sm:text-base text-gray-500">Loading Templates...</p>
             </div>
           </div>
           <OverviewTemplate
@@ -51,11 +52,12 @@
           />
         </div>
 
+        <!-- Courses Section -->
         <div v-motion-slide-visible-once-right :delay="200">
-          <div v-if="coursesPending" class="text-center p-8 bg-white rounded-xl shadow-sm min-h-[300px] flex items-center justify-center">
+          <div v-if="coursesPending" class="text-center p-6 sm:p-8 bg-white rounded-xl shadow-sm min-h-[250px] sm:min-h-[300px] flex items-center justify-center">
             <div class="inline-block">
-              <div class="w-8 h-8 mx-auto mb-2 bg-red-200 rounded-full animate-spin border-2 border-red-700 border-t-transparent" />
-              <p class="text-gray-500">Loading Courses...</p>
+              <div class="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 bg-red-200 rounded-full animate-spin border-2 border-red-700 border-t-transparent" />
+              <p class="text-sm sm:text-base text-gray-500">Loading Courses...</p>
             </div>
           </div>
           <OverviewActiveCourse
@@ -68,6 +70,16 @@
         </div>
       </div>
     </div> <!-- Close container div -->
+
+    <!-- Mobile Floating Action Button (visible only on small screens) -->
+    <NuxtLink to="/course/form/new">
+      <button
+        class="floating-action-button bg-[#9C1313] text-white hover:bg-[#7A0F0F] min-h-[56px] min-w-[56px]"
+        aria-label="Create Course"
+      >
+        <Icon name="mdi:plus" class="text-2xl" />
+      </button>
+    </NuxtLink>
 
     <!-- Modals at root level -->
     <SessionBuilderModal
@@ -412,3 +424,11 @@ async function handleStartQuickSession(template: SessionTemplate) {
   }
 }
 </script>
+
+<style scoped>
+/* Browser-specific scrolling enhancements */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+</style>

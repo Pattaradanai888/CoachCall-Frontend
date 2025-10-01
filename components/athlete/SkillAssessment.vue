@@ -12,7 +12,7 @@
     <div v-if="combinedSkills.length > 0">
       <ClientOnly>
         <div class="h-56 sm:h-64 w-full mb-6 flex items-center justify-center overflow-hidden">
-          <div class="w-full h-full max-w-sm max-h-sm">
+          <div class="w-full h-full max-w-sm max-h-sm mb-[130px] sm:mb-6">
             <RadarChart
               :skill-data="chartData"
               :max-score="100"

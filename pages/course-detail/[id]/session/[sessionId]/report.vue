@@ -19,82 +19,85 @@
     </div>
 
     <div v-else class="max-w-7xl mx-auto">
-      <header class="flex justify-between items-start mb-8">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-            <Icon name="mdi:chart-box-outline" class="mr-3 text-gray-700" />
-            Session Report: {{ sessionReport.session?.name }}
-          </h1>
-          <ClientOnly>
-            <p class="text-gray-500 mt-1 ml-10">
-              Completed on {{ completionDate }}
-            </p>
-            <template #fallback>
-              <p class="text-gray-500 mt-1 ml-10 animate-pulse">
-                Loading date...
+      <header class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div class="flex-1">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-start sm:items-center">
+              <Icon name="mdi:chart-box-outline" class="mr-2 sm:mr-3 text-gray-700 flex-shrink-0 mt-1 sm:mt-0" />
+              <span class="leading-tight">Session Report: {{ sessionReport.session?.name }}</span>
+            </h1>
+            <ClientOnly>
+              <p class="text-gray-500 mt-2 ml-6 sm:ml-10 text-sm">
+                Completed on {{ completionDate }}
               </p>
-            </template>
-          </ClientOnly>
-        </div>
-        <div class="flex items-center space-x-3">
-          <NuxtLink :to="backPath" class="px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition">
-            <span v-if="mode === 'course'">Back to Course</span>
-            <span v-else>Back to Dashboard</span>
-          </NuxtLink>
-          <button class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition">
-            Export
-          </button>
+              <template #fallback>
+                <p class="text-gray-500 mt-2 ml-6 sm:ml-10 animate-pulse text-sm">
+                  Loading date...
+                </p>
+              </template>
+            </ClientOnly>
+          </div>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:flex-shrink-0">
+            <NuxtLink :to="backPath" class="px-3 sm:px-4 py-2 text-sm font-semibold border bg-white rounded-md hover:bg-gray-100 transition text-center">
+              <span v-if="mode === 'course'">Back to Course</span>
+              <span v-else>Back to Dashboard</span>
+            </NuxtLink>
+            <button class="px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition">
+              Export
+            </button>
+          </div>
         </div>
       </header>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow-md text-center">
-          <p class="text-sm text-gray-500 mb-1">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-md text-center">
+          <p class="text-xs sm:text-sm text-gray-500 mb-1">
             Total Time
           </p>
-          <p class="text-3xl font-bold text-gray-800">
+          <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800">
             {{ formatTime(stats.totalTime) }}
           </p>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow-md text-center">
-          <p class="text-sm text-gray-500 mb-1">
+        <div class="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-md text-center">
+          <p class="text-xs sm:text-sm text-gray-500 mb-1">
             Evaluations
           </p>
-          <p class="text-3xl font-bold text-gray-800">
+          <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800">
             <span class="text-red-600">{{ stats.completedEvals }}</span> / {{ stats.totalEvals }}
           </p>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow-md text-center">
-          <p class="text-sm text-gray-500 mb-1">
+        <div class="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-md text-center">
+          <p class="text-xs sm:text-sm text-gray-500 mb-1">
             Avg Time/Task
           </p>
-          <p class="text-3xl font-bold text-gray-800">
+          <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800">
             {{ formatTime(stats.avgTimePerTask) }}
           </p>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow-md text-center">
-          <p class="text-sm text-gray-500 mb-1">
+        <div class="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-md text-center">
+          <p class="text-xs sm:text-sm text-gray-500 mb-1">
             Completion
           </p>
-          <p class="text-3xl font-bold text-green-600">
+          <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-green-600">
             {{ stats.completion }}%
           </p>
         </div>
       </div>
 
-      <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-bold text-gray-800 mb-1">
+      <main class="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-8">
+        <!-- Mobile: Full width athlete list -->
+        <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md lg:col-span-2">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-1">
             Athlete Performance Summary
           </h2>
-          <p class="text-sm text-gray-500 mb-4">
+          <p class="text-xs sm:text-sm text-gray-500 mb-4">
             Select an athlete to view details
           </p>
           <div class="space-y-2">
             <button
               v-for="athlete in athleteSummaries"
               :key="athlete.uuid"
-              class="w-full flex items-center p-3 rounded-lg text-left transition-colors"
+              class="w-full flex items-center p-2 sm:p-3 rounded-lg text-left transition-colors"
               :class="[selectedAthleteUuid === athlete.uuid ? 'bg-blue-100' : 'hover:bg-gray-50']"
               @click="selectedAthleteUuid = athlete.uuid"
             >
@@ -105,10 +108,10 @@
                 width="40"
                 height="40"
                 loading="lazy"
-                class="w-10 h-10 rounded-full mr-4"
+                class="w-8 sm:w-10 h-8 sm:h-10 rounded-full mr-3 sm:mr-4"
               />
               <div class="flex-grow">
-                <p class="font-semibold text-gray-800">
+                <p class="font-semibold text-gray-800 text-sm sm:text-base">
                   {{ athlete.name }}
                   <span v-if="athlete.isGuest" class="ml-2 px-2 py-0.5 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Guest</span>
                 </p>
@@ -118,7 +121,7 @@
                 </p>
               </div>
               <div class="text-right">
-                <p class="font-bold text-gray-800">
+                <p class="font-bold text-gray-800 text-sm sm:text-base">
                   {{ athlete.averageScore.toFixed(0) }}/100
                 </p>
                 <p class="text-xs text-gray-500 font-mono">
@@ -127,18 +130,19 @@
               </div>
             </button>
           </div>
-        </div>
+        </section>
 
-        <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">
+        <!-- Mobile: Full width skill assessment -->
+        <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md lg:col-span-3">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">
             Skill Impact Assessment
           </h2>
-          <div v-if="!selectedAthlete" class="flex items-center justify-center h-full text-gray-500">
-            <p>Select an athlete to see their skill breakdown.</p>
+          <div v-if="!selectedAthlete" class="flex items-center justify-center h-40 sm:h-60 text-gray-500">
+            <p class="text-sm sm:text-base">Select an athlete to see their skill breakdown.</p>
           </div>
           <div v-else>
-            <div class="mb-8 p-4 bg-gray-50 rounded-lg">
-              <div class="h-80 flex items-center justify-center">
+            <div class="mb-6 sm:mb-8 p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div class="h-40 sm:h-60 lg:h-80 flex items-center justify-center">
                 <RadarChart
                   v-if="chartComparisonData.after.length > 0"
                   :skill-data="chartComparisonData"
@@ -146,27 +150,27 @@
                   class="w-full"
                 />
                 <div v-else class="text-gray-400 text-center">
-                  <Icon name="mdi:chart-radar" size="4rem" class="mx-auto mb-2" />
-                  <p>No skill data available for this athlete</p>
+                  <Icon name="mdi:chart-radar" size="3rem sm:4rem" class="mx-auto mb-2" />
+                  <p class="text-sm sm:text-base">No skill data available for this athlete</p>
                 </div>
               </div>
 
-              <div class="space-y-4 mt-6">
-                <div v-for="(skill, index) in skillComparison.after" :key="skill.skill_id" class="grid grid-cols-6 gap-4 items-center">
-                  <p class="col-span-2 font-semibold text-gray-700 text-sm">
+              <div class="space-y-3 sm:space-y-4 mt-4 sm:mt-6">
+                <div v-for="(skill, index) in skillComparison.after" :key="skill.skill_id" class="grid grid-cols-12 gap-2 sm:gap-4 items-center">
+                  <p class="col-span-4 sm:col-span-3 font-semibold text-gray-700 text-xs sm:text-sm">
                     {{ skill.skill_name }}
                   </p>
-                  <div class="col-span-3">
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                      <div class="bg-red-600 h-2.5 rounded-full" :style="{ width: `${skill.average_score}%` }" />
+                  <div class="col-span-6 sm:col-span-7">
+                    <div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5">
+                      <div class="bg-red-600 h-2 sm:h-2.5 rounded-full" :style="{ width: `${skill.average_score}%` }" />
                     </div>
                   </div>
-                  <div class="col-span-1 text-right font-mono text-gray-800 flex items-baseline justify-end">
-                    <p class="font-bold">
+                  <div class="col-span-2 text-right font-mono text-gray-800 flex items-baseline justify-end">
+                    <p class="font-bold text-xs sm:text-sm">
                       {{ skill.average_score.toFixed(1) }}
                     </p>
                     <span
-                      class="text-xs ml-1"
+                      class="text-xs ml-1 hidden sm:inline"
                       :class="{
                         'text-green-600': getSkillChange(index) > 0,
                         'text-red-600': getSkillChange(index) < 0,
@@ -180,24 +184,65 @@
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </section>
 
-      <section class="mt-8 bg-white p-6 rounded-lg shadow-md">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-gray-800">
+        <!-- Detailed Evaluations Section -->
+        <section class="mt-6 sm:mt-8 bg-white p-4 sm:p-6 rounded-lg shadow-md lg:col-span-5">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3 sm:gap-0">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800">
             Detailed Evaluations
           </h2>
-          <select v-model="detailedFilter" class="border rounded-md px-3 py-1.5 text-sm">
+          <select v-model="detailedFilter" class="border rounded-md px-3 py-1.5 text-sm w-full sm:w-auto">
             <option value="All">
               All Athletes
             </option>
-            <option v-for="athlete in sessionReport.participatingAthletes" :key="athlete.uuid" :value="athlete.uuid">
+            <option v-for="athlete in sessionReport?.participatingAthletes" :key="athlete.uuid" :value="athlete.uuid">
               {{ athlete.name }}
             </option>
           </select>
         </div>
-        <div class="overflow-x-auto">
+        
+        <!-- Mobile: Card layout -->
+        <div class="block sm:hidden space-y-3">
+          <div v-if="filteredDetailedEvaluations.length === 0" class="text-center py-8 text-gray-500">
+            No evaluations for this filter.
+          </div>
+          <div v-for="(item, index) in filteredDetailedEvaluations" :key="index" class="border rounded-lg p-3 hover:bg-gray-50">
+            <div class="flex items-center mb-2">
+              <NuxtImg
+                :src="item.athlete.profile_image_url || '/default-profile.jpg'"
+                :alt="item.athlete.name"
+                format="webp"
+                width="32"
+                height="32"
+                loading="lazy"
+                class="w-8 h-8 rounded-full mr-3"
+              />
+              <div class="flex-grow">
+                <span class="font-medium text-sm">{{ item.athlete.name }}</span>
+                <span v-if="item.isGuest" class="ml-2 px-2 py-0.5 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Guest</span>
+              </div>
+              <span class="font-mono text-xs text-gray-500">{{ formatTime(item.evaluation.time) }}</span>
+            </div>
+            <div class="text-sm text-gray-700 mb-2">
+              <strong>Task:</strong> {{ item.task.name }}
+            </div>
+            <div class="mb-2">
+              <div class="text-xs text-gray-500 mb-1">Scores:</div>
+              <div class="flex flex-wrap gap-1">
+                <span v-for="(score, skillId) in item.evaluation.scores" :key="skillId" class="bg-gray-200 text-gray-800 text-xs font-mono px-2 py-1 rounded-md">
+                  {{ getSkillName(Number(skillId)) }}: {{ score }}
+                </span>
+              </div>
+            </div>
+            <div v-if="item.evaluation.notes" class="text-xs text-gray-500">
+              <strong>Notes:</strong> {{ item.evaluation.notes }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop: Table layout -->
+        <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="border-b text-gray-500">
               <tr>
@@ -258,7 +303,8 @@
             </tbody>
           </table>
         </div>
-      </section>
+        </section>
+      </main>
     </div>
   </div>
 </template>

@@ -4,14 +4,14 @@
     <div>
       <!-- Hero Section -->
       <div
-        class="flex items-center justify-center bg-[url(/landing-bg2.jpg)] w-full h-screen bg-center bg-cover bg-no-repeat">
+        class="flex items-center justify-center bg-[url(/landing-bg2.jpg)] w-full min-h-screen bg-center bg-cover bg-no-repeat">
         <div class="container mx-auto px-4 h-full">
-          <div class="grid grid-cols-2 h-full items-center">
-            <div class="flex flex-col justify-center">
-              <h1 class="text-7xl font-bold text-white mb-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 h-full items-center">
+            <div class="flex flex-col justify-center text-center md:text-left">
+              <h1 class="text-4xl md:text-7xl font-bold text-white mb-5">
                 Revolutionize Your Basketball Coaching
               </h1>
-              <p class="text-white mb-4">
+              <p class="text-white mb-4 text-base md:text-lg">
                 All-in-one platform for creating, managing, and tracking basketball training programs
                 with gamification and analytics.
               </p>
@@ -39,7 +39,7 @@
           </div>
           <div class="grid">
             <div class="grid-rows-2">
-              <div class="grid grid-cols-3 gap-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                 <div ref="featureCard1" class="bg-white shadow-xl mb-5">
                   <div class="p-5 text-center">
                     <div class="flex items-center justify-center mb-2">
@@ -82,7 +82,7 @@
                   </div>
                 </div>
               </div>
-              <div class="grid grid-cols-3 gap-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 mt-5 md:grid-cols-3 gap-5">
                 <div ref="featureCard4" class="bg-white shadow-xl mb-5">
                   <div class="p-5 text-center">
                     <div class="flex items-center justify-center mb-2">
@@ -142,9 +142,9 @@
             </p>
           </div>
           <div class="flex justify-center">
-            <nuxt-link to="/register" class="mb-16">
+            <nuxt-link to="/register" class="mb-16 w-full sm:w-auto">
               <button
-                class="bg-white text-[#9C1313] font-bold border-4 border-[#9C1313] border-solid px-4 py-2 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto">
+                class="w-full sm:w-auto bg-white text-[#9C1313] font-bold border-4 border-[#9C1313] border-solid px-4 py-2 rounded-xl hover:bg-[#9C1313] hover:text-white mx-auto">
                 Sign up now
               </button>
             </nuxt-link>

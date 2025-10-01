@@ -5,7 +5,7 @@
     </div>
     <div class="flex justify-between items-start">
       <div class="flex items-center space-x-3 flex-1">
-        <div class="drag-handle w-8 h-8 bg-[#fdcdcd] rounded-lg flex items-center justify-center hover:bg-[#ffa5a5] transition-colors cursor-grab active:cursor-grabbing">
+        <div class="drag-handle w-8 h-8 bg-[#fdcdcd] rounded-lg hidden lg:flex items-center justify-center hover:bg-[#ffa5a5] transition-colors cursor-grab active:cursor-grabbing">
           <Icon name="mdi:drag-horizontal-variant" size="1rem" class="text-[#9c1313]" />
         </div>
         <div class="flex-1">
@@ -24,7 +24,7 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center space-x-2 no-drag">
+      <div class="hidden lg:flex items-center space-x-2 no-drag">
         <button
           class="flex items-center text-sm px-2 py-1 rounded transition-colors"
           :class="{

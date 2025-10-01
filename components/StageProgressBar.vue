@@ -1,5 +1,5 @@
 <template>
-  <div class="">
+  <div class="hidden md:block">
     <!-- Scrollable progress container -->
     <div ref="container" class="relative overflow-x-auto pb-4 hide-scrollbar flex justify-center">
       <!-- Progress Steps -->

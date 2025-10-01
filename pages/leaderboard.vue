@@ -3,12 +3,12 @@
     <SubNavbar />
     <div class="max-w-[1140px] mx-auto py-8 px-4 lg:px-0">
       <!-- Header Section -->
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
-        <div>
-          <h1 class="text-3xl md:text-4xl font-bold text-gray-800">
+      <div class="flex flex-col sm:flex-row lg:flex-row justify-between items-start sm:items-center lg:items-center mb-6 sm:mb-8">
+        <div class="flex-1 min-w-0">
+          <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
             Athlete Leaderboard
           </h1>
-          <p class="text-gray-600 mt-1">
+          <p class="text-sm sm:text-base text-gray-600 mt-1">
             Ranking athletes by performance and improvement momentum
           </p>
           <div v-if="athletes && athletes.length > 0" class="mt-2 flex items-center gap-4 text-sm text-gray-500">
@@ -205,14 +205,16 @@
             <!-- Mobile notification banner -->
             <div 
               v-if="selectedAthleteUuid && detailedAthlete"
-              class="xl:hidden bg-[#9C1313] text-white p-4 rounded-xl mb-4 flex items-center gap-3"
+              class="xl:hidden bg-[#9C1313] text-white p-4 rounded-xl mb-4 flex items-center gap-3 shadow-lg animate-fade-in"
             >
               <Icon name="mdi:account-details" class="w-5 h-5" />
               <div class="flex-1">
                 <p class="font-semibold">{{ detailedAthlete.name }}</p>
-                <p class="text-sm text-white/80">Details loaded below</p>
+                <p class="text-sm text-white/80">Athlete details loaded</p>
               </div>
-              <Icon name="mdi:chevron-down" class="w-5 h-5 animate-bounce" />
+              <div class="flex items-center gap-2">
+                <Icon name="mdi:chevron-down" class="w-5 h-5 animate-bounce" />
+              </div>
             </div>
             
             <div id="athlete-detail-card">
@@ -234,6 +236,8 @@
       </div>
 
     </div>
+
+
   </div>
 </template>
 
@@ -248,7 +252,18 @@ const { fetchLeaderboard, fetchAthleteDetailOptimized } = useLeaderboard();
 // Fetch leaderboard data with SSR support
 const { data: athletes, pending: _isLoadingAthletes, refresh: refreshAthletesData } = await fetchLeaderboard();
 
+const route = useRoute();
 const selectedAthleteUuid = ref<string | null>(null);
+
+// Check if athlete UUID is passed from route query (mobile navigation)
+onMounted(() => {
+  if (route.query.athlete && typeof route.query.athlete === 'string') {
+    selectedAthleteUuid.value = route.query.athlete;
+    // Clear the query parameter from URL after setting the selection
+    const router = useRouter();
+    router.replace({ query: {} });
+  }
+});
 const sortBy = ref<'rank' | 'score' | 'growth' | 'momentum'>('rank');
 const sortOrder = ref<'asc' | 'desc'>('asc');
 

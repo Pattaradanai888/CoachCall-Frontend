@@ -11,9 +11,9 @@
     />
 
     <div
-      class="bg-white rounded-xl shadow-lg flex max-w-[1140px] w-full mx-auto h-[600px] max-h-[80vh] my-10 mt-[6.5rem]"
+      class="bg-transparent md:bg-white rounded-xl shadow-none md:shadow-lg flex flex-col md:flex-row max-w-[1140px] w-full mx-auto h-auto md:h-[600px] max-h-[80vh] my-10 mt-[6.5rem]"
     >
-      <div class="relative w-1/2 rounded-l-xl overflow-hidden">
+      <div class="hidden md:block relative w-1/2 rounded-l-xl overflow-hidden">
         <picture>
           <source srcset="/auth-bg.avif" type="image/avif">
           <source srcset="/auth-bg.webp" type="image/webp">
@@ -37,7 +37,7 @@
         </div>
       </div>
 
-      <div v-motion-pop :delay="100" class="w-1/2 p-12 flex flex-col justify-center">
+  <div v-motion-pop :delay="100" class="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center min-h-[60vh] md:min-h-0">
         <h2 class="text-2xl font-bold mb-2 text-center">
           Verify Your <span class="text-red-800">Email</span>
         </h2>
