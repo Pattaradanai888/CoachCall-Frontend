@@ -37,10 +37,12 @@
   "devDependencies": {
     "@antfu/eslint-config": "^4.13.2",
     "@iconify-json/mdi": "^1.2.3",
+    "@playwright/test": "^1.55.1",
+    "@types/node": "^24.6.1",
     "@types/sortablejs": "^1.15.8",
     "eslint": "^9.28.0"
   },
   "engines": {
-      "node": "^20.0.0"
-    }
+    "node": "^20.0.0"
+  }
 }

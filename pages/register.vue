@@ -282,21 +282,63 @@ const onSubmit = handleSubmit(async (values) => {
   }
   catch (error) {
     console.error('Registration failed:', error);
-    if (
-      error && typeof error === 'object' && 'response' in error && error.response
-      && typeof error.response === 'object' && 'data' in error.response && error.response.data
-      && typeof error.response.data === 'object' && 'detail' in error.response.data
-    ) {
-      const detail = error.response.data.detail;
-      if (typeof detail === 'string' && detail.toLowerCase().includes('email already registered')) {
-        setErrors({ email: 'This email is already registered.' });
+    
+    // Helper function to extract error message from various error structures
+    const getErrorMessage = (err: unknown): string => {
+      try {
+        // Try to extract message from common error structures with proper type guards
+        if (err && typeof err === 'object') {
+          const errorObj = err as Record<string, unknown>;
+          
+          // Common axios/fetch error patterns - check each safely
+          const candidates = [
+            errorObj.response && typeof errorObj.response === 'object' 
+              ? (errorObj.response as Record<string, unknown>).data && typeof (errorObj.response as Record<string, unknown>).data === 'object'
+                ? ((errorObj.response as Record<string, unknown>).data as Record<string, unknown>).detail
+                : undefined
+              : undefined,
+            errorObj.response && typeof errorObj.response === 'object' 
+              ? (errorObj.response as Record<string, unknown>).data && typeof (errorObj.response as Record<string, unknown>).data === 'object'
+                ? ((errorObj.response as Record<string, unknown>).data as Record<string, unknown>).message
+                : undefined
+              : undefined,
+            errorObj.data && typeof errorObj.data === 'object'
+              ? (errorObj.data as Record<string, unknown>).detail
+              : undefined,
+            errorObj.data && typeof errorObj.data === 'object'
+              ? (errorObj.data as Record<string, unknown>).message
+              : undefined,
+            errorObj.detail,
+            errorObj.message,
+            errorObj.error
+          ];
+          
+          for (const candidate of candidates) {
+            if (typeof candidate === 'string' && candidate.trim()) {
+              return candidate;
+            }
+          }
+        }
+        
+        return 'An unexpected error occurred during registration.';
+      } catch {
+        return 'An unexpected error occurred during registration.';
       }
-      else {
-        setErrors({ fullname: String(detail) || 'An unknown server error occurred.' });
-      }
-    }
-    else {
-      setErrors({ fullname: 'An unexpected error occurred during registration.' });
+    };
+    
+    const errorMessage = getErrorMessage(error);
+    console.log('Extracted error message:', errorMessage);
+    console.log('Full error object:', error);
+    
+    // Check if the error message indicates email already exists
+    if (errorMessage.toLowerCase().includes('email') && 
+        (errorMessage.toLowerCase().includes('already') || 
+         errorMessage.toLowerCase().includes('exists') || 
+         errorMessage.toLowerCase().includes('registered') ||
+         errorMessage.toLowerCase().includes('taken'))) {
+      setErrors({ email: 'This email is already registered.' });
+    } else {
+      setErrors({ fullname: errorMessage });
     }
   }
 });
