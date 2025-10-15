@@ -16,7 +16,7 @@
         v-bind="field"
         :type="type"
         :placeholder="placeholder"
-        :readonly="readonly"
+        :readonly="props.isReadonly"
         :min="min"
         :max="max"
         :step="step"
@@ -77,7 +77,7 @@ interface Props {
   iconColor?: string;
   required?: boolean;
   optional?: boolean;
-  readonly?: boolean;
+  isReadonly?: boolean;
   min?: string | number;
   max?: string | number;
   step?: string | number;
@@ -101,7 +101,7 @@ function inputClasses(errorMessage?: string) {
     ? `border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500`
     : `border-gray-300 focus:ring-2 focus:ring-[#9C1313] focus:border-[#9C1313]`;
 
-  return props.readonly
+  return props.isReadonly
     ? `${base} bg-gray-50 text-gray-600 cursor-not-allowed`
     : base;
 }
