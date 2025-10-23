@@ -15,18 +15,18 @@
     <div v-else class="max-w-7xl mx-auto">
       <!-- Responsive Header: Overall Progress -->
       <header class="bg-white p-4 sm:p-6 rounded-xl shadow-md mb-4 sm:mb-6">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-6 mb-4 sm:mb-6">
-          <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">
+        <div class="flex flex-row justify-between items-center gap-2 sm:gap-6 mb-4 sm:mb-6">
+          <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 flex-1 min-w-0">
             {{ course?.name || 'Quick Session' }}
           </h1>
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-shrink-0">
-            <span class="px-3 py-1 text-sm font-semibold text-gray-700 bg-gray-200 rounded-full flex items-center">
-              <Icon name="mdi:clock-outline" class="mr-1.5" />
-              Active Time: {{ formattedSessionTime }}
+          <div class="flex flex-row items-center gap-1 sm:gap-2 flex-shrink-0">
+            <span class="px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold text-gray-700 bg-gray-200 rounded-full flex items-center">
+              <Icon name="mdi:clock-outline" class="mr-1 sm:mr-1.5" size="0.875rem sm:1rem" />
+              <span class="hidden sm:inline">Active Time: </span>{{ formattedSessionTime }}
             </span>
-            <button class="px-3 py-1.5 text-sm font-semibold text-red-600 bg-red-200 rounded-full hover:bg-red-400 hover:text-red-900 transition flex items-center" @click="handleCancel">
-              <Icon name="mdi:close-circle-outline" class="mr-1.5" />
-              Cancel Session
+            <button class="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold text-red-600 bg-red-200 rounded-full hover:bg-red-400 hover:text-red-900 transition flex items-center" @click="handleCancel">
+              <Icon name="mdi:close-circle-outline" class="mr-1 sm:mr-1.5" size="0.875rem sm:1rem" />
+              <span class="hidden sm:inline">Cancel Session</span>
             </button>
           </div>
         </div>
@@ -321,45 +321,50 @@
               </div>
             </div>
 
-            <div class="mb-8">
-              <h3 class="text-sm font-bold text-gray-600 mb-3">
-                Quick Score
-              </h3>
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <button
-                  v-for="score in quickScores" :key="score.label"
-                  class="px-4 py-1.5 text-sm border rounded-full transition-colors"
-                  :class="[
-                    selectedQuickScore === score.label
-                      ? 'bg-red-800 text-white border-red-800 font-bold'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
-                  ]"
-                  @click="applyQuickScore(score.label)"
-                >
-                  {{ score.label }}
-                </button>
-              </div>
-            </div>
-
             <div class="space-y-6 mb-6">
               <div v-for="metric in currentTask.skill_weights" :key="metric.skill_id">
-                <div class="flex justify-between items-center mb-1">
+                <div class="flex justify-between items-center mb-2">
                   <label class="font-semibold text-gray-700">
                     {{ metric.skill_name }}
                     <span class="ml-2 text-xs font-mono bg-gray-200 px-1.5 py-0.5 rounded">{{ parseFloat(metric.weight) * 100 }}%</span>
                   </label>
-                  <span class="font-bold text-gray-800">{{ currentScores[metric.skill_id] || 0 }}%</span>
+                  <span class="font-bold text-gray-800">{{ getScoreLabel(currentScores[metric.skill_id] || 0) }}</span>
                 </div>
-                <input
-                  v-model.number="currentScores[metric.skill_id]"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="5"
-                  class="w-full h-2 rounded-lg appearance-none cursor-pointer range-thumb"
-                  :style="{ background: `linear-gradient(to right, #991B1B ${currentScores[metric.skill_id] || 0}%, #E5E7EB ${currentScores[metric.skill_id] || 0}%)` }"
-                  @input="isDirty = true; selectedQuickScore = null;"
-                >
+                <div class="flex gap-2">
+                  <button
+                    class="flex-1 px-3 py-2 text-sm border rounded-lg transition-colors"
+                    :class="[
+                      (currentScores[metric.skill_id] || 0) === 25
+                        ? 'bg-red-100 text-red-800 border-red-300 font-semibold'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    ]"
+                    @click="setScore(metric.skill_id, 25)"
+                  >
+                    Needs Improvement
+                  </button>
+                  <button
+                    class="flex-1 px-3 py-2 text-sm border rounded-lg transition-colors"
+                    :class="[
+                      (currentScores[metric.skill_id] || 0) === 65
+                        ? 'bg-yellow-100 text-yellow-800 border-yellow-300 font-semibold'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    ]"
+                    @click="setScore(metric.skill_id, 65)"
+                  >
+                    Developing
+                  </button>
+                  <button
+                    class="flex-1 px-3 py-2 text-sm border rounded-lg transition-colors"
+                    :class="[
+                      (currentScores[metric.skill_id] || 0) === 90
+                        ? 'bg-green-100 text-green-800 border-green-300 font-semibold'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    ]"
+                    @click="setScore(metric.skill_id, 90)"
+                  >
+                    Proficient
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -401,7 +406,7 @@
 
         <!-- Performance Scoring Section - Mobile: Full width -->
         <section v-if="participatingAthletes.length > 0 && currentTask && currentAthlete" class="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:hidden">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-0">
+          <div class="flex flex-col sm:flex-row justify-between items-center sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-0">
             <div class="flex items-center mb-2 sm:mb-0">
               <NuxtImg
                 :src="currentAthlete.profile_image_url || '/default-profile.jpg'"
@@ -422,7 +427,7 @@
                 </p>
               </div>
             </div>
-            <div class="flex items-center space-x-2 text-gray-600 bg-gray-100 p-1 rounded-lg">
+            <div class="flex items-center justify-center space-x-2 text-gray-600 bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
               <Icon name="mdi:timer-outline" size="1.2rem" />
               <span class="font-mono text-base font-bold">{{ formattedTaskTime }}</span>
               <button class="hover:text-gray-900" @click="toggleTaskTimer">
@@ -434,45 +439,50 @@
             </div>
           </div>
 
-          <div class="mb-6">
-            <h3 class="text-xs font-bold text-gray-600 mb-2">
-              Quick Score
-            </h3>
-            <div class="flex flex-wrap items-center gap-x-2 gap-y-2">
-              <button
-                v-for="score in quickScores" :key="score.label"
-                class="px-3 py-1 text-xs border rounded-full transition-colors"
-                :class="[
-                  selectedQuickScore === score.label
-                    ? 'bg-red-800 text-white border-red-800 font-bold'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
-                ]"
-                @click="applyQuickScore(score.label)"
-              >
-                {{ score.label }}
-              </button>
-            </div>
-          </div>
-
           <div class="space-y-4 mb-4">
             <div v-for="metric in currentTask.skill_weights" :key="metric.skill_id">
-              <div class="flex justify-between items-center mb-1">
+              <div class="flex justify-between items-center mb-2">
                 <label class="font-semibold text-gray-700 text-xs">
                   {{ metric.skill_name }}
                   <span class="ml-2 text-xs font-mono bg-gray-200 px-1.5 py-0.5 rounded">{{ parseFloat(metric.weight) * 100 }}%</span>
                 </label>
-                <span class="font-bold text-gray-800 text-xs">{{ currentScores[metric.skill_id] || 0 }}%</span>
+                <span class="font-bold text-gray-800 text-xs">{{ getScoreLabel(currentScores[metric.skill_id] || 0) }}</span>
               </div>
-              <input
-                v-model.number="currentScores[metric.skill_id]"
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                class="w-full h-2 rounded-lg appearance-none cursor-pointer range-thumb"
-                :style="{ background: `linear-gradient(to right, #991B1B ${currentScores[metric.skill_id] || 0}%, #E5E7EB ${currentScores[metric.skill_id] || 0}%)` }"
-                @input="isDirty = true; selectedQuickScore = null;"
-              >
+              <div class="flex gap-1">
+                <button
+                  class="flex-1 px-2 py-1.5 text-xs border rounded-md transition-colors"
+                  :class="[
+                    (currentScores[metric.skill_id] || 0) === 25
+                      ? 'bg-red-100 text-red-800 border-red-300 font-semibold'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  ]"
+                  @click="setScore(metric.skill_id, 25)"
+                >
+                  Needs Improvement
+                </button>
+                <button
+                  class="flex-1 px-2 py-1.5 text-xs border rounded-md transition-colors"
+                  :class="[
+                    (currentScores[metric.skill_id] || 0) === 65
+                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300 font-semibold'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  ]"
+                  @click="setScore(metric.skill_id, 65)"
+                >
+                  Developing
+                </button>
+                <button
+                  class="flex-1 px-2 py-1.5 text-xs border rounded-md transition-colors"
+                  :class="[
+                    (currentScores[metric.skill_id] || 0) === 90
+                      ? 'bg-green-100 text-green-800 border-green-300 font-semibold'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  ]"
+                  @click="setScore(metric.skill_id, 90)"
+                >
+                  Proficient
+                </button>
+              </div>
             </div>
           </div>
 
@@ -634,14 +644,7 @@ const notificationTitle = ref('');
 const notificationMessage = ref('');
 const notificationType = ref<'success' | 'error'>('success');
 
-const quickScores = [
-  { label: 'Poor', value: 20 },
-  { label: 'Needs Work', value: 40 },
-  { label: 'Average', value: 60 },
-  { label: 'Good', value: 80 },
-  { label: 'Excellent', value: 100 },
-];
-const selectedQuickScore = ref<string | null>(null);
+
 
 const tasks = computed<Task[]>(() => session.value?.tasks.map(st => st.task) || []);
 const totalTasks = computed(() => tasks.value.length);
@@ -789,7 +792,6 @@ function loadCurrentEvaluationForm() {
     currentScores.value = { ...currentEval.value.scores };
     notes.value = currentEval.value.notes;
     isDirty.value = false;
-    selectedQuickScore.value = null;
   }
 }
 
@@ -1028,15 +1030,16 @@ function findTaskSequence(taskId: number): number {
   return session.value?.tasks.find(st => st.task.id === taskId)?.sequence || 0;
 }
 
-function applyQuickScore(label: string) {
-  selectedQuickScore.value = label;
-  const score = quickScores.find(s => s.label === label);
-  if (score && currentTask.value) {
-    for (const metric of currentTask.value.skill_weights) {
-      currentScores.value[metric.skill_id] = score.value;
-    }
-    isDirty.value = true;
-  }
+function setScore(skillId: number, score: number) {
+  currentScores.value[skillId] = score;
+  isDirty.value = true;
+}
+
+function getScoreLabel(score: number): string {
+  if (score <= 0) return 'Not Scored';
+  if (score <= 35) return 'Needs Improvement';
+  if (score <= 75) return 'Developing';
+  return 'Proficient';
 }
 
 function handleNotificationClose() {
