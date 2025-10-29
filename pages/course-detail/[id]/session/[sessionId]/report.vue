@@ -228,11 +228,27 @@
               <strong>Task:</strong> {{ item.task.name }}
             </div>
             <div class="mb-2">
-              <div class="text-xs text-gray-500 mb-1">Scores:</div>
-              <div class="flex flex-wrap gap-1">
-                <span v-for="(score, skillId) in item.evaluation.scores" :key="skillId" class="bg-gray-200 text-gray-800 text-xs font-mono px-2 py-1 rounded-md">
-                  {{ getSkillName(Number(skillId)) }}: {{ score }}
-                </span>
+              <div class="text-xs text-gray-500 mb-1">Skills Evaluated:</div>
+              <div class="space-y-2">
+                <div v-for="(score, skillId) in item.evaluation.scores" :key="skillId" class="bg-gray-50 border border-gray-200 rounded-md p-2">
+                  <!-- Skill header with final score -->
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-semibold text-gray-700">{{ getSkillName(Number(skillId)) }}</span>
+                    <span class="text-xs font-bold text-red-600">{{ formatScore(score) }}</span>
+                  </div>
+                  
+                  <!-- Indicator ratings (if available) -->
+                  <div v-if="hasIndicators(score)" class="flex flex-wrap gap-1">
+                    <span
+                      v-for="(rating, indicatorName) in getIndicators(score)"
+                      :key="indicatorName"
+                      class="text-xs px-2 py-0.5 rounded-full"
+                      :class="getIndicatorBadgeClass(rating)"
+                    >
+                      {{ indicatorName }}: {{ getRatingLabel(rating) }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
             <div v-if="item.evaluation.notes" class="text-xs text-gray-500">
@@ -287,10 +303,26 @@
                   {{ item.task.name }}
                 </td>
                 <td class="py-3 px-3">
-                  <div class="flex flex-wrap gap-2">
-                    <span v-for="(score, skillId) in item.evaluation.scores" :key="skillId" class="bg-gray-200 text-gray-800 text-xs font-mono px-2 py-1 rounded-md">
-                      {{ getSkillName(Number(skillId)) }}: {{ score }}
-                    </span>
+                  <div class="space-y-2 max-w-md">
+                    <div v-for="(score, skillId) in item.evaluation.scores" :key="skillId" class="bg-gray-50 border border-gray-200 rounded-md p-2">
+                      <!-- Skill header with final score -->
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-semibold text-gray-700">{{ getSkillName(Number(skillId)) }}</span>
+                        <span class="text-xs font-bold text-red-600">{{ formatScore(score) }}</span>
+                      </div>
+                      
+                      <!-- Indicator ratings (if available) -->
+                      <div v-if="hasIndicators(score)" class="flex flex-wrap gap-1">
+                        <span
+                          v-for="(rating, indicatorName) in getIndicators(score)"
+                          :key="indicatorName"
+                          class="text-xs px-2 py-0.5 rounded-full"
+                          :class="getIndicatorBadgeClass(rating)"
+                        >
+                          {{ indicatorName }}: {{ getRatingLabel(rating) }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </td>
                 <td class="py-3 px-3 font-mono">
@@ -409,7 +441,16 @@ const athleteSummaries = computed(() => {
 
       const task = sessionTask.task;
       const singleTaskWeightedScore = task.skill_weights.reduce((taskSum, metric) => {
-        const scoreForSkill = evalData.scores[metric.skill_id] || 0;
+        const scoreValue = evalData.scores[metric.skill_id] as ScoreValue;
+        
+        // Handle new format (object with final_score) or old format (just a number)
+        let scoreForSkill = 0;
+        if (hasIndicators(scoreValue)) {
+          scoreForSkill = scoreValue.final_score;
+        } else if (typeof scoreValue === 'number') {
+          scoreForSkill = scoreValue;
+        }
+        
         const weight = Number.parseFloat(String(metric.weight));
         return taskSum + (scoreForSkill * weight);
       }, 0);
@@ -492,6 +533,53 @@ const filteredDetailedEvaluations = computed(() => {
       return detailedFilter.value === 'All' || item.athleteUuid === detailedFilter.value;
     });
 });
+
+// Helper functions for indicator-based score display
+type ScoreValue = number | { indicators: Record<string, number>; final_score: number };
+
+function hasIndicators(score: ScoreValue): score is { indicators: Record<string, number>; final_score: number } {
+  return typeof score === 'object' && score !== null && 'indicators' in score;
+}
+
+function getIndicators(score: ScoreValue): Record<string, number> {
+  if (hasIndicators(score)) {
+    return score.indicators || {};
+  }
+  return {};
+}
+
+function formatScore(score: ScoreValue): string {
+  if (hasIndicators(score)) {
+    // New format: { indicators: {...}, final_score: 66.67 }
+    return `${score.final_score.toFixed(1)}%`;
+  }
+  // Old format: just a number
+  if (typeof score === 'number') {
+    return `${score.toFixed(1)}%`;
+  }
+  return 'N/A';
+}
+
+function getRatingLabel(rating: number): string {
+  if (rating === 1) return 'Needs Work';
+  if (rating === 2) return 'Developing';
+  if (rating === 3) return 'Proficient';
+  return 'N/A';
+}
+
+function getIndicatorBadgeClass(rating: number): string {
+  if (rating === 1) {
+    // Red - Needs Improvement
+    return 'bg-red-100 text-red-800 border border-red-200';
+  } else if (rating === 2) {
+    // Yellow - Developing
+    return 'bg-yellow-100 text-yellow-900 border border-yellow-200';
+  } else if (rating === 3) {
+    // Green - Proficient
+    return 'bg-green-100 text-green-800 border border-green-200';
+  }
+  return 'bg-gray-100 text-gray-800 border border-gray-200';
+}
 
 onMounted(() => {
   if (athleteSummaries.value.length > 0) {

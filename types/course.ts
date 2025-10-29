@@ -19,17 +19,21 @@ export interface TaskSkillWeightPayload {
 }
 
 export interface TaskCreatePayload {
+  id?: number;
   name: string;
   description?: string | null;
   duration_minutes: number;
+  sequence?: number;
   skill_weights: TaskSkillWeightPayload[];
 }
 
 export interface SessionCreatePayload {
+  id?: number;
   name: string;
   description?: string | null;
   scheduled_date: string;
   is_template?: boolean;
+  sequence?: number;
   tasks: TaskCreatePayload[];
 }
 
@@ -133,8 +137,8 @@ export interface CourseListEntryWithProgress extends CourseListEntry {
 export interface TaskCompletionPayload {
   athlete_uuid: string;
   task_id: number;
-  score: number;
-  scores: Record<number, number>;
+  score: number;  // Not used in new system - backend calculates from indicator ratings
+  scores: Record<number, number> | Record<number, Record<string, number>>;  // OLD: skill_id → score | NEW: skill_id → { indicator: rating }
   notes: string;
   time: number;
 }

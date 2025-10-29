@@ -312,6 +312,11 @@
               <div class="flex items-center space-x-3 text-gray-600 bg-gray-100 p-2 rounded-lg">
                 <Icon name="mdi:timer-outline" size="1.5rem" />
                 <span class="font-mono text-xl font-bold">{{ formattedTaskTime }}</span>
+                <div class="flex items-center space-x-1">
+                  <button class="px-2 py-0.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50" title="Add 1 minute" @click="addExtraTime(60)">+1</button>
+                  <button class="px-2 py-0.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50" title="Add 3 minutes" @click="addExtraTime(180)">+3</button>
+                  <button class="px-2 py-0.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50" title="Add 5 minutes" @click="addExtraTime(300)">+5</button>
+                </div>
                 <button class="hover:text-gray-900" @click="toggleTaskTimer">
                   <Icon :name="currentEval?.isTimerRunning ? 'mdi:pause-circle' : 'mdi:play-circle'" size="1.7rem" :class="currentEval?.isTimerRunning ? 'text-red-600' : 'text-green-600'" />
                 </button>
@@ -321,51 +326,17 @@
               </div>
             </div>
 
-            <div class="space-y-6 mb-6">
-              <div v-for="metric in currentTask.skill_weights" :key="metric.skill_id">
-                <div class="flex justify-between items-center mb-2">
-                  <label class="font-semibold text-gray-700">
-                    {{ metric.skill_name }}
-                    <span class="ml-2 text-xs font-mono bg-gray-200 px-1.5 py-0.5 rounded">{{ parseFloat(metric.weight) * 100 }}%</span>
-                  </label>
-                  <span class="font-bold text-gray-800">{{ getScoreLabel(currentScores[metric.skill_id] || 0) }}</span>
-                </div>
-                <div class="flex gap-2">
-                  <button
-                    class="flex-1 px-3 py-2 text-sm border rounded-lg transition-colors"
-                    :class="[
-                      (currentScores[metric.skill_id] || 0) === 25
-                        ? 'bg-red-100 text-red-800 border-red-300 font-semibold'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    ]"
-                    @click="setScore(metric.skill_id, 25)"
-                  >
-                    Needs Improvement
-                  </button>
-                  <button
-                    class="flex-1 px-3 py-2 text-sm border rounded-lg transition-colors"
-                    :class="[
-                      (currentScores[metric.skill_id] || 0) === 65
-                        ? 'bg-yellow-100 text-yellow-800 border-yellow-300 font-semibold'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    ]"
-                    @click="setScore(metric.skill_id, 65)"
-                  >
-                    Developing
-                  </button>
-                  <button
-                    class="flex-1 px-3 py-2 text-sm border rounded-lg transition-colors"
-                    :class="[
-                      (currentScores[metric.skill_id] || 0) === 90
-                        ? 'bg-green-100 text-green-800 border-green-300 font-semibold'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    ]"
-                    @click="setScore(metric.skill_id, 90)"
-                  >
-                    Proficient
-                  </button>
-                </div>
-              </div>
+            <!-- Skills Evaluation Section -->
+            <div class="space-y-4 mb-6">
+              <SkillRubricEvaluator
+                v-for="metric in currentTask.skill_weights"
+                :key="metric.skill_id"
+                v-model="currentScores[metric.skill_id]"
+                :skill-id="metric.skill_id"
+                :skill-name="metric.skill_name"
+                :weight="parseFloat(metric.weight)"
+                @update:model-value="(ratings) => updateSkillEvaluation(metric.skill_id, ratings)"
+              />
             </div>
 
             <div class="mb-6">
@@ -430,6 +401,11 @@
             <div class="flex items-center justify-center space-x-2 text-gray-600 bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
               <Icon name="mdi:timer-outline" size="1.2rem" />
               <span class="font-mono text-base font-bold">{{ formattedTaskTime }}</span>
+              <div class="flex items-center space-x-1">
+                <button class="px-1.5 py-0.5 text-[0.7rem] bg-white border border-gray-300 rounded hover:bg-gray-50" title="Add 1 minute" @click="addExtraTime(60)">+1</button>
+                <button class="px-1.5 py-0.5 text-[0.7rem] bg-white border border-gray-300 rounded hover:bg-gray-50" title="Add 3 minutes" @click="addExtraTime(180)">+3</button>
+                <button class="px-1.5 py-0.5 text-[0.7rem] bg-white border border-gray-300 rounded hover:bg-gray-50" title="Add 5 minutes" @click="addExtraTime(300)">+5</button>
+              </div>
               <button class="hover:text-gray-900" @click="toggleTaskTimer">
                 <Icon :name="currentEval?.isTimerRunning ? 'mdi:pause-circle' : 'mdi:play-circle'" size="1.3rem" :class="currentEval?.isTimerRunning ? 'text-red-600' : 'text-green-600'" />
               </button>
@@ -439,51 +415,17 @@
             </div>
           </div>
 
-          <div class="space-y-4 mb-4">
-            <div v-for="metric in currentTask.skill_weights" :key="metric.skill_id">
-              <div class="flex justify-between items-center mb-2">
-                <label class="font-semibold text-gray-700 text-xs">
-                  {{ metric.skill_name }}
-                  <span class="ml-2 text-xs font-mono bg-gray-200 px-1.5 py-0.5 rounded">{{ parseFloat(metric.weight) * 100 }}%</span>
-                </label>
-                <span class="font-bold text-gray-800 text-xs">{{ getScoreLabel(currentScores[metric.skill_id] || 0) }}</span>
-              </div>
-              <div class="flex gap-1">
-                <button
-                  class="flex-1 px-2 py-1.5 text-xs border rounded-md transition-colors"
-                  :class="[
-                    (currentScores[metric.skill_id] || 0) === 25
-                      ? 'bg-red-100 text-red-800 border-red-300 font-semibold'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  ]"
-                  @click="setScore(metric.skill_id, 25)"
-                >
-                  Needs Improvement
-                </button>
-                <button
-                  class="flex-1 px-2 py-1.5 text-xs border rounded-md transition-colors"
-                  :class="[
-                    (currentScores[metric.skill_id] || 0) === 65
-                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300 font-semibold'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  ]"
-                  @click="setScore(metric.skill_id, 65)"
-                >
-                  Developing
-                </button>
-                <button
-                  class="flex-1 px-2 py-1.5 text-xs border rounded-md transition-colors"
-                  :class="[
-                    (currentScores[metric.skill_id] || 0) === 90
-                      ? 'bg-green-100 text-green-800 border-green-300 font-semibold'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  ]"
-                  @click="setScore(metric.skill_id, 90)"
-                >
-                  Proficient
-                </button>
-              </div>
-            </div>
+          <!-- Skills Evaluation Section - Mobile -->
+          <div class="space-y-3 mb-4">
+            <SkillRubricEvaluator
+              v-for="metric in currentTask.skill_weights"
+              :key="metric.skill_id"
+              v-model="currentScores[metric.skill_id]"
+              :skill-id="metric.skill_id"
+              :skill-name="metric.skill_name"
+              :weight="parseFloat(metric.weight)"
+              @update:model-value="(ratings) => updateSkillEvaluation(metric.skill_id, ratings)"
+            />
           </div>
 
           <div class="mb-4">
@@ -552,11 +494,13 @@
 
 <script lang="ts" setup>
 import type { Attendee, Session, SessionCompletionPayload, Task, TaskCompletionPayload } from '~/types/course';
+import type { SkillEvaluations, IndicatorRatings } from '~/types/rubrics';
+import SkillRubricEvaluator from '~/components/evaluation/SkillRubricEvaluator.vue';
 
 type TimerState = 'ALL_RUNNING' | 'ALL_PAUSED' | 'MIXED';
 
 interface EvaluationData {
-  scores: Record<number, number>;
+  skillEvaluations: SkillEvaluations;  // skill_id → IndicatorRatings (was: scores: Record<number, number>)
   notes: string;
   time: number;
   isTimerRunning: boolean;
@@ -633,6 +577,8 @@ const sessionElapsedTime = ref(0);
 let sessionTimerId: NodeJS.Timeout | null = null;
 let taskTimerIntervalId: NodeJS.Timeout | null = null;
 const isSessionTimerActive = ref(false);
+// Extra time allowance per evaluation key ("athleteUuid-taskId"), in seconds
+const extraTimeByEval = ref<Record<string, number>>({});
 
 const showCancelModal = ref(false);
 const showDirtyNavModal = ref(false);
@@ -656,7 +602,7 @@ const currentAthlete = computed<Attendee | undefined>(() => participatingAthlete
 const currentEvalKey = computed(() => currentAthlete.value && currentTask.value ? `${currentAthlete.value.uuid}-${currentTask.value.id}` : '');
 const currentEval = computed(() => evaluations.value[currentEvalKey.value]);
 
-const currentScores = ref<Record<number, number>>({});
+const currentScores = ref<SkillEvaluations>({});
 const notes = ref('');
 
 const overallProgress = computed(() => totalPossibleEvals.value === 0 ? 0 : Math.round((completedEvalsCount.value / totalPossibleEvals.value) * 100));
@@ -706,7 +652,36 @@ const saveButtonTooltip = computed(() => {
 
 
 const formattedSessionTime = computed(() => formatTime(sessionElapsedTime.value));
-const formattedTaskTime = computed(() => formatTime(currentEval.value?.time || 0));
+const formattedTaskTime = computed(() => {
+  if (!currentEvalKey.value) return formatTime(0);
+  return formatTime(getRemainingSecondsForKey(currentEvalKey.value));
+});
+
+// Utility: get base duration seconds for a task
+function getTaskDurationSeconds(taskId: number): number {
+  const task = tasks.value.find(t => t.id === taskId);
+  return ((task?.duration_minutes ?? 0) * 60) | 0;
+}
+
+// Utility: compute remaining seconds for an evaluation key (clamped to 0)
+function getRemainingSecondsForKey(key: string): number {
+  if (!key) return 0;
+  const lastDashIndex = key.lastIndexOf('-');
+  if (lastDashIndex === -1) return 0;
+  const taskId = Number(key.substring(lastDashIndex + 1));
+  const base = getTaskDurationSeconds(taskId);
+  const extra = extraTimeByEval.value[key] || 0;
+  const elapsed = evaluations.value[key]?.time || 0;
+  const remaining = base + extra - elapsed;
+  return remaining > 0 ? remaining : 0;
+}
+
+// Quick-add extra time for current evaluation
+function addExtraTime(seconds: number) {
+  if (!currentEvalKey.value) return;
+  const key = currentEvalKey.value;
+  extraTimeByEval.value[key] = (extraTimeByEval.value[key] || 0) + seconds;
+}
 
 const timersState = computed<TimerState>(() => {
   if (!currentTask.value || participatingAthletes.value.length === 0)
@@ -770,17 +745,20 @@ function initializeEvaluations() {
   for (const athlete of participatingAthletes.value) {
     for (const task of tasks.value) {
       const key = `${athlete.uuid}-${task.id}`;
-      const defaultScores = task.skill_weights.reduce((acc, metric) => {
-        acc[metric.skill_id] = 0;
+      // Initialize with empty skillEvaluations (will be filled as user rates indicators)
+      const defaultSkillEvaluations = task.skill_weights.reduce((acc, metric) => {
+        acc[metric.skill_id] = {}; // Empty IndicatorRatings object
         return acc;
-      }, {} as Record<number, number>);
+      }, {} as SkillEvaluations);
       initialEvals[key] = {
-        scores: defaultScores,
+        skillEvaluations: defaultSkillEvaluations,
         notes: '',
         time: 0,
         isTimerRunning: false,
         isFinished: false,
       };
+      // Initialize extra time for this evaluation key
+      extraTimeByEval.value[key] = 0;
     }
   }
   evaluations.value = initialEvals;
@@ -789,7 +767,7 @@ function initializeEvaluations() {
 
 function loadCurrentEvaluationForm() {
   if (currentEval.value) {
-    currentScores.value = { ...currentEval.value.scores };
+    currentScores.value = { ...currentEval.value.skillEvaluations };
     notes.value = currentEval.value.notes;
     isDirty.value = false;
   }
@@ -799,8 +777,8 @@ function saveCurrentEvaluation() {
   if (!currentEval.value || !currentEvalKey.value)
     return;
 
-  // Save scores and notes
-  evaluations.value[currentEvalKey.value].scores = { ...currentScores.value };
+  // Save skillEvaluations and notes
+  evaluations.value[currentEvalKey.value].skillEvaluations = { ...currentScores.value };
   evaluations.value[currentEvalKey.value].notes = notes.value;
 
   // Mark as finished and stop timer if not already finished
@@ -914,13 +892,20 @@ function toggleTaskTimer() {
   if (currentEval.value.isFinished) {
     // Unmark as finished and resume timer
     currentEval.value.isFinished = false;
-    currentEval.value.isTimerRunning = true;
+    // Only resume if there is remaining time
+    const remaining = getRemainingSecondsForKey(currentEvalKey.value);
+    currentEval.value.isTimerRunning = remaining > 0;
     // Remove from completedEvalKeys if present
     const idx = completedEvalKeys.value.indexOf(currentEvalKey.value);
     if (idx !== -1) completedEvalKeys.value.splice(idx, 1);
     isDirty.value = true;
   } else {
-    currentEval.value.isTimerRunning = !currentEval.value.isTimerRunning;
+    if (!currentEval.value.isTimerRunning) {
+      const remaining = getRemainingSecondsForKey(currentEvalKey.value);
+      currentEval.value.isTimerRunning = remaining > 0;
+    } else {
+      currentEval.value.isTimerRunning = false;
+    }
     isDirty.value = true;
   }
 }
@@ -931,6 +916,8 @@ function resetTaskTimer() {
   currentEval.value.time = 0;
   currentEval.value.isFinished = false;
   currentEval.value.isTimerRunning = false;
+  // Reset extra time for this evaluation
+  extraTimeByEval.value[currentEvalKey.value] = 0;
   // Remove from completedEvalKeys if present
   const idx = completedEvalKeys.value.indexOf(currentEvalKey.value);
   if (idx !== -1) completedEvalKeys.value.splice(idx, 1);
@@ -945,7 +932,9 @@ function startAllTimersForCurrentTask() {
     const key = `${athlete.uuid}-${currentTask.value.id}`;
     const evaluation = evaluations.value[key];
     if (evaluation && !evaluation.isFinished) {
-      evaluation.isTimerRunning = true;
+      // Only start if there's remaining time for this evaluation
+      const remaining = getRemainingSecondsForKey(key);
+      evaluation.isTimerRunning = remaining > 0;
     }
   }
 }
@@ -981,8 +970,14 @@ function startTimers() {
     Object.keys(evaluations.value).forEach((key) => {
       const evalItem = evaluations.value[key];
       if (evalItem.isTimerRunning) {
-        evalItem.time++;
-        anyTaskTimerRunning = true;
+        const remaining = getRemainingSecondsForKey(key);
+        if (remaining <= 0) {
+          // Auto-pause when countdown reaches zero
+          evalItem.isTimerRunning = false;
+        } else {
+          evalItem.time++;
+          anyTaskTimerRunning = true;
+        }
       }
     });
     if (!anyTaskTimerRunning) {
@@ -1030,16 +1025,21 @@ function findTaskSequence(taskId: number): number {
   return session.value?.tasks.find(st => st.task.id === taskId)?.sequence || 0;
 }
 
-function setScore(skillId: number, score: number) {
-  currentScores.value[skillId] = score;
-  isDirty.value = true;
-}
+// OLD FUNCTIONS - Deprecated (will be removed after testing)
+// function setScore(skillId: number, score: number) {
+//   currentScores.value[skillId] = score;
+//   isDirty.value = true;
+// }
+// function getScoreLabel(score: number): string {
+//   if (score <= 0) return 'Not Scored';
+//   if (score <= 35) return 'Needs Improvement';
+//   if (score <= 75) return 'Developing';
+//   return 'Proficient';
+// }
 
-function getScoreLabel(score: number): string {
-  if (score <= 0) return 'Not Scored';
-  if (score <= 35) return 'Needs Improvement';
-  if (score <= 75) return 'Developing';
-  return 'Proficient';
+function updateSkillEvaluation(skillId: number, ratings: IndicatorRatings) {
+  currentScores.value[skillId] = ratings;
+  isDirty.value = true;
 }
 
 function handleNotificationClose() {
@@ -1066,16 +1066,14 @@ async function finishSession() {
     const task = tasks.value.find(t => t.id === taskId);
     if (!task)
       continue;
-    const totalWeightedScore = task.skill_weights.reduce((sum, metric) => {
-      const scoreForSkill = evalData.scores[metric.skill_id] || 0;
-      const weight = Number.parseFloat(String(metric.weight));
-      return sum + (scoreForSkill * weight);
-    }, 0);
+    
+    // NEW: Send raw indicator ratings to backend (no frontend calculation)
+    // Backend will calculate precise percentages using the formula: (sum of ratings / (count × 3)) × 100
     completions.push({
       athlete_uuid: athleteUuid,
       task_id: taskId,
-      score: totalWeightedScore,
-      scores: evalData.scores,
+      score: 0,  // Not used - backend calculates from indicator ratings
+      scores: evalData.skillEvaluations,  // Now sends { skill_id: { "Indicator": 1|2|3 } }
       notes: evalData.notes,
       time: evalData.time,
     });
