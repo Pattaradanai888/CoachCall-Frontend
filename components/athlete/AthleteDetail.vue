@@ -42,27 +42,93 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-gray-600 text-sm mb-6">
-          <div class="flex items-center">
-            <Icon name="mdi:calendar-account" size="1.25rem" class="mr-2" /><span>Age: {{ athlete.age }} years</span>
+        <div class="space-y-2 text-gray-700 text-sm">
+          <!-- Basic Info -->
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:calendar-account" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Age</span>
+            <span class="font-medium">{{ athlete.age }} years</span>
           </div>
-          <div class="flex items-center">
-            <Icon name="mdi:account-switch" size="1.25rem" class="mr-2" /><span>Position: {{ positionsText }}</span>
+
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:calendar-clock" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Date of Birth</span>
+            <span class="font-medium">{{ formattedDateOfBirth }}</span>
           </div>
-          <div class="flex items-center">
-            <Icon name="mdi:account-group" size="1.25rem" class="mr-2" /><span>Group: {{ groupsText }}</span>
+
+          <div v-if="athlete.preferredName" class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:account-heart" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Preferred Name</span>
+            <span class="font-medium">{{ athlete.preferredName }}</span>
           </div>
-          <div class="flex items-center">
-            <Icon name="mdi:hand-right" size="1.25rem" class="mr-2" /><span>Dominant Hand: {{ athlete.dominantHand }}</span>
+
+          <!-- Physical -->
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:ruler" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Height</span>
+            <span class="font-medium">{{ athlete.height ? `${athlete.height} cm` : 'Not set' }}</span>
           </div>
-          <div class="flex items-center">
-            <Icon name="mdi:ruler" size="1.25rem" class="mr-2" /><span>Height: {{ athlete.height ? `${athlete.height} cm` : 'N/A' }}</span>
+
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:scale-bathroom" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Weight</span>
+            <span class="font-medium">{{ athlete.weight ? `${athlete.weight} kg` : 'Not set' }}</span>
           </div>
-          <div class="flex items-center">
-            <Icon name="mdi:scale-bathroom" size="1.25rem" class="mr-2" /><span>Weight: {{ athlete.weight ? `${athlete.weight} kg` : 'N/A' }}</span>
+
+          <!-- Basketball Info -->
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:account-switch" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Position</span>
+            <span class="font-medium">{{ positionsText }}</span>
           </div>
-          <div class="flex items-center col-span-1 sm:col-span-2">
-            <Icon name="mdi:calendar-clock" size="1.25rem" class="mr-2" /><span>Date of Birth: {{ formattedDateOfBirth }}</span>
+
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:hand-right" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Dominant Hand</span>
+            <span class="font-medium">{{ dominantHandText }}</span>
+          </div>
+
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:star" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Experience Level</span>
+            <span class="font-medium">{{ experienceLevelText }}</span>
+          </div>
+
+          <!-- Team -->
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:shield-account" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Group</span>
+            <span class="font-medium">{{ groupsText }}</span>
+          </div>
+
+          <div class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:tshirt-crew" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Jersey Number</span>
+            <span class="font-medium">{{ jerseyNumberText }}</span>
+          </div>
+
+          <!-- Contact -->
+          <div v-if="athlete.phoneNumber" class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:phone" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Phone</span>
+            <span class="font-medium">{{ athlete.phoneNumber }}</span>
+          </div>
+
+          <div v-if="hasEmergencyContact" class="flex items-center py-2 border-b border-gray-100">
+            <Icon name="mdi:account-alert" size="1.2rem" class="mr-3 text-gray-400" />
+            <span class="text-gray-500 w-32">Emergency</span>
+            <span class="font-medium">{{ athlete.emergencyContactName || athlete.emergencyContactPhone }}</span>
+          </div>
+
+          <!-- Notes -->
+          <div v-if="athlete.notes" class="pt-2">
+            <div class="flex items-start py-2">
+              <Icon name="mdi:note-text" size="1.2rem" class="mr-3 text-gray-400 mt-0.5" />
+              <div class="flex-1">
+                <span class="text-gray-500 block mb-2">Coach Notes</span>
+                <p class="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed bg-gray-50 p-3 rounded-lg">{{ athlete.notes }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -106,9 +172,13 @@ const emit = defineEmits<{
 
 const showConfirmDeleteModal = ref(false);
 
-const formattedDateOfBirth = computed(() => formatDateWithFallback(props.athlete.dateOfBirth, 'Not specified'));
-const positionsText = computed(() => props.athlete.positions.length > 0 ? props.athlete.positions.map(p => p.name).join(', ') : 'Not specified');
-const groupsText = computed(() => props.athlete.groups.length > 0 ? props.athlete.groups.map(g => g.name).join(', ') : 'No group assigned');
+const formattedDateOfBirth = computed(() => formatDateWithFallback(props.athlete.dateOfBirth, 'Not set'));
+const positionsText = computed(() => props.athlete.positions.length > 0 ? props.athlete.positions.map(p => p.name).join(', ') : 'Not set');
+const groupsText = computed(() => props.athlete.groups.length > 0 ? props.athlete.groups.map(g => g.name).join(', ') : 'Not assigned');
+const dominantHandText = computed(() => props.athlete.dominantHand || 'Not set');
+const experienceLevelText = computed(() => props.athlete.experienceLevel?.name || 'Not set');
+const jerseyNumberText = computed(() => props.athlete.jerseyNumber ? `#${props.athlete.jerseyNumber}` : 'Not assigned');
+const hasEmergencyContact = computed(() => !!(props.athlete.emergencyContactName || props.athlete.emergencyContactPhone));
 
 function onDeleteClick() {
   showConfirmDeleteModal.value = true;

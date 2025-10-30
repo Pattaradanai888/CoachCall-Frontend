@@ -64,8 +64,11 @@
             <div class="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 md:p-6 h-full min-h-[200px] sm:min-h-[250px]">
               <StatOverview v-if="stats" :stats="stats" />
               <div v-else class="h-full flex flex-col items-center justify-center text-gray-500 py-8 sm:py-12">
-                <Icon name="mdi:chart-line" class="w-10 h-10 sm:w-12 sm:h-12 opacity-50 mb-3 sm:mb-4" />
-                <p class="text-sm sm:text-base">Statistics are unavailable</p>
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <Icon name="mdi:chart-line" class="w-8 h-8 text-gray-400" />
+                </div>
+                <p class="text-base font-medium text-gray-700 mb-1">No statistics available</p>
+                <p class="text-sm text-gray-500 text-center px-4">Statistics will appear once you add athletes</p>
               </div>
             </div>
           </div>
@@ -74,8 +77,11 @@
             <div class="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 md:p-6 h-full min-h-[200px] sm:min-h-[250px]">
               <LatestAthleteCard v-if="latestAthlete" :athlete="latestAthlete" />
               <div v-else class="h-full flex flex-col items-center justify-center text-gray-500 py-8 sm:py-12">
-                <Icon name="mdi:run" class="w-10 h-10 sm:w-12 sm:h-12 opacity-50 mb-3 sm:mb-4" />
-                <p class="text-sm sm:text-base">No recent athletes</p>
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <Icon name="mdi:account-clock" class="w-8 h-8 text-gray-400" />
+                </div>
+                <p class="text-base font-medium text-gray-700 mb-1">No recent athletes</p>
+                <p class="text-sm text-gray-500 text-center px-4">Your latest athlete profile will show here</p>
               </div>
             </div>
           </div>

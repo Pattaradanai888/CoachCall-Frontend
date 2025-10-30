@@ -51,8 +51,12 @@
           </div>
         </li>
       </ul>
-      <div v-else class="flex-1 flex items-center justify-center text-gray-500">
-        No athletes found.
+      <div v-else class="flex-1 flex flex-col items-center justify-center text-gray-500 py-8 px-4">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <Icon name="mdi:account-search" size="2rem" class="text-gray-400" />
+        </div>
+        <p class="text-base font-medium text-gray-700 mb-1">No athletes found</p>
+        <p class="text-sm text-gray-500 text-center">Create your first athlete profile to get started</p>
       </div>
 
       <!-- Pagination controls -->

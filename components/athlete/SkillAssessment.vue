@@ -58,11 +58,12 @@
         </div>
       </div>
     </div>
-    <div v-else class="h-64 flex items-center justify-center text-center text-gray-500">
-      <div>
+    <div v-else class="h-64 flex flex-col items-center justify-center text-center text-gray-500 py-8">
+      <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
         <Icon name="mdi:chart-bar-stacked" size="2rem" class="text-gray-400" />
-        <p>No skill assessment data available.</p>
       </div>
+      <p class="text-base font-medium text-gray-700 mb-1">No skill data yet</p>
+      <p class="text-sm text-gray-500 px-4">Skill progression will appear after completing training sessions</p>
     </div>
   </div>
 </template>
