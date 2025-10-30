@@ -349,6 +349,7 @@ let templateSortable: Sortable | null = null;
 const editingDateIndex = ref<number | null>(null);
 const selectedDate = ref<Date | null>(null);
 const mobileView = ref<'templates' | 'timeline'>('templates');
+const isSyncingFromParent = ref(false); // Flag to prevent emit loop
 
 const { fetchSessionTemplates, fetchSkills, createSession } = useCourses();
 const { data: initialTemplates, pending: templatesPending, refresh: refreshTemplates } = await fetchSessionTemplates();
@@ -373,14 +374,26 @@ const { submit: performSaveTemplate } = useSubmit(createSession, {
 });
 
 watch(droppedItems, (newVal) => {
+  if (isSyncingFromParent.value) {
+    return;
+  }
   emit('update:modelValue', newVal);
 }, { deep: true });
 
 watch(() => props.modelValue, (newVal) => {
-  if (JSON.stringify(newVal) !== JSON.stringify(droppedItems.value)) {
-    droppedItems.value = newVal;
-    enforceTimelineOrder(); // Enforce order when modelValue is updated externally
+  if (!newVal) {
+    return;
   }
+  
+  // Always sync from parent to ensure data consistency
+  // This is critical for edit mode where parent loads data from API
+  isSyncingFromParent.value = true;
+  droppedItems.value = JSON.parse(JSON.stringify(newVal));
+  
+  // Reset flag after Vue updates
+  nextTick(() => {
+    isSyncingFromParent.value = false;
+  });
 }, { immediate: true, deep: true });
 
 const courseStartDate = computed(() => props.courseData?.dateRange?.start ? new Date(props.courseData.dateRange.start) : null);

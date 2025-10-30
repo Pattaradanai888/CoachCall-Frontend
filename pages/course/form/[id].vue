@@ -16,19 +16,21 @@
         </div>
       </div>
 
-      <!-- Step Components (no changes needed here) -->
+      <!-- Step Components -->
       <CourseInformation
         v-if="currentStep === 1"
         ref="courseInfoComponent"
         :course-data="courseData"
         @edit-step="goToStep"
       />
-      <AddSession
-        v-if="currentStep === 2"
-        v-model="sessionData"
-        :course-data="courseData"
-        @edit-step="goToStep"
-      />
+      <div v-show="currentStep === 2">
+        <AddSession
+          v-if="currentStep === 2 || isEditMode"
+          v-model="sessionData"
+          :course-data="courseData"
+          @edit-step="goToStep"
+        />
+      </div>
       <AddAthlete
         v-if="currentStep === 3"
         v-model="athleteData"
@@ -82,7 +84,7 @@
 
 <script setup lang="ts">
 import type { AthleteSelectionInfo } from '~/types/athlete';
-import type { CourseCreatePayload, DroppedItem, SessionCreatePayload } from '~/types/course';
+import type { CourseCreatePayload, DroppedItem, SessionCreatePayload, TaskCreatePayload, TaskSkillWeightPayload } from '~/types/course';
 import { useRoute, useRouter } from '#app';
 import { StageProgressBar } from '#components';
 import { computed, onMounted, ref } from 'vue';
@@ -128,13 +130,36 @@ const isLoading = ref(isEditMode.value); // Initially loading if in edit mode
 const pageTitle = computed(() => isEditMode.value ? 'Edit Your Course' : 'Create Your Course');
 const submitButtonText = computed(() => isEditMode.value ? 'Update Course' : 'Publish Course');
 
+interface CourseFormData {
+  title: string;
+  description: string | null;
+  dateRange: {
+    start: Date | null;
+    end: Date | null;
+  } | null;
+  imagePreview: string | null;
+  imageFile: File | null;
+  start_date: string | null;
+  end_date: string | null;
+}
+
 // --- FORM STATE ---
 const currentStep = ref(1);
 const totalSteps = 4;
-const courseData = ref<any>({});
+const courseData = ref<CourseFormData>(
+  {
+    title: '',
+    description: null,
+    dateRange: null,
+    imagePreview: null,
+    imageFile: null,
+    start_date: null,
+    end_date: null,
+  },
+);
 const sessionData = ref<DroppedItem[]>([]);
 const athleteData = ref<AthleteSelectionInfo[]>([]);
-const courseInfoComponent = ref<any>(null);
+const courseInfoComponent = ref<InstanceType<typeof CourseInformation> | null>(null);
 
 // --- NAVIGATION ---
 function saveStep1Data() {
@@ -245,25 +270,129 @@ const canPublish = computed(() => {
   );
 });
 
-function mapUiSessionToPayload(session: any): SessionCreatePayload {
-  const hasFullTasks = Array.isArray(session.tasks_full) && session.tasks_full.length > 0;
-  return {
-    name: session.name || 'Untitled Session',
-    description: session.description || null,
-    scheduled_date: session.date ? new Date(session.date).toISOString() : new Date(courseData.value.start_date).toISOString(),
-    is_template: false,
-    tasks: hasFullTasks
-      ? session.tasks_full.map((task: any) => ({
-          name: task.title || 'Untitled Task',
-          description: task.description || null,
-          duration_minutes: task.duration || 0,
-          skill_weights: (task.selectedSkillIds || []).map((skillId: number) => ({
-            skill_id: skillId,
-            weight: (task.skillWeights[skillId] || 0) / 100,
-          })),
-        }))
-      : [],
+interface TaskFullPayload {
+  id?: number;
+  title?: string;
+  description?: string | null;
+  duration?: number;
+  sequence?: number;
+  selectedSkillIds?: number[];
+  skillWeights?: Record<number | string, number | string>;
+}
+
+interface SessionTaskPayload {
+  sequence?: number;
+  task?: {
+    id?: number;
+    name?: string;
+    description?: string | null;
+    duration_minutes?: number;
+    skill_weights?: Array<{ skill_id: number; weight: string | number }>;
   };
+}
+
+function buildSkillWeightsFromTask(task: TaskFullPayload): TaskSkillWeightPayload[] {
+  const rawWeights = task.skillWeights ?? {};
+  const fallbackIds = Object.keys(rawWeights)
+    .map(id => Number.parseInt(id, 10))
+    .filter(id => Number.isFinite(id));
+  const selectedIds = Array.isArray(task.selectedSkillIds) && task.selectedSkillIds.length > 0
+    ? task.selectedSkillIds
+    : fallbackIds;
+
+  const uniqueIds = Array.from(new Set(selectedIds));
+  return uniqueIds
+    .map((skillId) => {
+      const raw = rawWeights[skillId] ?? rawWeights[String(skillId)];
+      const percent = typeof raw === 'number' ? raw : Number.parseFloat(String(raw ?? 0));
+      const normalized = Number.isFinite(percent) ? percent / 100 : 0;
+      return {
+        skill_id: skillId,
+        weight: normalized,
+      } satisfies TaskSkillWeightPayload;
+    })
+    .filter(entry => entry.weight > 0);
+}
+
+function buildTasksFromFullTasks(tasksFull: TaskFullPayload[] | undefined): TaskCreatePayload[] {
+  if (!Array.isArray(tasksFull))
+    return [];
+
+  return tasksFull.map((task, index) => {
+    const skillWeights = buildSkillWeightsFromTask(task);
+    return {
+      ...(task.id ? { id: task.id } : {}),
+      name: task.title || 'Untitled Task',
+      description: task.description ?? null,
+      duration_minutes: Number.isFinite(task.duration) ? Number(task.duration) : 0,
+      sequence: typeof task.sequence === 'number' ? task.sequence : index + 1,
+      skill_weights: skillWeights,
+    } satisfies TaskCreatePayload;
+  });
+}
+
+function buildTasksFromSessionTasks(sessionTasks: SessionTaskPayload[] | undefined): TaskCreatePayload[] {
+  if (!Array.isArray(sessionTasks))
+    return [];
+
+  return sessionTasks.map((sessionTask, index) => {
+    const baseTask = sessionTask.task;
+    const skillWeights = Array.isArray(baseTask?.skill_weights)
+      ? baseTask.skill_weights
+        .map(({ skill_id, weight }) => {
+          const normalized = typeof weight === 'number' ? weight : Number.parseFloat(String(weight ?? 0));
+          return {
+            skill_id,
+            weight: Number.isFinite(normalized) ? normalized : 0,
+          } satisfies TaskSkillWeightPayload;
+        })
+        .filter(entry => entry.weight > 0)
+      : [];
+
+    return {
+      ...(baseTask?.id ? { id: baseTask.id } : {}),
+      name: baseTask?.name || 'Untitled Task',
+      description: baseTask?.description ?? null,
+      duration_minutes: baseTask?.duration_minutes ?? 0,
+      sequence: typeof sessionTask.sequence === 'number' ? sessionTask.sequence : index + 1,
+      skill_weights: skillWeights,
+    } satisfies TaskCreatePayload;
+  });
+}
+
+function mapUiSessionToPayload(session: DroppedItem): SessionCreatePayload {
+  const tasksFromFull = buildTasksFromFullTasks(session.tasks_full);
+  const fallbackTasks = buildTasksFromSessionTasks(session.tasks as SessionTaskPayload[] | undefined);
+
+  const mergedTasks = tasksFromFull.map((task, index) => {
+    const fallbackTask = fallbackTasks[index];
+    const mergedSkillWeights = task.skill_weights.length > 0
+      ? task.skill_weights
+      : fallbackTask?.skill_weights ?? [];
+
+    return {
+      ...fallbackTask,
+      ...task,
+      skill_weights: mergedSkillWeights,
+      duration_minutes: task.duration_minutes || fallbackTask?.duration_minutes || 0,
+      description: task.description ?? fallbackTask?.description ?? null,
+      sequence: task.sequence ?? fallbackTask?.sequence ?? index + 1,
+    } satisfies TaskCreatePayload;
+  });
+
+  const preparedTasks = mergedTasks.length > 0 ? mergedTasks : fallbackTasks;
+
+  const fallbackDate = courseData.value.start_date ? new Date(courseData.value.start_date) : new Date();
+  const scheduledDate = session.date ? new Date(session.date) : fallbackDate;
+
+  return {
+    ...(session.id ? { id: session.id } : {}),
+    name: session.name || 'Untitled Session',
+    description: session.description ?? null,
+    scheduled_date: scheduledDate.toISOString(),
+    is_template: false,
+    tasks: preparedTasks,
+  } satisfies SessionCreatePayload;
 }
 
 const { submit: performSubmit, loading: isPublishing } = useSubmit(
@@ -295,8 +424,12 @@ const { submit: performSubmit, loading: isPublishing } = useSubmit(
         () => router.push('/course-management'),
       );
     },
-    onError: (error) => {
-      const message = (error as any)?.message || 'An unknown error occurred while saving the course.';
+    onError: (error: unknown) => {
+      const message = typeof error === 'string'
+        ? error
+        : error instanceof Error
+          ? error.message
+          : 'An unknown error occurred while saving the course.';
       triggerNotification('An Error Occurred', message, 'error');
     },
   },
@@ -315,8 +448,14 @@ async function publishOrUpdateCourse() {
   const finalPayload: CourseCreatePayload = {
     title: courseData.value.title,
     description: courseData.value.description,
-    start_date: new Date(courseData.value.start_date).toISOString().split('T')[0],
-    end_date: new Date(courseData.value.end_date).toISOString().split('T')[0],
+    start_date: (() => {
+      const startSource = courseData.value.start_date ?? courseData.value.dateRange?.start?.toISOString();
+      return startSource ? new Date(startSource).toISOString().split('T')[0] : '';
+    })(),
+    end_date: (() => {
+      const endSource = courseData.value.end_date ?? courseData.value.dateRange?.end?.toISOString();
+      return endSource ? new Date(endSource).toISOString().split('T')[0] : '';
+    })(),
     sessions: sessionData.value.map(mapUiSessionToPayload),
     attendee_ids: athleteData.value.map(athlete => athlete.uuid),
   };
