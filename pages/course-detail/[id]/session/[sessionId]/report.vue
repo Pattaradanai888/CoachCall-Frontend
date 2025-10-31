@@ -84,6 +84,54 @@
         </div>
       </div>
 
+      <!-- Session Insights Section -->
+      <section v-if="sessionReport.insights" class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 p-4 sm:p-6 rounded-lg shadow-md mb-6">
+        <div class="flex items-start mb-4">
+          <Icon name="mdi:lightbulb-on-outline" class="text-blue-600 mr-3 flex-shrink-0 mt-1" size="1.5rem" />
+          <div class="flex-1">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+              Session Insights
+            </h2>
+            <p class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              {{ sessionReport.insights.summary }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Team Pattern Alert (if exists) -->
+        <div v-if="sessionReport.insights.teamPattern" class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-4">
+          <div class="flex items-start">
+            <Icon name="mdi:alert-circle-outline" class="text-amber-600 mr-3 flex-shrink-0 mt-0.5" size="1.25rem" />
+            <div class="flex-1">
+              <h3 class="text-sm font-semibold text-amber-900 mb-1">
+                Team-Wide Pattern Detected
+              </h3>
+              <p class="text-sm text-amber-800">
+                {{ sessionReport.insights.teamPattern }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Items -->
+        <div v-if="sessionReport.insights.actionItems && sessionReport.insights.actionItems.length > 0" class="bg-white border border-blue-200 rounded-lg p-4">
+          <div class="flex items-center mb-3">
+            <Icon name="mdi:clipboard-check-outline" class="text-blue-600 mr-2" size="1.25rem" />
+            <h3 class="text-sm sm:text-base font-semibold text-gray-900">
+              Recommended Actions
+            </h3>
+          </div>
+          <ul class="space-y-2">
+            <li v-for="(item, index) in sessionReport.insights.actionItems" :key="index" class="flex items-start text-sm text-gray-700">
+              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs mr-3 flex-shrink-0 mt-0.5">
+                {{ index + 1 }}
+              </span>
+              <span class="flex-1 leading-relaxed">{{ item }}</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <main class="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-8">
         <!-- Mobile: Full width athlete list -->
         <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md lg:col-span-2">
@@ -111,13 +159,23 @@
                 class="w-8 sm:w-10 h-8 sm:h-10 rounded-full mr-3 sm:mr-4"
               />
               <div class="flex-grow">
-                <p class="font-semibold text-gray-800 text-sm sm:text-base">
-                  {{ athlete.name }}
-                  <span v-if="athlete.isGuest" class="ml-2 px-2 py-0.5 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Guest</span>
-                </p>
+                <div class="flex items-center flex-wrap gap-2 mb-1">
+                  <p class="font-semibold text-gray-800 text-sm sm:text-base">
+                    {{ athlete.name }}
+                  </p>
+                  <span v-if="athlete.isGuest" class="px-2 py-0.5 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Guest</span>
+                  <span v-if="getAthleteInsightBadge(athlete.uuid)" class="px-2 py-0.5 text-xs font-medium rounded-full" :class="getAthleteInsightBadge(athlete.uuid)?.class">
+                    {{ getAthleteInsightBadge(athlete.uuid)?.icon }}
+                  </span>
+                </div>
 
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-gray-500 mb-1">
                   {{ athlete.tasksCompleted }} / {{ sessionReport.session?.tasks.length || 0 }} tasks completed
+                </p>
+                
+                <!-- Athlete-specific insight note -->
+                <p v-if="getAthleteNote(athlete.uuid)" class="text-xs text-gray-700 italic mt-1 line-clamp-2">
+                  {{ getAthleteNote(athlete.uuid) }}
                 </p>
               </div>
               <div class="text-right">
@@ -180,6 +238,21 @@
                       ({{ getSkillChange(index) >= 0 ? '+' : '' }}{{ getSkillChange(index).toFixed(1) }})
                     </span>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Athlete-Specific Insight Card (if available) -->
+            <div v-if="selectedAthleteUuid && getAthleteNote(selectedAthleteUuid)" class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 rounded-r-lg" :class="getAthleteInsightBorderClass(selectedAthleteUuid)">
+              <div class="flex items-start">
+                <span class="text-2xl mr-3 flex-shrink-0">{{ getAthleteInsightBadge(selectedAthleteUuid)?.icon || '💡' }}</span>
+                <div class="flex-1">
+                  <h3 class="text-sm font-semibold text-gray-900 mb-1">
+                    Performance Insight
+                  </h3>
+                  <p class="text-sm text-gray-700 leading-relaxed">
+                    {{ getAthleteNote(selectedAthleteUuid) }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -579,6 +652,69 @@ function getIndicatorBadgeClass(rating: number): string {
     return 'bg-green-100 text-green-800 border border-green-200';
   }
   return 'bg-gray-100 text-gray-800 border border-gray-200';
+}
+
+// Helper function to safely get athlete note
+function getAthleteNote(athleteUuid: string): string | null {
+  if (!sessionReport.value?.insights?.athleteNotes) return null;
+  return sessionReport.value.insights.athleteNotes[athleteUuid] || null;
+}
+
+// Helper function to get athlete insight badge (improvement, decline, or struggle indicators)
+function getAthleteInsightBadge(athleteUuid: string): { icon: string; class: string } | null {
+  const note = getAthleteNote(athleteUuid);
+  if (!note) return null;
+
+  // Check for improvement indicators
+  if (note.includes('improvement') || note.includes('demonstrated')) {
+    return {
+      icon: '↑',
+      class: 'bg-green-100 text-green-700 border border-green-300'
+    };
+  }
+  
+  // Check for decline indicators
+  if (note.includes('decline') || note.includes('requires additional focus')) {
+    return {
+      icon: '↓',
+      class: 'bg-red-100 text-red-700 border border-red-300'
+    };
+  }
+  
+  // Check for struggle indicators
+  if (note.includes('struggled')) {
+    return {
+      icon: '!',
+      class: 'bg-amber-100 text-amber-700 border border-amber-300'
+    };
+  }
+  
+  // Default for stable/consistent performance
+  if (note.includes('maintained') || note.includes('consistent')) {
+    return {
+      icon: '→',
+      class: 'bg-blue-100 text-blue-700 border border-blue-300'
+    };
+  }
+  
+  return null;
+}
+
+// Helper function to get border class for athlete insight card
+function getAthleteInsightBorderClass(athleteUuid: string): string {
+  const note = getAthleteNote(athleteUuid);
+  if (!note) return 'border-blue-400';
+
+  if (note.includes('improvement') || note.includes('demonstrated')) {
+    return 'border-green-400';
+  }
+  if (note.includes('decline') || note.includes('requires additional focus')) {
+    return 'border-red-400';
+  }
+  if (note.includes('struggled')) {
+    return 'border-amber-400';
+  }
+  return 'border-blue-400';
 }
 
 onMounted(() => {

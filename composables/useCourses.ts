@@ -88,11 +88,29 @@ export function useCourses() {
 
     return useAsyncData<SessionReportData>(
       `session-report-${id}`,
-      () => $api(`/course/session/${id}/report`),
+      async () => {
+        const data = await $api<any>(`/course/session/${id}/report`);
+        
+        if (!data) return null as any;
+        
+        // Transform snake_case insights to camelCase
+        if (data.insights) {
+          return {
+            ...data,
+            insights: {
+              summary: data.insights.summary || '',
+              athleteNotes: data.insights.athlete_notes || {},
+              teamPattern: data.insights.team_pattern || null,
+              actionItems: data.insights.action_items || [],
+            },
+          };
+        }
+        
+        return data;
+      },
       {
         server: true,
         default: () => null,
-        transform: (data: SessionReportData) => data || null,
       },
     );
   };

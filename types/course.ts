@@ -153,6 +153,13 @@ export interface FinalEvaluationData {
   time: number;
 }
 
+export interface SessionInsights {
+  summary: string;
+  athleteNotes: Record<string, string>; // athleteUUID → note
+  teamPattern: string | null;
+  actionItems: string[];
+}
+
 export interface SessionReportData {
   course: CourseDetail | null;
   session: Session;
@@ -160,6 +167,7 @@ export interface SessionReportData {
   skillComparisonData: Record<string, SessionSkillComparison>;
   evaluations: Record<string, FinalEvaluationData>;
   totalSessionTime: number;
+  insights: SessionInsights;
 }
 
 export interface EventItem {
