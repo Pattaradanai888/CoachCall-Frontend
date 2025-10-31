@@ -80,12 +80,18 @@
             @error="handleProfileUpdateError"
           />
 
-           <MatricsTab
-            v-if="activeTab === 'matrics' && profileData"
-          />
         </div>
       </div>
     </div>
+
+    <!-- Notification Modal -->
+    <NotificationModal
+      :show="showNotificationModal"
+      :title="notificationTitle"
+      :message="notificationMessage"
+      :type="notificationType"
+      @close="closeNotificationModal"
+    />
   </div>
 </template>
 
@@ -98,8 +104,8 @@ import PasswordTab from '~/components/profile/PasswordTab.vue';
 // Import new components
 import ProfileOverviewTab from '~/components/profile/ProfileOverviewTab.vue';
 import ProfilePictureTab from '~/components/profile/ProfilePictureTab.vue';
+import NotificationModal from '~/components/NotificationModal.vue';
 import { useAuthStore } from '~/stores/auth';
-import MatricsTab from '~/components/profile/MatricsTab.vue';
 
 // Store and router
 const auth = useAuthStore();
@@ -108,6 +114,12 @@ const auth = useAuthStore();
 const activeTab = ref('overview');
 const loadingPage = ref(false); // Renamed from 'loading' to be specific to page loading
 const pageError = ref<string | null>(null); // Renamed from 'error'
+
+// Notification modal state
+const showNotificationModal = ref(false);
+const notificationTitle = ref('');
+const notificationMessage = ref('');
+const notificationType = ref<'success' | 'error'>('success');
 
 // Profile data from Pinia store
 const profileData = computed<User | null>(() => auth.user);
@@ -127,32 +139,23 @@ const tabs = [
     name: 'Profile Picture',
     icon: 'mdi:camera-account',
   },
-  {
-    id: 'matrics',
-    name: 'Performance Metric',
-    icon: 'mdi:poll',
-  },
 ];
 
-// Notification utility (placeholder)
+// Notification utility using NotificationModal
 function showNotification(message: string, type: 'success' | 'error' = 'success') {
-  // Replace with your actual notification system (e.g., a toast library)
-  if (type === 'error') {
-    console.error(`NOTIFICATION: ${message}`);
-    pageError.value = message; // Display error on page if desired
+  notificationTitle.value = type === 'success' ? 'Success' : 'Error';
+  notificationMessage.value = message;
+  notificationType.value = type;
+  showNotificationModal.value = true;
+  
+  // Clear page error when showing success notification
+  if (type === 'success') {
+    pageError.value = null;
   }
-  else {
-    // Using console.warn instead of console.log to avoid eslint no-console error
-    console.warn(`NOTIFICATION: ${message}`);
-    pageError.value = null; // Clear previous errors on success
-  }
-  // Auto-clear error message after a few seconds
-  if (type === 'error') {
-    setTimeout(() => {
-      if (pageError.value === message)
-        pageError.value = null;
-    }, 5000);
-  }
+}
+
+function closeNotificationModal() {
+  showNotificationModal.value = false;
 }
 
 // Event Handlers from child components
