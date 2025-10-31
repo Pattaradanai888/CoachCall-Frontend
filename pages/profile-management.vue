@@ -54,7 +54,6 @@
           <ProfileOverviewTab
             v-if="activeTab === 'overview' && profileData"
             :profile="profileData"
-            :achievements="achievements"
           />
 
           <DisplayNameTab
@@ -102,14 +101,6 @@ import ProfilePictureTab from '~/components/profile/ProfilePictureTab.vue';
 import { useAuthStore } from '~/stores/auth';
 import MatricsTab from '~/components/profile/MatricsTab.vue';
 
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  icon: string;
-}
-
 // Store and router
 const auth = useAuthStore();
 
@@ -121,8 +112,7 @@ const pageError = ref<string | null>(null); // Renamed from 'error'
 // Profile data from Pinia store
 const profileData = computed<User | null>(() => auth.user);
 
-// Mock data (replace with real data fetching if needed)
-const achievements = ref<Achievement[]>([]);
+
 
 const tabs = [
   { id: 'overview', name: 'Overview', icon: 'mdi:account-details-outline' },
@@ -230,6 +220,14 @@ onMounted(async () => {
     navigateTo('/login?redirect=/profile-management');
     return;
   }
+  
+  // Check for tab parameter in URL
+  const route = useRoute();
+  const tabParam = route.query.tab as string;
+  if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+    activeTab.value = tabParam;
+  }
+  
   await fetchPageProfileData();
 });
 

@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white p-3 sm:p-4 lg:p-5 rounded-lg shadow-sm">
     <!-- Header + Tabs -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+    <div class="flex flex-row justify-between items-center gap-3 sm:gap-4">
       <div class="flex-1 min-w-0">
         <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 leading-tight">
           Courses Overview
@@ -9,7 +9,7 @@
       </div>
       <div
         ref="tabContainer"
-        class="relative flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto overflow-x-auto"
+        class="relative flex bg-gray-100 rounded-lg p-1 flex-shrink-0 overflow-x-auto"
       >
         <div
           class="absolute top-1 bottom-1 bg-white rounded-md shadow-sm transition-all duration-300"
