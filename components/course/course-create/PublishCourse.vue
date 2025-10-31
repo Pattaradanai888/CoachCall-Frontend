@@ -258,13 +258,27 @@
 </template>
 
 <script setup lang="ts">
-import type { Attendee } from '~/types/course';
+import type { Attendee, DroppedItem } from '~/types/course';
 import { computed } from 'vue';
+
+interface CourseData {
+  title?: string;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  cover_image_url?: string | null;
+  dateRange?: {
+    start: Date | null;
+    end: Date | null;
+  } | null;
+  imagePreview?: string | null;
+  imageFile?: File | null;
+}
 
 // --- PROPS & EMITS ---
 const props = withDefaults(defineProps<{
-  courseData?: any;
-  sessionData?: any[];
+  courseData?: CourseData;
+  sessionData?: DroppedItem[];
   athleteData?: Attendee[];
 }>(), {
   courseData: () => ({}),

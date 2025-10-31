@@ -75,7 +75,6 @@ const emit = defineEmits<{
 }>();
 
 const auth = useAuthStore();
-const { $api } = useNuxtApp();
 
 const newFullname = ref('');
 const loading = ref(false);

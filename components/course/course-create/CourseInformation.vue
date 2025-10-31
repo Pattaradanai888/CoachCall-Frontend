@@ -261,16 +261,25 @@ interface CourseFormState {
   imagePreview: string | null;
 }
 
+interface CourseData {
+  title?: string;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  cover_image_url?: string | null;
+  dateRange?: {
+    start: Date | null;
+    end: Date | null;
+  } | null;
+  imagePreview?: string | null;
+  imageFile?: File | null;
+}
+
 const props = withDefaults(defineProps<{
-  courseData?: any;
+  courseData?: CourseData;
 }>(), {
   courseData: () => ({}),
 });
-
-// Removed the 'error' event as the modal will handle it now
-const emit = defineEmits<{
-  (e: 'editStep', step: number): void;
-}>();
 
 const dragOver = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);

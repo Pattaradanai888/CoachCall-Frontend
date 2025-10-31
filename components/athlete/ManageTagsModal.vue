@@ -99,6 +99,16 @@
       </transition>
     </div>
   </transition>
+
+  <!-- Delete Confirmation Modal -->
+  <ConfirmModal
+    :show="showDeleteConfirm"
+    title="Confirm Delete"
+    :message="`Are you sure you want to delete the ${props.entityName.toLowerCase()} &quot;${itemToDelete?.name}&quot;?`"
+    confirm-text="Delete"
+    @close="showDeleteConfirm = false"
+    @confirm="confirmDelete"
+  />
 </template>
 
 <script setup lang="ts">
@@ -131,6 +141,8 @@ const isLoading = ref(false);
 const isSubmitting = ref(false);
 const error = ref<string | null>(null);
 const hasChanges = ref(false);
+const showDeleteConfirm = ref(false);
+const itemToDelete = ref<Item | null>(null);
 
 // Dynamic validation schema
 const fieldName = `new${props.entityName}Name`;
@@ -152,8 +164,11 @@ async function fetchItems() {
   try {
     items.value = await $api<Item[]>(props.apiEndpoint);
   }
-  catch (apiError: any) {
-    error.value = apiError.data?.detail || `Failed to load ${props.entityName.toLowerCase()}s.`;
+  catch (apiError: unknown) {
+    const errorDetail = apiError && typeof apiError === 'object' && 'data' in apiError 
+      ? (apiError as { data?: { detail?: string } }).data?.detail 
+      : null;
+    error.value = errorDetail || `Failed to load ${props.entityName.toLowerCase()}s.`;
   }
   finally {
     isLoading.value = false;
@@ -174,25 +189,41 @@ const onAddItemSubmit = handleSubmit(async (values) => {
     hasChanges.value = true;
     await fetchItems();
   }
-  catch (apiError: any) {
-    error.value = apiError.data?.detail || `Failed to create ${props.entityName.toLowerCase()}.`;
+  catch (apiError: unknown) {
+    const errorDetail = apiError && typeof apiError === 'object' && 'data' in apiError 
+      ? (apiError as { data?: { detail?: string } }).data?.detail 
+      : null;
+    error.value = errorDetail || `Failed to create ${props.entityName.toLowerCase()}.`;
   }
   finally {
     isSubmitting.value = false;
   }
 });
 
-async function handleDelete(itemId: number, itemName: string) {
-  if (!confirm(`Are you sure you want to delete the ${props.entityName.toLowerCase()} "${itemName}"?`))
-    return;
+function handleDelete(itemId: number, itemName: string) {
+  itemToDelete.value = { id: itemId, name: itemName };
+  showDeleteConfirm.value = true;
+}
+
+async function confirmDelete() {
+  if (!itemToDelete.value) return;
+  
+  showDeleteConfirm.value = false;
   error.value = null;
+  
   try {
-    await $api(`${props.apiEndpoint}/${itemId}`, { method: 'DELETE' });
+    await $api(`${props.apiEndpoint}/${itemToDelete.value.id}`, { method: 'DELETE' });
     hasChanges.value = true;
     await fetchItems();
   }
-  catch (apiError: any) {
-    error.value = apiError.data?.detail || `Failed to delete ${props.entityName.toLowerCase()}.`;
+  catch (apiError: unknown) {
+    const errorDetail = apiError && typeof apiError === 'object' && 'data' in apiError 
+      ? (apiError as { data?: { detail?: string } }).data?.detail 
+      : null;
+    error.value = errorDetail || `Failed to delete ${props.entityName.toLowerCase()}.`;
+  }
+  finally {
+    itemToDelete.value = null;
   }
 }
 

@@ -312,10 +312,19 @@
     @create-session="handleSessionCreated"
     @create-template="handleTemplateCreated"
   />
+
+  <!-- Notification Modal for Template Save -->
+  <NotificationModal
+    :show="showNotification"
+    :title="notificationTitle"
+    :message="notificationMessage"
+    :type="notificationType"
+    @close="showNotification = false"
+  />
 </template>
 
 <script setup lang="ts">
-import type { DroppedItem, Session, SessionCreatePayload } from '~/types/course';
+import type { DroppedItem, Session, SessionCreatePayload, SessionTemplate, TaskFull } from '~/types/course';
 import { PaginationBar } from '#components';
 import Sortable from 'sortablejs';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
@@ -325,9 +334,23 @@ import { useSubmit } from '~/composables/useSubmit';
 import SessionTemplateComponent from './AddSession/SessionTemplate.vue';
 import TimelineItem from './AddSession/TimelineItem.vue';
 
+interface CourseData {
+  title?: string;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  cover_image_url?: string | null;
+  dateRange?: {
+    start: Date | null;
+    end: Date | null;
+  } | null;
+  imagePreview?: string | null;
+  imageFile?: File | null;
+}
+
 const props = withDefaults(defineProps<{
   modelValue?: DroppedItem[];
-  courseData?: any;
+  courseData?: CourseData;
 }>(), {
   modelValue: () => [],
   courseData: () => ({}),
@@ -339,6 +362,10 @@ const templatesContainer = ref<HTMLElement | null>(null);
 const timelineDropZone = ref<HTMLElement | null>(null);
 
 const showAddModal = ref(false);
+const showNotification = ref(false);
+const notificationTitle = ref('');
+const notificationMessage = ref('');
+const notificationType = ref<'success' | 'error'>('success');
 const currentPage = ref(1);
 const itemsPerPage = 5;
 const searchQuery = ref('');
@@ -365,11 +392,17 @@ const { data: availableSkills } = await fetchSkills();
 
 const { submit: performSaveTemplate } = useSubmit(createSession, {
   onSuccess: () => {
-    alert('Template saved successfully!');
+    notificationTitle.value = 'Success';
+    notificationMessage.value = 'Template saved successfully!';
+    notificationType.value = 'success';
+    showNotification.value = true;
     refreshTemplates();
   },
   onError: (err) => {
-    alert(`Failed to save template: ${err}`);
+    notificationTitle.value = 'Error';
+    notificationMessage.value = `Failed to save template: ${err}`;
+    notificationType.value = 'error';
+    showNotification.value = true;
   },
 });
 
@@ -420,8 +453,8 @@ function closeCreateModal() {
   showAddModal.value = false;
 }
 
-function handleSessionCreated(sessionData: any) {
-  const newItem = { ...sessionData, timelineId: `custom-${Date.now()}`, date: null };
+function handleSessionCreated(sessionData: SessionTemplate | { id: string; name: string; description: string; total_duration_minutes: number; task_count: number; tasks_full: TaskFull[] }) {
+  const newItem = { ...sessionData, timelineId: `custom-${Date.now()}`, date: null, tasks: [], scheduled_date: '' } as DroppedItem;
   droppedItems.value.push(newItem);
   enforceTimelineOrder();
   closeCreateModal();
@@ -489,15 +522,6 @@ async function initializeSortable() {
         if (!originalTemplate)
           return;
 
-        interface TaskFull {
-          id: number;
-          title: string;
-          description: string;
-          duration: number;
-          selectedSkillIds: number[];
-          skillWeights: Record<number, number>;
-        }
-        
         let tasks_full: TaskFull[] = [];
         if (originalTemplate.tasks && Array.isArray(originalTemplate.tasks)) {
           tasks_full = originalTemplate.tasks.map(sessionTask => ({
@@ -587,15 +611,6 @@ function saveDateSelection() {
 
 // Mobile-specific functions
 function addTemplateToTimeline(template: Session) {
-  interface TaskFull {
-    id: number;
-    title: string;
-    description: string;
-    duration: number;
-    selectedSkillIds: number[];
-    skillWeights: Record<number, number>;
-  }
-  
   let tasks_full: TaskFull[] = [];
   if (template.tasks && Array.isArray(template.tasks)) {
     tasks_full = template.tasks.map(sessionTask => ({

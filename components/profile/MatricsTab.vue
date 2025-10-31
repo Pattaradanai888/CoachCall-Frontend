@@ -75,6 +75,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Error Notification Modal -->
+  <NotificationModal
+    :show="showErrorNotification"
+    title="Error"
+    :message="errorMessage"
+    type="error"
+    @close="showErrorNotification = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -93,6 +102,8 @@ watch(fetchedSkills, (newSkills) => {
 }, { immediate: true });
 
 // --- State for Editing ---
+const showErrorNotification = ref(false);
+const errorMessage = ref('');
 const editingMetricId = ref<number | null>(null);
 const editingMetricName = ref('');
 
@@ -120,7 +131,8 @@ async function saveMetric() {
 
   } catch (error) {
     console.error('Failed to update metric:', error);
-    alert('Error: Could not save the metric.');
+    errorMessage.value = 'Could not save the metric.';
+    showErrorNotification.value = true;
   } finally {
     cancelEditing();
   }

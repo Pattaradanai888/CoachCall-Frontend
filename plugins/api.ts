@@ -2,7 +2,7 @@
 import type { FetchOptions, FetchRequest } from 'ofetch';
 import { defineNuxtPlugin } from '#app';
 import { ofetch } from 'ofetch';
-import { isRef, unref, type Ref } from 'vue';
+import { isRef, unref } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { debug } from '~/utils/logger';
 
@@ -29,7 +29,7 @@ export default defineNuxtPlugin((nuxtApp) => {
           url = new URL(rawReq);
         } else {
           // derive a usable base
-          let base = (options && (options as any).baseURL) || '';
+          let base = (options && typeof options === 'object' && 'baseURL' in options ? (options as { baseURL?: string }).baseURL : undefined) || '';
 
           // if base is empty or invalid, fall back to browser origin (client) or localhost (server)
           if (!base || typeof base !== 'string' || base.trim() === '') {
@@ -43,7 +43,7 @@ export default defineNuxtPlugin((nuxtApp) => {
           // finally build a full URL (works if rawReq is absolute path or relative)
           url = new URL(rawReq, base);
         }
-      } catch (e) {
+      } catch {
         // absolute fallback: ensure url exists and won't throw
         const fallbackOrigin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost';
         url = new URL('/' + rawReq.replace(/^\/+/, ''), fallbackOrigin);

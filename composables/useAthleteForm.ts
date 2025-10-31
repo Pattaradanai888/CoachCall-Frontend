@@ -151,8 +151,11 @@ export function useAthleteForm(athlete: MaybeRef<AthleteDetail | null>) {
       }
       return true;
     }
-    catch (error: any) {
-      submissionError.value = error.data?.detail || 'An unexpected error occurred.';
+    catch (error: unknown) {
+      const errorDetail = error && typeof error === 'object' && 'data' in error 
+        ? (error as { data?: { detail?: string } }).data?.detail 
+        : null;
+      submissionError.value = errorDetail || 'An unexpected error occurred.';
       return false;
     }
     finally {

@@ -42,8 +42,8 @@ export default defineEventHandler(async (event) => {
         }
         body = formData;
       }
-    } catch (e) {
-      logError('[SWA-PROXY] Error parsing multipart form data:', e);
+    } catch (error) {
+      logError('[SWA-PROXY] Error parsing multipart form data:', error);
       body = undefined;
     }
   } else if (isMethod(event, ['POST', 'PUT', 'PATCH'])) {
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     try {
       const rawBody = await readRawBody(event);
       if (rawBody) body = rawBody;
-    } catch (e) {
+    } catch {
       body = undefined;
     }
   }
@@ -84,27 +84,26 @@ export default defineEventHandler(async (event) => {
   // Helper: mask cookie string values but keep attributes
   function maskCookieForLog(cookieStr: string) {
     // replace name=value with name=<redacted> but preserve attributes
-    return cookieStr.replace(/([^=; \t]+)=([^;]+)/g, (m, name) => {
+    return cookieStr.replace(/([^=; \t]+)=([^;]+)/g, (_m, name) => {
       // mask only the value portion for the first cookie pair (name=...) and keep other attrs
       return `${name}=<redacted>`;
     });
   }
 
   // Helper: produce a compact header summary (presence + masked value for auth/cookie)
-  function summarizeRequestHeaders(hdrs: Record<string, any>) {
+  function summarizeRequestHeaders(hdrs: Record<string, unknown>) {
     const summary: Record<string, string> = {};
-    const lowerKeys = Object.keys(hdrs).map(k => k.toLowerCase());
     // Authorization
     const authKey = Object.keys(hdrs).find(k => k.toLowerCase() === 'authorization');
     if (authKey) {
-      summary['authorization'] = maskValue(hdrs[authKey]).toString();
+      summary['authorization'] = maskValue(hdrs[authKey] as string).toString();
     } else {
       summary['authorization'] = '<missing>';
     }
     // Custom auth (x-auth-token)
     const customAuthKey = Object.keys(hdrs).find(k => k.toLowerCase() === 'x-auth-token');
     if (customAuthKey) {
-      summary['x-auth-token'] = maskValue(hdrs[customAuthKey]).toString();
+      summary['x-auth-token'] = maskValue(hdrs[customAuthKey] as string).toString();
     } else {
       summary['x-auth-token'] = '<missing>';
     }
@@ -273,14 +272,17 @@ export default defineEventHandler(async (event) => {
     }
     setResponseStatus(event, respStatus);
     return response._data;
-  } catch (error: any) {
-    logError(`[SWA-PROXY] Error proxying ${method} ${targetUrl}:`, error?.message ?? error);
+  } catch (error: unknown) {
+    const errorMessage = error && typeof error === 'object' && 'message' in error ? (error as { message: string }).message : String(error);
+    logError(`[SWA-PROXY] Error proxying ${method} ${targetUrl}:`, errorMessage);
 
-    if (error.response) {
-      const status = error.response.status || 500;
+    // Check if error has response property (ofetch error structure)
+    if (error && typeof error === 'object' && 'response' in error) {
+      const fetchError = error as { response: { status?: number; _data?: unknown } };
+      const status = fetchError.response.status || 500;
       setResponseStatus(event, status);
       // Mask any proxied error body to avoid sensitive token echoes
-      const data = error.response._data;
+      const data = fetchError.response._data;
       if (VERBOSE) {
         logError('[SWA-PROXY] Backend error body (masked):', typeof data === 'string' ? '<string body>' : '<json body>');
       }

@@ -242,6 +242,25 @@
       @close="showAddAthleteModal = false"
       @update-attendees="handleUpdateAttendees"
     />
+
+    <!-- Cancel Session Confirmation Modal -->
+    <ConfirmModal
+      :show="showCancelConfirm"
+      title="Cancel & Delete Session"
+      message="Are you sure you want to cancel and delete this quick session? This action cannot be undone."
+      confirm-text="Delete Session"
+      @close="showCancelConfirm = false"
+      @confirm="confirmCancelSession"
+    />
+
+    <!-- Error Notification Modal -->
+    <NotificationModal
+      :show="showErrorNotification"
+      title="Error"
+      :message="errorMessage"
+      type="error"
+      @close="showErrorNotification = false"
+    />
   </div>
 </template>
 
@@ -293,6 +312,9 @@ const error = computed(() => courseError.value || sessionError.value);
 const sessionAthletes = ref<Attendee[]>([]);
 const presentAthleteIds = ref<string[]>([]);
 const showAddAthleteModal = ref(false);
+const showCancelConfirm = ref(false);
+const showErrorNotification = ref(false);
+const errorMessage = ref('');
 
 watch(session, (newSession) => {
   if (newSession) {
@@ -380,24 +402,24 @@ async function handleStartSession() {
   }
 }
 
-async function handleCancelSession() {
-  if (!session.value)
-    return;
-  // In a real app, you would use a more robust confirmation modal component
-  const confirmed = confirm(
-    'Are you sure you want to cancel and delete this quick session? This action cannot be undone.',
-  );
-  if (confirmed) {
-    try {
-      await deleteSession(session.value.id);
-      await router.push('/course-management');
-      // You could also show a success notification here
-    }
-    catch (e) {
-      console.error('Failed to delete session:', e);
-      // You could show an error notification here
-      alert('Failed to delete the session. Please try again.');
-    }
+function handleCancelSession() {
+  if (!session.value) return;
+  showCancelConfirm.value = true;
+}
+
+async function confirmCancelSession() {
+  if (!session.value) return;
+  
+  showCancelConfirm.value = false;
+  
+  try {
+    await deleteSession(session.value.id);
+    await router.push('/course-management');
+  }
+  catch (e) {
+    console.error('Failed to delete session:', e);
+    errorMessage.value = 'Failed to delete the session. Please try again.';
+    showErrorNotification.value = true;
   }
 }
 

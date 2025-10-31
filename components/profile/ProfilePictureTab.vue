@@ -91,6 +91,16 @@
       @close="closePreviewModal"
       @upload="handleUploadProfilePicture"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmModal
+      :show="showDeleteConfirm"
+      title="Delete Profile Picture"
+      message="Are you sure you want to delete your profile picture? This action cannot be undone."
+      confirm-text="Delete"
+      @close="showDeleteConfirm = false"
+      @confirm="handleDeleteProfilePicture"
+    />
   </div>
 </template>
 
@@ -118,6 +128,7 @@ const showPreviewModal = ref(false);
 const selectedFile = ref<File | null>(null);
 const previewImage = ref<string | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
+const showDeleteConfirm = ref(false);
 
 function triggerFileInput() {
   fileInputRef.value?.click();
@@ -234,16 +245,11 @@ async function handleUploadProfilePicture() {
 }
 
 function confirmDeleteProfilePicture() {
-  if (
-    window.confirm(
-      'Are you sure you want to delete your profile picture? This action cannot be undone.',
-    )
-  ) {
-    handleDeleteProfilePicture();
-  }
+  showDeleteConfirm.value = true;
 }
 
 async function handleDeleteProfilePicture() {
+  showDeleteConfirm.value = false;
   await deletePicture();
 }
 </script>

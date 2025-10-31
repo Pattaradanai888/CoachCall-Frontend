@@ -86,12 +86,20 @@ export function useCourses() {
   const fetchSessionReport = (sessionId: number | string) => {
     const id = typeof sessionId === 'string' ? Number.parseInt(sessionId, 10) : sessionId;
 
-    return useAsyncData<SessionReportData>(
+    return useAsyncData<SessionReportData | null>(
       `session-report-${id}`,
       async () => {
-        const data = await $api<any>(`/course/session/${id}/report`);
+        // Backend response has snake_case insights
+        interface BackendInsights {
+          summary: string;
+          athlete_notes: Record<string, string>;
+          team_pattern: string | null;
+          action_items: string[];
+        }
         
-        if (!data) return null as any;
+        const data = await $api<SessionReportData & { insights?: BackendInsights }>(`/course/session/${id}/report`);
+        
+        if (!data) return null;
         
         // Transform snake_case insights to camelCase
         if (data.insights) {

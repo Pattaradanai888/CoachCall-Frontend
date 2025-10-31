@@ -43,7 +43,7 @@ export interface CourseCreatePayload {
   cover_image_url?: string | null;
   start_date: string;
   end_date: string;
-  sessions: any[];
+  sessions: SessionCreatePayload[];
   attendee_ids?: string[];
 }
 
@@ -80,7 +80,7 @@ export interface CourseDetail {
 }
 
 export interface Session {
-  date: any;
+  date: string | null;
   id: number;
   name: string;
   description: string | null;
@@ -92,13 +92,24 @@ export interface Session {
   task_count: number;
   total_duration_minutes: number;
 
-  completions?: any[];
+  completions?: TaskCompletion[];
   evaluationData?: Record<string, FinalEvaluationData>;
   totalSessionTime?: number;
 }
 
+export interface TaskCompletion {
+  id: number;
+  athlete_uuid: string;
+  task_id: number;
+  final_score: number;
+  notes: string | null;
+  time: number;
+  completed_at: string;
+  scores_breakdown: Record<string, unknown>;
+}
+
 export interface SessionTemplate {
-  tasks: any;
+  tasks: SessionTask[];
   id: number;
   name: string;
   description: string | null;
@@ -124,10 +135,19 @@ export interface SessionTask {
   task: Task;
 }
 
+export interface TaskFull {
+  id: number;
+  title: string;
+  description: string | null;
+  duration: number;
+  selectedSkillIds: number[];
+  skillWeights: Record<number, number>;
+}
+
 export interface DroppedItem extends SessionTemplate {
   timelineId: string;
   date: Date | null;
-  tasks_full?: any[];
+  tasks_full?: TaskFull[];
 }
 
 export interface CourseListEntryWithProgress extends CourseListEntry {

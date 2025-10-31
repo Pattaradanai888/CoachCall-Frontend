@@ -1,11 +1,12 @@
 // composables/useSubmit.ts
 import { ref } from 'vue';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useSubmit<T extends (...args: any[]) => Promise<any>>(
   action: T,
   options?: {
     onSuccess?: (result: Awaited<ReturnType<T>>) => void;
-    onError?: (error: any) => void;
+    onError?: (error: string) => void;
   },
 ) {
   const loading = ref(false);
@@ -19,8 +20,16 @@ export function useSubmit<T extends (...args: any[]) => Promise<any>>(
       options?.onSuccess?.(result);
       return result;
     }
-    catch (err: any) {
-      const errorMessage = err.response?._data?.detail || err.message || 'An unexpected error occurred.';
+    catch (err: unknown) {
+      let errorMessage = 'An unexpected error occurred.';
+      if (err && typeof err === 'object') {
+        if ('response' in err) {
+          const response = (err as { response?: { _data?: { detail?: string } } }).response;
+          errorMessage = response?._data?.detail || errorMessage;
+        } else if ('message' in err) {
+          errorMessage = (err as { message: string }).message;
+        }
+      }
       submissionError.value = errorMessage;
       options?.onError?.(errorMessage);
     }

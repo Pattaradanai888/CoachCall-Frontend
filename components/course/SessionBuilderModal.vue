@@ -223,18 +223,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { Session, SessionCreatePayload, Skill, TaskCreatePayload } from '~/types/course';
+import type { Session, SessionCreatePayload, Skill, TaskCreatePayload, TaskFull } from '~/types/course';
 import { computed, ref, watch } from 'vue';
 import TaskComponent from '~/components/TaskComponent.vue';
-
-interface UITask {
-  id: number;
-  title: string;
-  description: string;
-  duration: number;
-  selectedSkillIds: number[];
-  skillWeights: Record<number, number>;
-}
 
 interface SessionUIData {
   id: string;
@@ -242,7 +233,7 @@ interface SessionUIData {
   description: string;
   total_duration_minutes: number;
   task_count: number;
-  tasks_full: UITask[];
+  tasks_full: TaskFull[];
 }
 
 type ModalMode = 'timeline' | 'template';
@@ -269,7 +260,7 @@ const isEditMode = computed(() => !!props.initialData);
 const sessionName = ref('');
 const sessionDescription = ref('');
 let taskIdCounter = 1;
-const tasks = ref<UITask[]>([]);
+const tasks = ref<TaskFull[]>([]);
 const saveAsTemplateFlag = ref(props.mode === 'template');
 const originalDataForReset = ref<Session | null>(null);
 const totalTime = computed(() => tasks.value.reduce((sum, t) => sum + (Number(t.duration) || 0), 0));
@@ -435,10 +426,18 @@ function removeTask(id: number) {
   if (idx > -1)
     tasks.value.splice(idx, 1);
 }
-function updateField({ id, field, value }: { id: number; field: keyof UITask; value: any }) {
+function updateField({ id, field, value }: { id: number; field: keyof TaskFull; value: string | number | null }) {
   const task = tasks.value.find(t => t.id === id);
-  if (task)
-    (task as any)[field] = value;
+  if (task) {
+    // Type-safe assignment based on field
+    if (field === 'id' || field === 'duration') {
+      (task[field] as number) = value as number;
+    } else if (field === 'title') {
+      (task[field] as string) = value as string;
+    } else if (field === 'description') {
+      (task[field] as string | null) = value as string | null;
+    }
+  }
 }
 </script>
 

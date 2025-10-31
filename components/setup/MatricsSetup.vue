@@ -149,9 +149,10 @@ async function saveSkills(): Promise<{ success: boolean; error?: string }> {
     console.log('Successfully saved all skills:', selectedSkills.value.map(s => s.name));
     return { success: true };
   }
-  catch (err: any) {
+  catch (err: unknown) {
     console.error('Failed to save one or more skills:', err);
-    const errorMessage = err.data?.message || 'An error occurred while saving your skills.';
+    const errorData = err && typeof err === 'object' && 'data' in err ? (err as { data?: { message?: string } }).data : null;
+    const errorMessage = errorData?.message || 'An error occurred while saving your skills.';
     return { success: false, error: errorMessage };
   }
 }

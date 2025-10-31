@@ -157,20 +157,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { Skill } from '~/types/course';
+import type { Skill, TaskFull } from '~/types/course';
 import { computed, ref, watch } from 'vue';
 
-interface Task {
-  id: number;
-  title: string;
-  description: string;
-  duration: number;
-  selectedSkillIds: number[];
-  skillWeights: Record<number, number>;
-}
-
 const props = defineProps<{
-  task: Task;
+  task: TaskFull;
   index: number;
   availableSkills: Skill[];
   tasksLength: number;
@@ -178,12 +169,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'remove', id: number): void;
-  (e: 'update-field', payload: { id: number; field: keyof Task; value: any }): void;
+  (e: 'update-field', payload: { id: number; field: keyof TaskFull; value: string | number | null }): void;
   (e: 'toggle-skill', payload: { id: number; skill: Skill }): void;
   (e: 'update-skill-weight', payload: { id: number; skillId: number; value: number }): void;
 }>();
 
-const localTask = ref<Task>({ ...props.task });
+const localTask = ref<TaskFull>({ ...props.task });
 const isSliding = ref(false);
 
 watch(
@@ -253,7 +244,7 @@ function handleSliderInput(skillId: number, event: Event) {
   }
 }
 
-function handleSliderChange(skillId: number, event: Event) {
+function handleSliderChange(_skillId: number, _event: Event) {
   isSliding.value = false;
   localTask.value.selectedSkillIds.forEach((sId) => {
     emit('update-skill-weight', {
@@ -268,7 +259,7 @@ function emitRemove() {
   emit('remove', props.task.id);
 }
 
-function emitUpdateField(field: keyof Task, value: any) {
+function emitUpdateField(field: keyof TaskFull, value: string | number | null) {
   emit('update-field', { id: props.task.id, field, value });
 }
 

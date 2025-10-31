@@ -180,9 +180,6 @@ const templatesPending = ref(true);
 const availableSkills = ref<Skill[]>([]);
 
 const {
-  fetchAllCourseDetails,
-  fetchSessionTemplates,
-  fetchSkills,
   fetchAllCourseDetailsClient,
   fetchSessionTemplatesClient,
   fetchSkillsClient,
@@ -291,8 +288,7 @@ const { submit: performSaveTemplate } = useSubmit(createSession, {
     refreshTemplates();
     closeModal();
   },
-  onError: (err: any) => {
-    const errorMessage = err?.data?.detail || 'An unknown error occurred.';
+  onError: (errorMessage: string) => {
     showNotification('Error', `Failed to save template: ${errorMessage}`, 'error');
   },
 });
@@ -418,8 +414,11 @@ async function handleStartQuickSession(template: SessionTemplate) {
       showNotification('Error', 'Failed to create quick session instance.', 'error');
     }
   }
-  catch (error: any) {
-    const errorMessage = error?.data?.detail || 'An unknown error occurred.';
+  catch (error: unknown) {
+    const errorDetail = error && typeof error === 'object' && 'data' in error 
+      ? (error as { data?: { detail?: string } }).data?.detail 
+      : null;
+    const errorMessage = errorDetail || 'An unknown error occurred.';
     showNotification('Error', `Could not start quick session: ${errorMessage}`, 'error');
   }
 }
